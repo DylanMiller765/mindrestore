@@ -19,6 +19,7 @@ struct MindRestoreApp: App {
             Exercise.self,
             SpacedRepetitionCard.self,
             DailySession.self,
+            BrainScoreResult.self,
         ])
     }
 }

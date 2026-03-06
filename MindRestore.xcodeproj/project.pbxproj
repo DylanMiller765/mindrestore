@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
+		0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */; };
+		0E55511D927C33E1FF5B4B4A /* DailyChallengeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */; };
+		0F933B5273CE53AED927AB16 /* ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69BA16CD97233B209118C979 /* ConfettiView.swift */; };
 		15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EF9610B969A47D9CF45857 /* ProgressRing.swift */; };
 		1836CEF9329F3657D53366E4 /* SpacedRepetitionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */; };
 		19739734781F9B63810F13CB /* SpacedRepetitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */; };
@@ -22,12 +25,14 @@
 		5D898BDABF6807EA6EDFF2F4 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55274562ADD2916F382380DF /* User.swift */; };
 		5EC983D4404D8F5DCD55947A /* EducationContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7175665C273F5FCE80DE0F /* EducationContent.swift */; };
 		6F33F73B24342351802ACB19 /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABD9792A0473A14E54F8F87 /* StoreService.swift */; };
+		6FA7676BFD4BDC702165B01C /* BrainAssessmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
 		84708C2B0EA60D9FFF749210 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECDC3DB774658A5C4D15A9D /* SettingsView.swift */; };
 		8574E446C920D58FEE0C30CF /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02E7BAD4ADED91F69A38C14 /* NotificationService.swift */; };
 		8ED3241E521BC34D514C4623 /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = D8DB75C7343DFB9C66001701 /* Configuration.storekit */; };
+		90F6C841495047F91C0A60C2 /* DailyChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAED08649D48D8892E649EC /* DailyChallengeView.swift */; };
 		95D37AFEE22F63192D4DD339 /* ActiveRecallContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4028B827231FBAD8F46A06 /* ActiveRecallContent.swift */; };
 		9D6CE991CC7E9F424AAB8463 /* SpacedRepetitionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 333B57315792C0E9850E9B12 /* SpacedRepetitionViewModel.swift */; };
 		A15B03DE954A1622830984B7 /* EducationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACBF181734EEB2DE916FE0ED /* EducationDetailView.swift */; };
@@ -38,20 +43,25 @@
 		B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1091C68DA4412E2434189 /* EducationFeedView.swift */; };
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
+		C93B5314318FD0ED427CDDE3 /* BrainScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05276B66D71D60017E61FBAC /* BrainScore.swift */; };
 		CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */; };
 		CBAD16576947D46F18E8C64F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A09FC1A19873D8978A18CF2 /* Constants.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
 		D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */; };
+		E19FD204B981EA7E98758597 /* BrainAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */; };
 		E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */; };
 		E97ADA93A06FD52948075DD9 /* ActiveRecallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C98AA0B97EDAAFE2D1ED6C /* ActiveRecallView.swift */; };
+		F7FE67F3CDF973225F4A1AF7 /* ShareCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD9448D12FB29A1CB1FEDA6 /* ShareCardView.swift */; };
 		FA8567C797B41B4B41197836 /* MindRestoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2803E4C219B6D38BE3A296 /* MindRestoreApp.swift */; };
 		FC65303B02F0B4EA9D897243 /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36C08C1BDCFA5D2FFF8348ED /* ProgressViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		05276B66D71D60017E61FBAC /* BrainScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScore.swift; sourceTree = "<group>"; };
 		0C755FB45F2C7F2138DB6779 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallEngine.swift; sourceTree = "<group>"; };
+		1BAED08649D48D8892E649EC /* DailyChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeView.swift; sourceTree = "<group>"; };
 		1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressDashboardView.swift; sourceTree = "<group>"; };
 		28F2956C980BEE531AF763D7 /* DailySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySession.swift; sourceTree = "<group>"; };
 		2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallViewModel.swift; sourceTree = "<group>"; };
@@ -61,6 +71,7 @@
 		36C08C1BDCFA5D2FFF8348ED /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		3B4028B827231FBAD8F46A06 /* ActiveRecallContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallContent.swift; sourceTree = "<group>"; };
 		3EDD34095382917612B530DD /* MindRestore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindRestore.entitlements; sourceTree = "<group>"; };
+		3FD9448D12FB29A1CB1FEDA6 /* ShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardView.swift; sourceTree = "<group>"; };
 		41D1091C68DA4412E2434189 /* EducationFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationFeedView.swift; sourceTree = "<group>"; };
 		43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapCalendar.swift; sourceTree = "<group>"; };
 		49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionEngine.swift; sourceTree = "<group>"; };
@@ -68,11 +79,13 @@
 		4B18226B6A2D87A22928921B /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		4B93885923C4848ACCA6ADDA /* StreakBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakBadge.swift; sourceTree = "<group>"; };
 		55274562ADD2916F382380DF /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		69BA16CD97233B209118C979 /* ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
 		6D13AA055A0D3D3C6E5BD475 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		88C98AA0B97EDAAFE2D1ED6C /* ActiveRecallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallView.swift; sourceTree = "<group>"; };
 		8EB3B88316FAD4493693973A /* DualNBackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackView.swift; sourceTree = "<group>"; };
 		940190D18EAB3567FB46D745 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreRevealView.swift; sourceTree = "<group>"; };
 		9A09FC1A19873D8978A18CF2 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		A2163242F05F27F1F0A59324 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		A2AA6B711819E89512C58132 /* MindRestore.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MindRestore.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,7 +95,10 @@
 		ACBF181734EEB2DE916FE0ED /* EducationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationDetailView.swift; sourceTree = "<group>"; };
 		B0EF9610B969A47D9CF45857 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
 		C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionCard.swift; sourceTree = "<group>"; };
+		C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentView.swift; sourceTree = "<group>"; };
+		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; path = Configuration.storekit; sourceTree = "<group>"; };
 		DDC7BA108188B8B4C09EFCAE /* SpacedRepetitionContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionContent.swift; sourceTree = "<group>"; };
 		DEA102E53FDC05BEB37936DB /* ExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCard.swift; sourceTree = "<group>"; };
@@ -116,7 +132,9 @@
 		0DD32ADC34CAA5E05388F379 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				767D0CAB8BE4CFA91D81720A /* Assessment */,
 				B57CC3DB666874F9DD66355F /* Components */,
+				462E1C3AEAB6051FAE78559C /* DailyChallenge */,
 				181DF5745F23286AAF4E045D /* Education */,
 				ABDA89A7AA279D281F1FF7A4 /* Exercises */,
 				3E828668D791FAF13F66963D /* Home */,
@@ -164,6 +182,7 @@
 		25E5FC4509952A03EF3B86CC /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				05276B66D71D60017E61FBAC /* BrainScore.swift */,
 				28F2956C980BEE531AF763D7 /* DailySession.swift */,
 				A5587C281892FC851EF36036 /* Enums.swift */,
 				A2163242F05F27F1F0A59324 /* Exercise.swift */,
@@ -194,6 +213,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		462E1C3AEAB6051FAE78559C /* DailyChallenge */ = {
+			isa = PBXGroup;
+			children = (
+				1BAED08649D48D8892E649EC /* DailyChallengeView.swift */,
+			);
+			path = DailyChallenge;
+			sourceTree = "<group>";
+		};
 		640CC68FC7209CBC86C6E003 /* Content */ = {
 			isa = PBXGroup;
 			children = (
@@ -202,6 +229,16 @@
 				DDC7BA108188B8B4C09EFCAE /* SpacedRepetitionContent.swift */,
 			);
 			path = Content;
+			sourceTree = "<group>";
+		};
+		767D0CAB8BE4CFA91D81720A /* Assessment */ = {
+			isa = PBXGroup;
+			children = (
+				C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */,
+				9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */,
+				3FD9448D12FB29A1CB1FEDA6 /* ShareCardView.swift */,
+			);
+			path = Assessment;
 			sourceTree = "<group>";
 		};
 		7C931884ACF860DD4B9838D8 /* Paywall */ = {
@@ -225,6 +262,7 @@
 		B57CC3DB666874F9DD66355F /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				69BA16CD97233B209118C979 /* ConfettiView.swift */,
 				DEA102E53FDC05BEB37936DB /* ExerciseCard.swift */,
 				43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */,
 				B0EF9610B969A47D9CF45857 /* ProgressRing.swift */,
@@ -247,6 +285,8 @@
 			isa = PBXGroup;
 			children = (
 				2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */,
+				BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */,
+				CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */,
 				A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */,
 				6D13AA055A0D3D3C6E5BD475 /* HomeViewModel.swift */,
 				36C08C1BDCFA5D2FFF8348ED /* ProgressViewModel.swift */,
@@ -343,8 +383,14 @@
 				D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */,
 				E97ADA93A06FD52948075DD9 /* ActiveRecallView.swift in Sources */,
 				CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */,
+				E19FD204B981EA7E98758597 /* BrainAssessmentView.swift in Sources */,
+				6FA7676BFD4BDC702165B01C /* BrainAssessmentViewModel.swift in Sources */,
+				C93B5314318FD0ED427CDDE3 /* BrainScore.swift in Sources */,
+				0F933B5273CE53AED927AB16 /* ConfettiView.swift in Sources */,
 				CBAD16576947D46F18E8C64F /* Constants.swift in Sources */,
 				7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */,
+				90F6C841495047F91C0A60C2 /* DailyChallengeView.swift in Sources */,
+				0E55511D927C33E1FF5B4B4A /* DailyChallengeViewModel.swift in Sources */,
 				2BCE4DCBC49958359A20156C /* DailySession.swift in Sources */,
 				7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */,
 				CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */,
@@ -368,7 +414,9 @@
 				15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */,
 				FC65303B02F0B4EA9D897243 /* ProgressViewModel.swift in Sources */,
 				2A12EA7DE45D1531ECFC0EB1 /* PsychoEducationCard.swift in Sources */,
+				0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */,
 				84708C2B0EA60D9FFF749210 /* SettingsView.swift in Sources */,
+				F7FE67F3CDF973225F4A1AF7 /* ShareCardView.swift in Sources */,
 				1836CEF9329F3657D53366E4 /* SpacedRepetitionCard.swift in Sources */,
 				AB56E7A56DA1EDD43280D7D9 /* SpacedRepetitionContent.swift in Sources */,
 				19739734781F9B63810F13CB /* SpacedRepetitionEngine.swift in Sources */,
