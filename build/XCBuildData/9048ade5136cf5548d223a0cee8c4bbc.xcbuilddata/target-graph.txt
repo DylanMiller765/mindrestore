@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'MemoriWidgetExtension' in project 'MindRestore' (no dependencies)

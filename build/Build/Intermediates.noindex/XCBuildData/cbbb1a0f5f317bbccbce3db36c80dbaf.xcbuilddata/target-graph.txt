@@ -1,8 +1,0 @@
-Target dependency graph (4 targets)
-Target 'MindRestore' in project 'MindRestore'
-➜ Explicit dependency on target 'MemoriWidgetExtension' in project 'MindRestore'
-➜ Explicit dependency on target 'ConfettiSwiftUI' in project 'ConfettiSwiftUI'
-Target 'ConfettiSwiftUI' in project 'ConfettiSwiftUI'
-➜ Explicit dependency on target 'ConfettiSwiftUI' in project 'ConfettiSwiftUI'
-Target 'ConfettiSwiftUI' in project 'ConfettiSwiftUI' (no dependencies)
-Target 'MemoriWidgetExtension' in project 'MindRestore' (no dependencies)
