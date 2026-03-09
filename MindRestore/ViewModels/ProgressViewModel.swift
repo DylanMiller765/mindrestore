@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@MainActor @Observable
 final class ProgressViewModel {
     var trainingDays: Set<Date> = []
     var weeklyScores: [(date: Date, score: Double)] = []
@@ -10,7 +10,7 @@ final class ProgressViewModel {
     func refresh(sessions: [DailySession]) {
         trainingDays = Set(sessions.map { Calendar.current.startOfDay(for: $0.date) })
 
-        let sevenDaysAgo = Date().daysAgo(7)
+        let sevenDaysAgo = Date.now.daysAgo(7)
         let recentSessions = sessions.filter { $0.date >= sevenDaysAgo }
 
         weeklyScores = recentSessions.map { (date: $0.date, score: $0.totalScore) }

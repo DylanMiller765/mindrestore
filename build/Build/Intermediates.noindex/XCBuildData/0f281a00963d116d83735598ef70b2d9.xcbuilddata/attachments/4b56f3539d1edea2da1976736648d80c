@@ -1,0 +1,38 @@
+{
+  "" : {
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetExtension-master.dia",
+    "emit-module-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetExtension-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetExtension-master-emit-module.dia",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetExtension-master.swiftdeps"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/MemoriWidget/MemoriWidget.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.dia",
+    "index-unit-output-path" : "/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidget~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/MemoriWidget/MemoriWidgetBundle.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.dia",
+    "index-unit-output-path" : "/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/MemoriWidgetBundle~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/MemoriWidget/WidgetDataService.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.dia",
+    "index-unit-output-path" : "/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/MindRestore.build/Debug-iphoneos/MemoriWidgetExtension.build/Objects-normal/arm64/WidgetDataService~partial.swiftmodule"
+  }
+}

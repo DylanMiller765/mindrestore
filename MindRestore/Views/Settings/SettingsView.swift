@@ -7,27 +7,25 @@ struct SettingsView: View {
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
 
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.system.rawValue
-
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
+    @State private var editingName = false
+    @State private var editedName = ""
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
-
-    private var selectedTheme: AppTheme {
-        AppTheme(rawValue: appTheme) ?? .system
-    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     profileHeader
+                    quickStatsRow
                     proCard
                     notificationsCard
-                    appearanceCard
                     preferencesCard
+                    streakFreezeCard
                     privacyCard
                     aboutCard
                 }
@@ -36,15 +34,15 @@ struct SettingsView: View {
                 .padding(.bottom, 32)
             }
             .pageBackground()
-            .navigationTitle("Settings")
+            .navigationTitle("Profile")
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
             .alert("Reset All Data", isPresented: $showingResetConfirmation) {
-                Button("Reset", role: .destructive) { resetAllData() }
+                Button("Reset Everything", role: .destructive) { resetAllData() }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will permanently delete all your training data, streaks, and progress. This cannot be undone.")
+                Text("Are you sure? This will delete all your progress, scores, and settings.")
             }
         }
     }
@@ -52,49 +50,124 @@ struct SettingsView: View {
     // MARK: - Profile Header
 
     private var profileHeader: some View {
-        VStack(spacing: 16) {
-            StreakRingView(current: user?.currentStreak ?? 0, goal: 7, lineWidth: 6, size: 88)
+        VStack(spacing: 14) {
+            // Level ring with XP progress
+            ZStack {
+                // Background track
+                Circle()
+                    .stroke(AppColors.accent.opacity(0.15), lineWidth: 5)
+                    .frame(width: 88, height: 88)
+
+                // XP progress arc
+                Circle()
+                    .trim(from: 0, to: user?.xpProgress ?? 0)
+                    .stroke(
+                        AppColors.accentGradient,
+                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                    )
+                    .frame(width: 88, height: 88)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.8, dampingFraction: 0.7), value: user?.xpProgress)
+
+                // Level number
+                Text("Lv\(user?.level ?? 1)")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+            }
 
             VStack(spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("MindRestore")
-                        .font(.title3.weight(.semibold))
+                    if let user, !user.username.isEmpty {
+                        Text(user.username)
+                            .font(.title3.weight(.semibold))
+                    } else {
+                        Text("Memori")
+                            .font(.title3.weight(.semibold))
+                    }
                     if isProUser {
                         Text("PRO")
                             .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(AppColors.accent, in: Capsule())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.accentGradient)
+                            )
                             .foregroundStyle(.white)
                     }
                 }
-            }
 
-            HStack(spacing: 0) {
-                quickStat(value: "\(user?.currentStreak ?? 0)", label: "Streak", icon: "flame.fill", color: AppColors.accent)
-                Divider().frame(height: 32)
-                quickStat(value: "\(sessions.count)", label: "Sessions", icon: "brain.head.profile", color: .blue)
-                Divider().frame(height: 32)
-                let weekCount = sessions.filter { $0.date > Date().daysAgo(7) }.count
-                quickStat(value: "\(weekCount)", label: "This Week", icon: "calendar", color: .purple)
+                if let user {
+                    Text(user.levelName)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppColors.accent)
+
+                    Text("\(user.totalXP) / \(user.xpForNextLevel) XP")
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.textTertiary)
+                }
             }
         }
-        .padding(.vertical, 8)
-        .appCard()
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppColors.cardSurface)
+                .shadow(color: AppColors.accent.opacity(0.08), radius: 16, y: 6)
+        }
     }
 
-    private func quickStat(value: String, label: String, icon: String, color: Color) -> some View {
+    // MARK: - Quick Stats Row
+
+    private var quickStatsRow: some View {
+        HStack(spacing: 10) {
+            miniStatCard(
+                value: "\(user?.currentStreak ?? 0)",
+                label: "Streak",
+                icon: "flame.fill",
+                color: AppColors.coral
+            )
+            miniStatCard(
+                value: "\(sessions.count)",
+                label: "Sessions",
+                icon: "brain.head.profile",
+                color: AppColors.indigo
+            )
+            let weekCount = sessions.filter { $0.date > Date.now.daysAgo(7) }.count
+            miniStatCard(
+                value: "\(weekCount)",
+                label: "This Week",
+                icon: "calendar",
+                color: AppColors.violet
+            )
+        }
+    }
+
+    private func miniStatCard(value: String, label: String, icon: String, color: Color) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(color)
+
             Text(value)
-                .font(.headline)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(color.opacity(0.08))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(color.opacity(0.12), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 
     // MARK: - Pro Card
@@ -104,10 +177,10 @@ struct SettingsView: View {
             if isProUser {
                 HStack(spacing: 14) {
                     Image(systemName: "star.fill")
-                        .font(.title3)
-                        .foregroundStyle(.yellow)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppColors.amber)
                         .frame(width: 40, height: 40)
-                        .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 10))
+                        .background(AppColors.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Pro Member")
@@ -123,7 +196,27 @@ struct SettingsView: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 }
-                .appCard()
+                .padding(16)
+                .background {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.cardSurface)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            AppColors.amber.opacity(0.5),
+                                            AppColors.amber.opacity(0.2),
+                                            AppColors.amber.opacity(0.5)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                        }
+                        .shadow(color: AppColors.amber.opacity(0.1), radius: 8, y: 2)
+                }
             } else {
                 Button { showingPaywall = true } label: {
                     HStack(spacing: 14) {
@@ -148,10 +241,9 @@ struct SettingsView: View {
                     }
                     .padding(16)
                     .background(
-                        LinearGradient(colors: [AppColors.accent, AppColors.accent.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: 16)
+                        AppColors.premiumGradient,
+                        in: RoundedRectangle(cornerRadius: 14)
                     )
-                    .shadow(color: AppColors.accent.opacity(0.25), radius: 12, y: 4)
                 }
                 .buttonStyle(.plain)
             }
@@ -188,9 +280,7 @@ struct SettingsView: View {
                     }
                 )) {
                     HStack(spacing: 12) {
-                        Image(systemName: "bell.fill")
-                            .foregroundStyle(AppColors.accent)
-                            .frame(width: 20)
+                        settingIcon("bell.fill", color: AppColors.coral)
                         Text("Daily Reminder")
                             .font(.subheadline)
                     }
@@ -228,61 +318,6 @@ struct SettingsView: View {
         .appCard()
     }
 
-    // MARK: - Appearance
-
-    private var appearanceCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Appearance")
-
-            HStack(spacing: 8) {
-                ForEach(AppTheme.allCases, id: \.rawValue) { theme in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            appTheme = theme.rawValue
-                        }
-                    } label: {
-                        VStack(spacing: 8) {
-                            themePreview(for: theme)
-                            Text(theme.displayName)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(selectedTheme == theme ? AppColors.accent : Color.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .appCard()
-    }
-
-    @ViewBuilder
-    private func themePreview(for theme: AppTheme) -> some View {
-        let isSelected = selectedTheme == theme
-        let strokeColor: Color = isSelected ? AppColors.accent : Color.gray.opacity(0.2)
-        let strokeWidth: CGFloat = isSelected ? 2 : 1
-
-        Group {
-            switch theme {
-            case .dark:
-                RoundedRectangle(cornerRadius: 10).fill(Color.black)
-            case .light:
-                RoundedRectangle(cornerRadius: 10).fill(Color.white)
-            case .system:
-                RoundedRectangle(cornerRadius: 10).fill(
-                    LinearGradient(colors: [.white, .black], startPoint: .leading, endPoint: .trailing)
-                )
-            }
-        }
-        .frame(height: 48)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(strokeColor, lineWidth: strokeWidth))
-        .overlay {
-            Image(systemName: theme.icon)
-                .font(.body)
-                .foregroundStyle(theme == .dark ? Color.white : Color.primary)
-        }
-    }
-
     // MARK: - Preferences
 
     private var preferencesCard: some View {
@@ -290,10 +325,36 @@ struct SettingsView: View {
             SectionHeader(title: "Preferences")
 
             if let user {
-                HStack {
-                    Image(systemName: "target")
-                        .foregroundStyle(AppColors.accent)
-                        .frame(width: 20)
+                HStack(spacing: 12) {
+                    settingIcon("person.fill", color: AppColors.accent)
+                    Text("Name")
+                        .font(.subheadline)
+                    Spacer()
+                    if editingName {
+                        TextField("Your name", text: $editedName)
+                            .font(.subheadline)
+                            .multilineTextAlignment(.trailing)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                user.username = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
+                                editingName = false
+                            }
+                    } else {
+                        Button {
+                            editedName = user.username
+                            editingName = true
+                        } label: {
+                            Text(user.username.isEmpty ? "Not set" : user.username)
+                                .font(.subheadline)
+                                .foregroundStyle(user.username.isEmpty ? .secondary : .primary)
+                        }
+                    }
+                }
+
+                Divider()
+
+                HStack(spacing: 12) {
+                    settingIcon("target", color: AppColors.teal)
                     Text("Daily Goal")
                         .font(.subheadline)
                     Spacer()
@@ -311,14 +372,130 @@ struct SettingsView: View {
                     set: { user.soundEnabled = $0 }
                 )) {
                     HStack(spacing: 12) {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .foregroundStyle(.blue)
-                            .frame(width: 20)
+                        settingIcon("speaker.wave.2.fill", color: AppColors.sky)
                         Text("Exercise Sounds")
                             .font(.subheadline)
                     }
                 }
                 .tint(AppColors.accent)
+
+                Divider()
+
+                HStack(spacing: 12) {
+                    settingIcon("circle.lefthalf.filled", color: AppColors.violet)
+                    Text("Appearance")
+                        .font(.subheadline)
+                    Spacer()
+                }
+
+                Picker("", selection: $appTheme) {
+                    ForEach(AppTheme.allCases, id: \.rawValue) { theme in
+                        Label(theme.displayName, systemImage: theme.icon)
+                            .tag(theme.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .appCard()
+    }
+
+    // MARK: - Streak Freeze
+
+    private var streakFreezeCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Streak Protection")
+
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.sky.opacity(0.12))
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(AppColors.sky)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text("Streak Freezes:")
+                            .font(.subheadline.weight(.medium))
+
+                        Text("\(user?.streakFreezes ?? 0)/\(user?.maxStreakFreezes ?? 2) available")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(AppColors.accent)
+                    }
+
+                    Text("Protects your streak if you miss a day. Earn 1 every 7 days of training.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            // Freeze slots — larger and more visual
+            HStack(spacing: 10) {
+                ForEach(0..<(user?.maxStreakFreezes ?? 2), id: \.self) { index in
+                    let isFilled = index < (user?.streakFreezes ?? 0)
+                    HStack(spacing: 8) {
+                        Image(systemName: isFilled ? "shield.fill" : "shield")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(isFilled ? AppColors.sky : .secondary.opacity(0.4))
+                        Text(isFilled ? "Ready" : "Empty")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(isFilled ? .primary : .secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(isFilled
+                                  ? AppColors.sky.opacity(0.10)
+                                  : Color.secondary.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isFilled
+                                    ? AppColors.sky.opacity(0.25)
+                                    : Color.secondary.opacity(0.1), lineWidth: 1)
+                    )
+                }
+            }
+
+            // Next freeze progress indicator
+            if let user {
+                let daysIntoStreak = user.currentStreak % 7
+                let daysUntilFreeze = daysIntoStreak == 0 && user.currentStreak > 0 ? 0 : 7 - daysIntoStreak
+                let freezeProgress = Double(daysIntoStreak) / 7.0
+
+                if user.streakFreezes < user.maxStreakFreezes {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Next freeze in \(daysUntilFreeze) day\(daysUntilFreeze == 1 ? "" : "s")")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(AppColors.textTertiary)
+                            Spacer()
+                            Text("\(daysIntoStreak)/7")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(AppColors.sky)
+                        }
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppColors.sky.opacity(0.12))
+                                    .frame(height: 4)
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppColors.sky)
+                                    .frame(width: max(3, geo.size.width * freezeProgress), height: 4)
+                            }
+                        }
+                        .frame(height: 4)
+                    }
+                    .padding(.top, 2)
+                }
             }
         }
         .appCard()
@@ -344,8 +521,8 @@ struct SettingsView: View {
             Image(systemName: icon)
                 .font(.caption)
                 .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(color, in: RoundedRectangle(cornerRadius: 6))
+                .frame(width: 28, height: 28)
+                .background(color, in: RoundedRectangle(cornerRadius: 7))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.weight(.medium))
@@ -360,7 +537,7 @@ struct SettingsView: View {
     private var aboutCard: some View {
         VStack(spacing: 0) {
             aboutRow(icon: "info.circle.fill", color: .gray, title: "Version", trailing: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-            Divider().padding(.leading, 44)
+            Divider().padding(.leading, 52)
             if isProUser {
                 aboutRow(icon: "creditcard.fill", color: .blue, title: "Manage Subscription", isLink: true) {
                     if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
@@ -372,7 +549,51 @@ struct SettingsView: View {
                     Task { await storeService.restorePurchases() }
                 }
             }
-            Divider().padding(.leading, 44)
+            Divider().padding(.leading, 52)
+            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
+                HStack(spacing: 12) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(Color.purple, in: RoundedRectangle(cornerRadius: 7))
+
+                    Text("Privacy Policy")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+            }
+            Divider().padding(.leading, 52)
+            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/terms")!) {
+                HStack(spacing: 12) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(Color.gray, in: RoundedRectangle(cornerRadius: 7))
+
+                    Text("Terms of Use")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+            }
+            Divider().padding(.leading, 52)
             aboutRow(icon: "trash.fill", color: .red, title: "Reset All Data", isLink: true) {
                 showingResetConfirmation = true
             }
@@ -388,8 +609,8 @@ struct SettingsView: View {
                 Image(systemName: icon)
                     .font(.caption)
                     .foregroundStyle(.white)
-                    .frame(width: 26, height: 26)
-                    .background(color, in: RoundedRectangle(cornerRadius: 6))
+                    .frame(width: 28, height: 28)
+                    .background(color, in: RoundedRectangle(cornerRadius: 7))
 
                 Text(title)
                     .font(.subheadline)
@@ -404,10 +625,20 @@ struct SettingsView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 13)
         }
         .buttonStyle(.plain)
         .disabled(action == nil)
+    }
+
+    // MARK: - Setting Icon Helper
+
+    private func settingIcon(_ name: String, color: Color) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(color)
+            .frame(width: 28, height: 28)
+            .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 7))
     }
 
     // MARK: - Reset
@@ -417,10 +648,15 @@ struct SettingsView: View {
             try modelContext.delete(model: Exercise.self)
             try modelContext.delete(model: SpacedRepetitionCard.self)
             try modelContext.delete(model: DailySession.self)
+            try modelContext.delete(model: BrainScoreResult.self)
+            try modelContext.delete(model: Achievement.self)
             if let user {
                 user.currentStreak = 0
                 user.longestStreak = 0
                 user.lastSessionDate = nil
+                user.streakFreezes = 1
+                user.streakFreezeUsedDate = nil
+                user.streakFreezeLastAwardDate = nil
             }
             NotificationService.shared.cancelAll()
         } catch {

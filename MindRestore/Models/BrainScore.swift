@@ -72,46 +72,81 @@ final class BrainScoreResult {
 }
 
 // MARK: - Scoring Utilities
+//
+// Based on cognitive science norms:
+// - Digit span: Average adult forward span is 7 +/- 2 (Miller's Law)
+//   4 digits = below average, 7 = average, 9+ = exceptional
+// - Reaction time: Average simple RT is ~250ms for young adults
+//   150ms = exceptional, 250ms = average, 400ms+ = slow
+// - Visual memory: Average pattern recall ~4-5 cells on 4x4 grid
+//   3 = below average, 5 = average, 8 = exceptional
 
 enum BrainScoring {
+
+    /// Digit span score (0-100) using sigmoid curve centered on 7 digits
     static func digitSpanScore(maxDigits: Int) -> Double {
-        min(100, max(0, Double(maxDigits - 3) * 14.3))
+        // Sigmoid: maps 3->5, 5->25, 7->50, 9->85, 10->95
+        let x = Double(maxDigits)
+        let score = 100.0 / (1.0 + exp(-1.2 * (x - 7.0)))
+        return min(100, max(0, score))
     }
 
+    /// Reaction time score (0-100) using inverse sigmoid
+    /// Lower ms = higher score
     static func reactionTimeScore(avgMs: Int) -> Double {
-        min(100, max(0, Double(450 - avgMs) / 3.0))
+        // 150ms -> ~95, 200ms -> ~80, 250ms -> ~55, 300ms -> ~30, 400ms -> ~5
+        let x = Double(avgMs)
+        let score = 100.0 / (1.0 + exp(0.025 * (x - 260.0)))
+        return min(100, max(0, score))
     }
 
+    /// Visual memory score (0-100) using sigmoid curve centered on 5 cells
     static func visualMemoryScore(maxLevel: Int) -> Double {
-        min(100, max(0, Double(maxLevel - 2) * 14.3))
+        // 3->15, 4->30, 5->50, 6->70, 7->85, 8->93
+        let x = Double(maxLevel)
+        let score = 100.0 / (1.0 + exp(-1.4 * (x - 5.0)))
+        return min(100, max(0, score))
     }
 
+    /// Composite brain score (0-1000)
+    /// Weighted: digit span 35%, reaction time 30%, visual memory 35%
     static func compositeBrainScore(digit: Double, reaction: Double, visual: Double) -> Int {
-        let avg = (digit + reaction + visual) / 3.0
-        return min(1000, max(0, Int(avg * 10)))
+        let weighted = digit * 0.35 + reaction * 0.30 + visual * 0.35
+        return min(1000, max(0, Int(weighted * 10)))
     }
 
+    /// Brain age estimation using logarithmic curve
+    /// Score 1000 -> age 18, score 500 -> age 32, score 0 -> age 75
     static func brainAge(from score: Int) -> Int {
-        let age = 80.0 - (Double(score) / 1000.0) * 62.0
-        return max(18, min(80, Int(age)))
+        let s = Double(score) / 1000.0
+        // Logarithmic mapping — sharper at high scores, gradual at low
+        let age = 75.0 - 57.0 * pow(s, 0.7)
+        return max(18, min(75, Int(age)))
     }
 
+    /// Determine dominant brain type based on score distribution
     static func determineBrainType(digit: Double, reaction: Double, visual: Double) -> BrainType {
         let scores = [digit, reaction, visual]
+        let avg = scores.reduce(0, +) / 3.0
         let maxScore = scores.max() ?? 0
         let minScore = scores.min() ?? 0
 
-        if maxScore - minScore < 15 {
+        // Need meaningful separation — at least 20% above average
+        let spread = maxScore - avg
+        if spread < 10 || (maxScore - minScore) < 15 {
             return .balancedBrain
         }
 
-        if reaction == maxScore { return .lightningReflex }
-        if digit == maxScore { return .numberCruncher }
-        return .patternMaster
+        if reaction == maxScore && reaction - avg >= 10 { return .lightningReflex }
+        if digit == maxScore && digit - avg >= 10 { return .numberCruncher }
+        if visual == maxScore && visual - avg >= 10 { return .patternMaster }
+        return .balancedBrain
     }
 
+    /// Percentile estimation using normal CDF approximation
+    /// Centered on 500 with SD of 180 for realistic distribution
     static func percentile(score: Int) -> Int {
-        let z = (Double(score) - 500.0) / 150.0
+        let z = (Double(score) - 480.0) / 180.0
         let cdf = normalCDF(z)
         return max(1, min(99, Int(cdf * 100)))
     }

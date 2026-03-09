@@ -3,16 +3,16 @@ import SwiftData
 
 @main
 struct MindRestoreApp: App {
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.system.rawValue
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
 
-    private var selectedTheme: AppTheme {
-        AppTheme(rawValue: appTheme) ?? .system
+    private var colorScheme: ColorScheme? {
+        AppTheme(rawValue: appTheme)?.colorScheme
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(selectedTheme.colorScheme)
+                .preferredColorScheme(colorScheme)
         }
         .modelContainer(for: [
             User.self,
@@ -20,6 +20,7 @@ struct MindRestoreApp: App {
             SpacedRepetitionCard.self,
             DailySession.self,
             BrainScoreResult.self,
+            Achievement.self,
         ])
     }
 }

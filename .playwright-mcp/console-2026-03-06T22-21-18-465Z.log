@@ -1,0 +1,20 @@
+[    1008ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://appstoreconnect.apple.com/olympus/v1/session:0
+[    2780ms] [ERROR] Access to font at 'https://appleid.cdn-apple.com/appleauth/static/bin/cb3432457731/dist/assets/shared-icons.woff' from origin 'https://idmsa.apple.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://idmsa.apple.com/appleauth/auth/signin?widgetKey=e0b80c3bf78523bfe80974d320935bfa30add02e1bff88ec2166c6bd5a706c42&skVersion=7&iframeId=auth-aempdh7t-kpwp-8mi5-yllt-tr2x0t4e&authVersion=latest:0
+[    2781ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://appleid.cdn-apple.com/appleauth/static/bin/cb3432457731/dist/assets/shared-icons.woff:0
+[   25388ms] [ERROR] Failed to load resource: the server responded with a status of 409 () @ https://idmsa.apple.com/appleauth/auth/signin/complete?isRememberMeEnabled=false:0
+[   39910ms] [WARNING] tb-alertbox--warn ng-isolate-scope is not valid @ https://appstoreconnect.apple.com/static/vendors.1768505445909.js:0
+[   39917ms] [WARNING] tb-alertbox--alert ng-isolate-scope is not valid @ https://appstoreconnect.apple.com/static/vendors.1768505445909.js:0
+[   40406ms] [WARNING] tb-alertbox--warn ng-isolate-scope is not valid @ https://appstoreconnect.apple.com/static/vendors.1768505445909.js:0
+[   40406ms] [WARNING] tb-alertbox--alert ng-isolate-scope is not valid @ https://appstoreconnect.apple.com/static/vendors.1768505445909.js:0
+[   56243ms] [WARNING] document.domain mutation is ignored because the surrounding agent cluster is origin-keyed. @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[   56252ms] [WARNING] [maison] No route found https://appstoreconnect.apple.com/apps @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[   56290ms] [WARNING] Metrics config: No config provided via delegate or fetched via init(), using default/cached config values. @ https://appstoreconnect.apple.com/access/static/js/694.81535de161180022.js:0
+[   56682ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ https://appstoreconnect.apple.com/apps:0
+[   58442ms] [WARNING] An array is needed to render meta tags @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[   77766ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://appstoreconnect.apple.com/iris/v2/appAvailabilities/6760178716?include=territoryAvailabilities&limit[territoryAvailabilities]=200:0
+[   81140ms] [WARNING] Metrics config: No config provided via delegate or fetched via init(), using default/cached config values. @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[   81140ms] [ERROR] {appName: appstore, payload: Array(1), eventKit: logger, env: PROD} @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[  129619ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://appstoreconnect.apple.com/iris/v1/subscriptions/6760207760/subscriptionAvailability?include=availableTerritories&limit[availableTerritories]=200:0
+[  132766ms] [ERROR] {appName: appstore, payload: Array(1), eventKit: logger, env: PROD} @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1
+[  224248ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://appstoreconnect.apple.com/iris/v1/subscriptions/6760207678/subscriptionAvailability?include=availableTerritories&limit[availableTerritories]=200:0
+[  227351ms] [ERROR] {appName: appstore, payload: Array(1), eventKit: logger, env: PROD} @ https://appstoreconnect.apple.com/access/static/js/container.f00f8c8dd8c97bc3.js:1

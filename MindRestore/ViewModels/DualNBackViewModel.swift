@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 import UIKit
 
-@Observable
+@MainActor @Observable
 final class DualNBackViewModel {
     let engine = DualNBackEngine()
     var isPlaying = false
@@ -27,7 +27,7 @@ final class DualNBackViewModel {
         engine.startGame(n: n, isDual: dual)
         isPlaying = true
         showResults = false
-        startTime = Date()
+        startTime = Date.now
         scheduleNextTrial()
     }
 
@@ -58,20 +58,37 @@ final class DualNBackViewModel {
     }
 
     func tapPosition() {
+        let prevHits = engine.positionHits
         engine.respondPosition()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if engine.positionHits > prevHits {
+            HapticService.correct()
+        } else {
+            HapticService.wrong()
+        }
     }
 
     func tapSound() {
+        let prevHits = engine.soundHits
         engine.respondSound()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if engine.soundHits > prevHits {
+            HapticService.correct()
+        } else {
+            HapticService.wrong()
+        }
     }
 
     func stop() {
         trialTimer?.invalidate()
+        synthesizer.stopSpeaking(at: .immediate)
         engine.endGame()
         isPlaying = false
         showResults = true
+    }
+
+    func cleanup() {
+        trialTimer?.invalidate()
+        trialTimer = nil
+        synthesizer.stopSpeaking(at: .immediate)
     }
 
     var nextN: Int {
@@ -79,7 +96,7 @@ final class DualNBackViewModel {
     }
 
     var durationSeconds: Int {
-        Int(Date().timeIntervalSince(startTime))
+        Int(Date.now.timeIntervalSince(startTime))
     }
 
     private func speakLetter(_ letter: String) {

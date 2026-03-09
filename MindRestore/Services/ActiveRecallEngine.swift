@@ -16,7 +16,7 @@ struct RecallQuestion: Identifiable {
     let answer: String
 }
 
-@Observable
+@MainActor @Observable
 final class ActiveRecallEngine {
     private var usedChallengeIndices: Set<Int> = []
 

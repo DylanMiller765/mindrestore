@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@MainActor @Observable
 final class SpacedRepetitionEngine {
 
     func processRating(_ card: SpacedRepetitionCard, rating: SelfRating) {
@@ -24,12 +24,12 @@ final class SpacedRepetitionEngine {
         card.easeFactor = card.easeFactor + (0.1 - (3.0 - q) * (0.08 + (3.0 - q) * 0.02))
         card.easeFactor = max(1.3, card.easeFactor)
 
-        card.lastReviewDate = Date()
-        card.nextReviewDate = Calendar.current.date(byAdding: .day, value: card.interval, to: Date()) ?? Date()
+        card.lastReviewDate = Date.now
+        card.nextReviewDate = Calendar.current.date(byAdding: .day, value: card.interval, to: Date.now) ?? Date.now
     }
 
     func getSessionCards(from allCards: [SpacedRepetitionCard], limit: Int = 15) -> [SpacedRepetitionCard] {
-        let now = Date()
+        let now = Date.now
 
         let dueCards = allCards
             .filter { $0.nextReviewDate <= now }

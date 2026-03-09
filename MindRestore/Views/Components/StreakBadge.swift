@@ -14,6 +14,7 @@ struct StreakBadge: View {
                 .font(.headline.weight(.bold))
                 .foregroundStyle(count > 0 ? .primary : .secondary)
         }
+        .accessibilityLabel("\(count) day streak")
         .onAppear {
             if [7, 30, 100].contains(count) {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.3)) {

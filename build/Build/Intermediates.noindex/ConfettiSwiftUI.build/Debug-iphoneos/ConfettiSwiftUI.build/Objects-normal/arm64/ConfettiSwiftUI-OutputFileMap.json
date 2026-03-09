@@ -1,0 +1,58 @@
+{
+  "" : {
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI-master.dia",
+    "emit-module-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI-master-emit-module.dia",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI-master.swiftdeps"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/build/SourcePackages/checkouts/ConfettiSwiftUI/Sources/ConfettiSwiftUI.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.dia",
+    "index-unit-output-path" : "/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/ConfettiSwiftUI~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/build/SourcePackages/checkouts/ConfettiSwiftUI/Sources/Shapes/RoundedCross.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.dia",
+    "index-unit-output-path" : "/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/RoundedCross~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/build/SourcePackages/checkouts/ConfettiSwiftUI/Sources/Shapes/SlimRectangle.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.dia",
+    "index-unit-output-path" : "/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/SlimRectangle~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/build/SourcePackages/checkouts/ConfettiSwiftUI/Sources/Shapes/Triangle.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.dia",
+    "index-unit-output-path" : "/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/Triangle~partial.swiftmodule"
+  },
+  "/Users/dylanmiller/Desktop/mindrestore/build/SourcePackages/checkouts/ConfettiSwiftUI/Sources/View+ConfettiCannon.swift" : {
+    "const-values" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.swiftconstvalues",
+    "dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.d",
+    "diagnostics" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.dia",
+    "index-unit-output-path" : "/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.o",
+    "llvm-bc" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.bc",
+    "object" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.o",
+    "swift-dependencies" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon.swiftdeps",
+    "swiftmodule" : "/Users/dylanmiller/Desktop/mindrestore/build/Build/Intermediates.noindex/ConfettiSwiftUI.build/Debug-iphoneos/ConfettiSwiftUI.build/Objects-normal/arm64/View+ConfettiCannon~partial.swiftmodule"
+  }
+}

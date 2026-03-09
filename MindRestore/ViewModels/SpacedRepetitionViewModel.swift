@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@MainActor @Observable
 final class SpacedRepetitionViewModel {
     let engine = SpacedRepetitionEngine()
     var sessionCards: [SpacedRepetitionCard] = []
@@ -27,7 +27,7 @@ final class SpacedRepetitionViewModel {
         isRevealed = false
         isSessionComplete = false
         ratings = []
-        startTime = Date()
+        startTime = Date.now
     }
 
     func reveal() {
@@ -54,6 +54,6 @@ final class SpacedRepetitionViewModel {
     }
 
     var durationSeconds: Int {
-        Int(Date().timeIntervalSince(startTime))
+        Int(Date.now.timeIntervalSince(startTime))
     }
 }

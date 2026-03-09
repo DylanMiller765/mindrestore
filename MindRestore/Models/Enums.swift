@@ -3,13 +3,14 @@ import Foundation
 // MARK: - Subscription Status
 
 enum SubscriptionStatus: String, Codable {
-    case free, trial, subscribed, lifetime
+    case free, trial, subscribed
 }
 
 // MARK: - Exercise Type
 
 enum ExerciseType: String, Codable, CaseIterable, Identifiable {
-    case spacedRepetition, dualNBack, activeRecall
+    case spacedRepetition, dualNBack, activeRecall, chunkingTraining, prospectiveMemory
+    case memoryPalace, reactionTime, sequentialMemory, mathSpeed, speedMatch, visualMemory, colorMatch
     var id: String { rawValue }
 
     var displayName: String {
@@ -17,6 +18,15 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .spacedRepetition: return "Spaced Repetition"
         case .dualNBack: return "Dual N-Back"
         case .activeRecall: return "Active Recall"
+        case .chunkingTraining: return "Chunking Training"
+        case .prospectiveMemory: return "Prospective Memory"
+        case .memoryPalace: return "Memory Palace"
+        case .reactionTime: return "Reaction Time"
+        case .sequentialMemory: return "Number Memory"
+        case .mathSpeed: return "Math Speed"
+        case .speedMatch: return "Speed Match"
+        case .visualMemory: return "Visual Memory"
+        case .colorMatch: return "Color Match"
         }
     }
 
@@ -25,6 +35,15 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .spacedRepetition: return "rectangle.on.rectangle.angled"
         case .dualNBack: return "square.grid.3x3"
         case .activeRecall: return "brain.head.profile"
+        case .chunkingTraining: return "square.grid.4x3.fill"
+        case .prospectiveMemory: return "clock.badge.checkmark"
+        case .memoryPalace: return "building.columns.fill"
+        case .reactionTime: return "bolt.fill"
+        case .sequentialMemory: return "number.circle.fill"
+        case .mathSpeed: return "multiply.circle.fill"
+        case .speedMatch: return "bolt.square.fill"
+        case .visualMemory: return "square.grid.3x3.fill"
+        case .colorMatch: return "paintpalette.fill"
         }
     }
 
@@ -33,6 +52,15 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .spacedRepetition: return "Adaptive flashcard system"
         case .dualNBack: return "Working memory training"
         case .activeRecall: return "Real-world memory challenges"
+        case .chunkingTraining: return "Multiply memory capacity with chunking"
+        case .prospectiveMemory: return "Remember to do things in the future"
+        case .memoryPalace: return "Method of loci spatial memory"
+        case .reactionTime: return "Test and improve processing speed"
+        case .sequentialMemory: return "Remember digits shown one at a time"
+        case .mathSpeed: return "Solve multiplication problems fast"
+        case .speedMatch: return "Match symbols as fast as you can"
+        case .visualMemory: return "Remember the pattern of highlighted tiles"
+        case .colorMatch: return "Stroop effect color-word challenge"
         }
     }
 }
@@ -151,5 +179,51 @@ enum SelfRating: Int, CaseIterable {
         case .good: return "Good"
         case .easy: return "Easy"
         }
+    }
+}
+
+// MARK: - User Level
+
+enum UserLevel {
+    static let maxLevel = 20
+
+    static func name(for level: Int) -> String {
+        switch level {
+        case 1: return "Beginner Brain"
+        case 2: return "Curious Mind"
+        case 3: return "Quick Thinker"
+        case 4: return "Memory Apprentice"
+        case 5: return "Focus Fighter"
+        case 6: return "Pattern Spotter"
+        case 7: return "Recall Rookie"
+        case 8: return "Brain Builder"
+        case 9: return "Mind Sharpener"
+        case 10: return "Cognitive Climber"
+        case 11: return "Neural Navigator"
+        case 12: return "Synapse Surfer"
+        case 13: return "Memory Machine"
+        case 14: return "Brain Storm"
+        case 15: return "Mind Master"
+        case 16: return "Cortex Commander"
+        case 17: return "Neuron King"
+        case 18: return "Memory Titan"
+        case 19: return "Cognitive Legend"
+        case 20: return "Brain God"
+        default: return level > 20 ? "Brain God" : "Beginner Brain"
+        }
+    }
+
+    static func xpRequired(for level: Int) -> Int {
+        guard level > 1 else { return 0 }
+        // Exponential curve: each level takes ~40% more XP
+        return Int(200 * pow(1.4, Double(level - 2)))
+    }
+
+    static func level(for xp: Int) -> Int {
+        var lvl = 1
+        while lvl < maxLevel && xp >= xpRequired(for: lvl + 1) {
+            lvl += 1
+        }
+        return lvl
     }
 }

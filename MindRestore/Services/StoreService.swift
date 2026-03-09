@@ -9,13 +9,17 @@ final class StoreService {
     var purchaseError: String?
     var isLoading = false
 
-    static let monthlyProductID = "com.mindrestore.pro.monthly"
-    static let annualProductID = "com.mindrestore.pro.annual"
-    static let lifetimeProductID = "com.mindrestore.pro.lifetime"
+    static let monthlyProductID = "com.memori.pro.monthly"
+    static let annualProductID = "com.memori.pro.annual"
+    // Lifetime removed
 
     private var updateListenerTask: Task<Void, Error>?
 
     init() {
+        // Ensure install date is persisted on first launch
+        if UserDefaults.standard.object(forKey: "installDate") == nil {
+            UserDefaults.standard.set(Date.now, forKey: "installDate")
+        }
         updateListenerTask = listenForTransactions()
         Task { await loadProducts() }
         Task { await updateSubscriptionStatus() }
@@ -26,8 +30,7 @@ final class StoreService {
         do {
             products = try await Product.products(for: [
                 Self.monthlyProductID,
-                Self.annualProductID,
-                Self.lifetimeProductID
+                Self.annualProductID
             ])
             products.sort { $0.price < $1.price }
         } catch {
@@ -73,8 +76,7 @@ final class StoreService {
         for await result in Transaction.currentEntitlements {
             if let transaction = try? checkVerified(result) {
                 if transaction.productID == Self.monthlyProductID ||
-                   transaction.productID == Self.annualProductID ||
-                   transaction.productID == Self.lifetimeProductID {
+                   transaction.productID == Self.annualProductID {
                     hasActiveEntitlement = true
                 }
             }
@@ -112,9 +114,7 @@ final class StoreService {
         products.first { $0.id == Self.annualProductID }
     }
 
-    var lifetimeProduct: Product? {
-        products.first { $0.id == Self.lifetimeProductID }
-    }
+
 }
 
 enum StoreServiceError: Error {

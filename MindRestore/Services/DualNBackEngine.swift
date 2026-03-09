@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@MainActor @Observable
 final class DualNBackEngine {
     var currentN: Int = 1
     var positions: [Int] = []
@@ -84,7 +84,7 @@ final class DualNBackEngine {
                     letters.append(letters[i - currentN])
                     soundMatches.insert(i)
                 } else {
-                    letters.append(availableLetters.randomElement()!)
+                    letters.append(availableLetters.randomElement() ?? "C")
                 }
             } else {
                 letters.append("")

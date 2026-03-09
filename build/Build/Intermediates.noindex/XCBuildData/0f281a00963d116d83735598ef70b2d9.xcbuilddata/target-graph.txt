@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'MindRestore' in project 'MindRestore'
+➜ Explicit dependency on target 'MemoriWidgetExtension' in project 'MindRestore'
+Target 'MemoriWidgetExtension' in project 'MindRestore' (no dependencies)

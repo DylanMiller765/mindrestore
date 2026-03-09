@@ -8,11 +8,19 @@ struct ProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(AppColors.accent.opacity(0.15), lineWidth: lineWidth)
+                .stroke(AppColors.accent.opacity(0.20), lineWidth: lineWidth)
 
             Circle()
                 .trim(from: 0, to: min(progress, 1.0))
-                .stroke(AppColors.accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(
+                    AngularGradient(
+                        colors: [AppColors.accent, AppColors.teal, AppColors.accent],
+                        center: .center,
+                        startAngle: .degrees(-90),
+                        endAngle: .degrees(270)
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
                 .rotationEffect(.degrees(-90))
                 .animation(.spring(response: 0.5, dampingFraction: 0.6), value: progress)
 
@@ -23,5 +31,6 @@ struct ProgressRing: View {
             }
         }
         .frame(width: size, height: size)
+        .accessibilityLabel("Progress: \(Int(progress * 100)) percent")
     }
 }

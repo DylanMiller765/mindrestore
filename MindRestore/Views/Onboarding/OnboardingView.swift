@@ -7,34 +7,48 @@ struct OnboardingView: View {
     @Query private var users: [User]
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
+    @State private var assessmentResult: BrainScoreResult?
+    @State private var notificationsEnabled = false
+    @State private var enteredName: String = ""
+    @FocusState private var nameFieldFocused: Bool
 
     var onComplete: () -> Void
 
-    private let totalPages = 3
+    private let totalPages = 6
 
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground).ignoresSafeArea()
+            AppColors.pageBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
                     welcomePage.tag(0)
-                    goalsPage.tag(1)
-                    privacyPage.tag(2)
+                    namePage.tag(1)
+                    goalsPage.tag(2)
+                    assessmentPage.tag(3)
+                    notificationsPage.tag(4)
+                    privacyPage.tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
                 .animation(.easeInOut, value: currentPage)
 
-                HStack(spacing: 8) {
-                    ForEach(0..<totalPages, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentPage ? AppColors.accent : Color.gray.opacity(0.3))
-                            .frame(width: index == currentPage ? 8 : 6, height: index == currentPage ? 8 : 6)
-                            .animation(.easeInOut(duration: 0.2), value: currentPage)
+                if currentPage != 3 {
+                    HStack(spacing: 8) {
+                        ForEach(0..<totalPages, id: \.self) { index in
+                            Capsule()
+                                .fill(
+                                    index == currentPage
+                                        ? AnyShapeStyle(AppColors.accentGradient)
+                                        : AnyShapeStyle(Color.gray.opacity(0.25))
+                                )
+                                .frame(width: index == currentPage ? 24 : 8, height: 8)
+
+                                .animation(.spring(response: 0.3), value: currentPage)
+                        }
                     }
+                    .padding(.bottom, 16)
                 }
-                .padding(.bottom, 16)
             }
         }
     }
@@ -44,24 +58,29 @@ struct OnboardingView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 72, weight: .light))
-                    .foregroundStyle(AppColors.accent)
+                ZStack {
+                    Circle()
+                        .fill(AppColors.cardBorder)
+                        .frame(width: 120, height: 120)
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 56))
+                        .foregroundStyle(AppColors.accent)
+                }
 
-                Text("MindRestore")
+                Text("Memori")
                     .font(.largeTitle.bold())
 
-                Text("Your memory is a muscle.\nLet's train it.")
+                Text("Train your brain.\nSharpen your mind.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 20) {
-                FeatureRow(icon: "rectangle.on.rectangle.angled", color: AppColors.accent, title: "Spaced Repetition", subtitle: "Adaptive review at optimal intervals")
-                FeatureRow(icon: "square.grid.3x3", color: .blue, title: "Dual N-Back", subtitle: "Working memory training")
-                FeatureRow(icon: "brain.head.profile", color: .purple, title: "Active Recall", subtitle: "Real-world memory challenges")
-                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: .orange, title: "Track Progress", subtitle: "See your improvement over time")
+            VStack(alignment: .leading, spacing: 16) {
+                FeatureRow(icon: CognitiveDomain.memory.icon, color: CognitiveDomain.memory.color, title: "Memory Training", subtitle: "Spaced repetition & active recall")
+                FeatureRow(icon: CognitiveDomain.attention.icon, color: CognitiveDomain.attention.color, title: "Dual N-Back", subtitle: "Working memory & attention")
+                FeatureRow(icon: CognitiveDomain.speed.icon, color: CognitiveDomain.speed.color, title: "Processing Speed", subtitle: "Reaction time challenges")
+                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.amber, title: "Brain Score", subtitle: "Track your cognitive improvement")
             }
             .padding(.horizontal, 40)
 
@@ -70,6 +89,76 @@ struct OnboardingView: View {
             continueButton { currentPage = 1 }
         }
         .padding(.bottom, 8)
+    }
+
+    // MARK: - Name Entry Page
+
+    private var namePage: some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                Spacer(minLength: 40)
+
+                ZStack {
+                    Circle()
+                        .fill(AppColors.cardBorder)
+                        .frame(width: 120, height: 120)
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 52))
+                        .foregroundStyle(AppColors.accent)
+                }
+
+                VStack(spacing: 8) {
+                    Text("What should we\ncall you?")
+                        .font(.title.bold())
+                        .multilineTextAlignment(.center)
+                    Text("Used for greetings and leaderboards.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                TextField("Your name", text: $enteredName)
+                    .font(.title3.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppColors.cardSurface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(AppColors.accent.opacity(0.2), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 40)
+                    .focused($nameFieldFocused)
+                    .submitLabel(.continue)
+                    .onSubmit { dismissAndAdvance() }
+
+                VStack(spacing: 12) {
+                    continueButton { dismissAndAdvance() }
+
+                    Button {
+                        enteredName = ""
+                        dismissAndAdvance()
+                    } label: {
+                        Text("Skip")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
+                    }
+                }
+                .padding(.top, 8)
+            }
+            .padding(.bottom, 16)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .onAppear { nameFieldFocused = true }
+    }
+
+    private func dismissAndAdvance() {
+        nameFieldFocused = false
+        withAnimation { currentPage = 2 }
     }
 
     private var goalsPage: some View {
@@ -87,7 +176,7 @@ struct OnboardingView: View {
             VStack(spacing: 12) {
                 ForEach(UserFocusGoal.allCases) { goal in
                     GoalCard(goal: goal, isSelected: selectedGoals.contains(goal)) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             if selectedGoals.contains(goal) {
                                 selectedGoals.remove(goal)
                             } else if selectedGoals.count < 3 {
@@ -101,20 +190,92 @@ struct OnboardingView: View {
 
             Spacer()
 
-            continueButton { currentPage = 2 }
+            continueButton { currentPage = 3 }
                 .disabled(selectedGoals.isEmpty)
                 .opacity(selectedGoals.isEmpty ? 0.4 : 1)
         }
         .padding(.bottom, 8)
+        .onAppear { nameFieldFocused = false }
     }
+
+    // MARK: - Brain Assessment Page
+
+    private var assessmentPage: some View {
+        OnboardingAssessmentView { result in
+            assessmentResult = result
+            withAnimation {
+                currentPage = 4
+            }
+        }
+    }
+
+    // MARK: - Notifications Page
+
+    private var notificationsPage: some View {
+        VStack(spacing: 32) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 140, height: 140)
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppColors.accent)
+            }
+
+            VStack(spacing: 8) {
+                Text("Stay on track")
+                    .font(.title.bold())
+                    .multilineTextAlignment(.center)
+                Text("Get gentle reminders to train daily\nand keep your streak alive.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                Button {
+                    Task {
+                        let granted = await NotificationService.shared.requestPermission()
+                        notificationsEnabled = granted
+                        withAnimation { currentPage = 5 }
+                    }
+                } label: {
+                    Text("Enable Notifications")
+                        .gradientButton()
+                }
+
+                Button {
+                    withAnimation { currentPage = 5 }
+                } label: {
+                    Text("Maybe Later")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
+            }
+            .padding(.horizontal, 32)
+        }
+        .padding(.bottom, 8)
+    }
+
+    // MARK: - Privacy Page
 
     private var privacyPage: some View {
         VStack(spacing: 32) {
             Spacer()
 
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(AppColors.accent)
+            ZStack {
+                Circle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 140, height: 140)
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppColors.accent)
+            }
 
             VStack(spacing: 8) {
                 Text("Your data stays on\nyour device. Always.")
@@ -132,7 +293,7 @@ struct OnboardingView: View {
                 completeOnboarding()
             } label: {
                 Text("Get Started")
-                    .accentButton()
+                    .gradientButton()
             }
             .padding(.horizontal, 32)
         }
@@ -142,8 +303,9 @@ struct OnboardingView: View {
     private func continueButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text("Continue")
-                .accentButton()
+                .gradientButton()
         }
+        .accessibilityHint("Continues to the next step")
         .padding(.horizontal, 32)
     }
 
@@ -158,8 +320,34 @@ struct OnboardingView: View {
         }
 
         user.hasCompletedOnboarding = true
+        user.username = enteredName.trimmingCharacters(in: .whitespacesAndNewlines)
         user.focusGoals = Array(selectedGoals)
+        user.notificationsEnabled = notificationsEnabled
 
+        // Save brain score result and create initial session
+        if let result = assessmentResult {
+            modelContext.insert(result)
+
+            // Create exercise entry for the assessment
+            let exercise = Exercise(
+                type: .activeRecall,
+                difficulty: 3,
+                score: Double(result.brainScore) / 1000.0,
+                durationSeconds: 120
+            )
+            modelContext.insert(exercise)
+
+            // Create today's session
+            let session = DailySession()
+            modelContext.insert(session)
+            session.addExercise(exercise)
+
+            // Update user stats
+            user.updateStreak()
+            user.totalXP += 50  // Bonus XP for completing onboarding assessment
+        }
+
+        try? modelContext.save()
         onComplete()
     }
 }
@@ -173,11 +361,8 @@ struct FeatureRow: View {
     let subtitle: String
 
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
-                .frame(width: 28)
+        HStack(spacing: 14) {
+            ColoredIconBadge(icon: icon, color: color, size: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -202,14 +387,14 @@ struct GoalCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(isSelected ? AppColors.accent : Color.clear)
-                    .frame(width: 4, height: 40)
-
                 Image(systemName: goal.icon)
                     .font(.title3)
-                    .foregroundStyle(isSelected ? AppColors.accent : .secondary)
-                    .frame(width: 32)
+                    .foregroundStyle(isSelected ? .white : .secondary)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(isSelected ? AppColors.accentGradient : LinearGradient(colors: [AppColors.cardBorder.opacity(0.4)], startPoint: .top, endPoint: .bottom))
+                    )
 
                 Text(goal.displayName)
                     .font(.subheadline.weight(.semibold))
@@ -219,16 +404,32 @@ struct GoalCard: View {
                 Spacer()
 
                 if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
                         .foregroundStyle(AppColors.accent)
                 }
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 12)
-            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppColors.cardSurface)
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppColors.accent.opacity(0.06))
+                    }
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isSelected ? AppColors.accent.opacity(0.5) : Color.clear,
+                        lineWidth: 1.5
+                    )
+            )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(goal.displayName)\(isSelected ? ", selected" : "")")
     }
 }

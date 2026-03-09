@@ -1,0 +1,4 @@
+module ConfettiSwiftUI {
+header "ConfettiSwiftUI-Swift.h"
+export *
+}

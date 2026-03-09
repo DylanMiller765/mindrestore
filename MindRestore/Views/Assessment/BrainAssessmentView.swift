@@ -4,7 +4,14 @@ import SwiftData
 struct BrainAssessmentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AchievementService.self) private var achievementService
+    @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(StoreService.self) private var storeService
+    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @State private var viewModel = BrainAssessmentViewModel()
+    @State private var hasSaved = false
+
+    private var previousScore: BrainScoreResult? { brainScores.first }
 
     private var assessmentProgress: Double {
         switch viewModel.phase {
@@ -49,8 +56,14 @@ struct BrainAssessmentView: View {
             case .calculating:
                 calculatingView
             case .results:
-                ScoreRevealView(viewModel: viewModel) {
-                    saveAndDismiss()
+                ScoreRevealView(viewModel: viewModel, previousScore: previousScore) {
+                    // Trigger paywall AFTER the reveal is done, not before
+                    let isProUser = storeService.isProUser || (users.first?.isProUser ?? false)
+                    paywallTrigger.triggerAfterAssessment(isProUser: isProUser)
+                    dismiss()
+                }
+                .onAppear {
+                    saveResult()
                 }
             }
         }
@@ -78,6 +91,7 @@ struct BrainAssessmentView: View {
         Text(text)
             .foregroundStyle(active ? AppColors.accent : .secondary)
             .frame(maxWidth: .infinity)
+            .accessibilityLabel("\(text == "MEM" ? "Memory" : text == "SPD" ? "Speed" : "Visual") phase\(active ? ", active" : "")")
     }
 
     private var backgroundColor: Color {
@@ -85,7 +99,7 @@ struct BrainAssessmentView: View {
         case .reactionWait: return Color(red: 0.8, green: 0.2, blue: 0.2)
         case .reactionGo: return Color(red: 0.2, green: 0.8, blue: 0.2)
         case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
-        default: return Color(UIColor.systemBackground)
+        default: return AppColors.pageBg
         }
     }
 
@@ -95,10 +109,18 @@ struct BrainAssessmentView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 80))
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.pulse)
+            ZStack {
+                Circle()
+                    .fill(AppColors.accent.opacity(0.15))
+                    .frame(width: 140, height: 140)
+                Circle()
+                    .fill(AppColors.accent.opacity(0.04))
+                    .frame(width: 180, height: 180)
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppColors.accent)
+                    .symbolEffect(.pulse)
+            }
 
             VStack(spacing: 12) {
                 Text("Brain Assessment")
@@ -109,13 +131,16 @@ struct BrainAssessmentView: View {
                     .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 testPreviewRow(icon: "number.circle.fill", title: "Digit Span", subtitle: "Number memory", color: .blue)
-                testPreviewRow(icon: "bolt.fill", title: "Reaction Time", subtitle: "Processing speed", color: .yellow)
-                testPreviewRow(icon: "square.grid.3x3.fill", title: "Visual Memory", subtitle: "Pattern recall", color: .purple)
+                testPreviewRow(icon: "bolt.fill", title: "Reaction Time", subtitle: "Processing speed", color: .orange)
+                testPreviewRow(icon: "square.grid.3x3.fill", title: "Visual Memory", subtitle: "Pattern recall", color: AppColors.violet)
             }
             .padding(20)
-            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(AppColors.cardSurface)
+            )
             .padding(.horizontal, 24)
 
             Text("Takes about 2 minutes")
@@ -128,7 +153,7 @@ struct BrainAssessmentView: View {
                 viewModel.start()
             } label: {
                 Text("Begin Assessment")
-                    .accentButton()
+                    .gradientButton()
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
@@ -137,10 +162,7 @@ struct BrainAssessmentView: View {
 
     private func testPreviewRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
-                .frame(width: 32)
+            ColoredIconBadge(icon: icon, color: color, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.weight(.semibold))
                 Text(subtitle).font(.caption).foregroundStyle(.secondary)
@@ -192,6 +214,7 @@ struct BrainAssessmentView: View {
                     .foregroundStyle(AppColors.accent)
                     .transition(.scale.combined(with: .opacity))
                     .id("digit_\(viewModel.displayDigitIndex)")
+                    .accessibilityLabel("Remember this number: \(digit)")
             }
 
             Text("\(viewModel.currentDigits.count) digits")
@@ -219,7 +242,7 @@ struct BrainAssessmentView: View {
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .padding()
-                .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 40)
 
             Spacer()
@@ -228,8 +251,9 @@ struct BrainAssessmentView: View {
                 viewModel.submitDigitAnswer()
             } label: {
                 Text("Submit")
-                    .accentButton()
+                    .gradientButton()
             }
+            .accessibilityHint("Submits your digit recall answer")
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
@@ -259,7 +283,7 @@ struct BrainAssessmentView: View {
         VStack(spacing: 16) {
             Spacer()
             Text("TAP!")
-                .font(.system(size: 64, weight: .black))
+                .font(.system(size: 64, weight: .bold))
                 .foregroundStyle(.white)
             Spacer()
         }
@@ -289,14 +313,46 @@ struct BrainAssessmentView: View {
     private var reactionResultView: some View {
         VStack(spacing: 16) {
             Spacer()
-            Text("\(viewModel.lastReactionMs) ms")
-                .font(.system(size: 56, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.accent)
-            Text("Round \(viewModel.reactionRound) of 5")
-                .font(.subheadline)
+
+            Text("\(viewModel.lastReactionMs)")
+                .font(.system(size: 72, weight: .bold, design: .rounded))
+                .foregroundStyle(reactionMsColor)
+                .contentTransition(.numericText(value: Double(viewModel.lastReactionMs)))
+
+            Text("ms")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(reactionMsColor.opacity(0.7))
+
+            Text(reactionMsLabel)
+                .font(.headline)
                 .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Text("Round \(viewModel.reactionRound) of 5")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
+
             Spacer()
         }
+    }
+
+    private var reactionMsColor: Color {
+        let ms = viewModel.lastReactionMs
+        if ms < 200 { return .green }
+        if ms < 300 { return AppColors.accent }
+        if ms < 400 { return .yellow }
+        return AppColors.coral
+    }
+
+    private var reactionMsLabel: String {
+        let ms = viewModel.lastReactionMs
+        if ms < 150 { return "Insane!" }
+        if ms < 200 { return "Lightning fast!" }
+        if ms < 250 { return "Great reflexes!" }
+        if ms < 300 { return "Nice!" }
+        if ms < 400 { return "Good" }
+        return "Keep trying!"
     }
 
     // MARK: - Visual Memory
@@ -326,6 +382,7 @@ struct BrainAssessmentView: View {
                             }
                         }
                         .animation(.easeInOut(duration: 0.15), value: isSelected)
+                        .accessibilityLabel(interactive ? "Grid cell \(index + 1)\(isSelected ? ", selected" : "")" : "Grid cell \(index + 1)\(isHighlighted ? ", highlighted" : "")")
                 }
             }
             .padding(.horizontal, 32)
@@ -337,8 +394,9 @@ struct BrainAssessmentView: View {
                     viewModel.submitVisualAnswer()
                 } label: {
                     Text("Submit")
-                        .accentButton()
+                        .gradientButton()
                 }
+                .accessibilityHint("Submits your visual memory answer")
                 .padding(.horizontal, 32)
                 .disabled(viewModel.selectedCells.count != viewModel.highlightedCells.count)
                 .opacity(viewModel.selectedCells.count == viewModel.highlightedCells.count ? 1 : 0.4)
@@ -354,7 +412,7 @@ struct BrainAssessmentView: View {
         if interactive && isSelected {
             return AppColors.accent
         }
-        return Color(UIColor.tertiarySystemFill)
+        return Color.gray.opacity(0.12)
     }
 
     // MARK: - Calculating
@@ -380,7 +438,10 @@ struct BrainAssessmentView: View {
 
     // MARK: - Save
 
-    private func saveAndDismiss() {
+    private func saveResult() {
+        guard !hasSaved else { return }
+        hasSaved = true
+
         let result = viewModel.createResult()
         modelContext.insert(result)
 
@@ -407,12 +468,28 @@ struct BrainAssessmentView: View {
         session.addExercise(exercise)
 
         let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
-        users.first?.updateStreak()
+        let currentUser = users.first
+        currentUser?.updateStreak()
         NotificationService.shared.cancelStreakRisk()
-        if let streak = users.first?.currentStreak {
+        if let streak = currentUser?.currentStreak {
             NotificationService.shared.scheduleMilestone(streak: streak)
         }
 
-        dismiss()
+        if let currentUser {
+            _ = ContentView.awardXP(
+                user: currentUser,
+                score: Double(viewModel.brainScore) / 1000.0,
+                difficulty: 3,
+                achievementService: achievementService,
+                modelContext: modelContext
+            )
+        }
+
+        // Schedule retake reminder 7 days from now
+        NotificationService.shared.scheduleRetakeReminder(lastAssessmentDate: Date())
+
+        // Paywall trigger moved to ScoreRevealView onDone — fires after the reveal, not before
     }
+
+    @Query private var users: [User]
 }

@@ -2,16 +2,15 @@ import Foundation
 
 enum Constants {
     enum ProductIDs {
-        static let monthly = "com.mindrestore.pro.monthly"
-        static let annual = "com.mindrestore.pro.annual"
-        static let lifetime = "com.mindrestore.pro.lifetime"
+        static let monthly = "com.memori.pro.monthly"
+        static let annual = "com.memori.pro.annual"
     }
 
     enum Defaults {
         static let dailyGoal = 3
         static let reminderHour = 9
         static let reminderMinute = 0
-        static let trialDays = 7
+        static let freeExercisesPerDay = 3
     }
 
     enum Exercise {

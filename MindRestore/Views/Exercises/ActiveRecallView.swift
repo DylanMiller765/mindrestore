@@ -4,39 +4,75 @@ import SwiftData
 struct ActiveRecallView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AchievementService.self) private var achievementService
+    @Environment(TrainingSessionManager.self) private var trainingManager
+    @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(StoreService.self) private var storeService
     @Query private var users: [User]
 
     @State private var viewModel = ActiveRecallViewModel()
     @State private var challengeStarted = false
+    @State private var strategyTip: StrategyTip?
+    @State private var showingPaywall = false
 
     private var user: User? { users.first }
+    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
 
     var body: some View {
         VStack(spacing: 0) {
             if !challengeStarted {
                 startView
+                    .transition(.opacity)
             } else {
                 switch viewModel.phase {
                 case .reading:
                     readingView
+                        .transition(.opacity)
                 case .answering:
                     answeringView
+                        .transition(.opacity)
                 case .results:
                     resultsView
+                        .transition(.opacity)
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: challengeStarted)
         .navigationTitle("Active Recall")
         .navigationBarTitleDisplayMode(.inline)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .onDisappear {
+            viewModel.cancelTimer()
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
+        }
+        .onChange(of: viewModel.phase) { _, newPhase in
+            if newPhase == .results {
+                if viewModel.score >= 0.7 {
+                    SoundService.shared.playCorrect()
+                } else {
+                    SoundService.shared.playWrong()
+                }
+                SoundService.shared.playComplete()
+                strategyTip = StrategyTipService.shared.freshTip(for: .activeRecall)
+            }
+        }
     }
 
     private var startView: some View {
         VStack(spacing: 32) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 64))
-                .foregroundStyle(AppColors.accent)
+            ZStack {
+                Circle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 120, height: 120)
+                    .accessibilityHidden(true)
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 52, weight: .medium))
+                    .foregroundStyle(AppColors.accent)
+            }
 
             VStack(spacing: 8) {
                 Text("Active Recall")
@@ -55,6 +91,7 @@ struct ActiveRecallView: View {
                 Text("Start Challenge")
                     .accentButton()
             }
+            .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
@@ -69,6 +106,7 @@ struct ActiveRecallView: View {
                 Text("\(Int(viewModel.timeRemaining))s")
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(viewModel.timeRemaining <= 5 ? AppColors.error : AppColors.accent)
+                    .accessibilityLabel("Time remaining: \(Int(viewModel.timeRemaining)) seconds")
             }
             .padding(.horizontal)
 
@@ -116,7 +154,7 @@ struct ActiveRecallView: View {
                                     .textFieldStyle(.roundedBorder)
                             }
                             .padding()
-                            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
                         }
                     }
                 }
@@ -124,7 +162,6 @@ struct ActiveRecallView: View {
             }
 
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.submitAnswers()
             } label: {
                 Text("Submit Answers")
@@ -138,16 +175,23 @@ struct ActiveRecallView: View {
     private var resultsView: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Image(systemName: viewModel.score >= 0.7 ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(viewModel.score >= 0.7 ? AppColors.accent : AppColors.warning)
-                    .padding(.top, 24)
+                ZStack {
+                    Circle()
+                        .fill(AppColors.cardBorder)
+                        .frame(width: 100, height: 100)
+                    Image(systemName: viewModel.score >= 0.7 ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(viewModel.score >= 0.7 ? AppColors.accent : AppColors.warning)
+                }
+                .padding(.top, 24)
 
                 Text(viewModel.score >= 0.7 ? "Great Job!" : "Keep Practicing!")
                     .font(.title.weight(.bold))
 
                 Text("Score: \(viewModel.score.percentString)")
                     .font(.title2)
+                    .foregroundStyle(AppColors.accent)
+                    .accessibilityLabel("Score: \(viewModel.score.percentString)")
 
                 if let challenge = viewModel.currentChallenge {
                     VStack(alignment: .leading, spacing: 12) {
@@ -176,9 +220,39 @@ struct ActiveRecallView: View {
                             }
                         }
                     }
-                    .appCard()
+                    .glowingCard(color: AppColors.accent, intensity: 0.08)
                     .padding(.horizontal)
                 }
+
+                if let tip = strategyTip {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "lightbulb.fill")
+                                .foregroundStyle(.yellow)
+                            Text(tip.title)
+                                .font(.subheadline.weight(.bold))
+                        }
+                        Text(tip.body)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(tip.researchNote)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .italic()
+                    }
+                    .appCard()
+                    .padding(.horizontal, 20)
+                }
+
+                LeaderboardRankCard(
+                    exerciseType: .activeRecall,
+                    userScore: Int(viewModel.score * 100),
+                    userName: user?.username ?? "You",
+                    userLevel: user?.level ?? 1,
+                    isPro: isProUser,
+                    onUpgradeTap: { showingPaywall = true }
+                )
+                .padding(.horizontal)
 
                 VStack(spacing: 12) {
                     Button {
@@ -205,6 +279,9 @@ struct ActiveRecallView: View {
     }
 
     private func saveExercise() {
+        paywallTrigger.recordExerciseCompleted()
+        trainingManager.addTrainingTime(viewModel.durationSeconds)
+
         let exercise = Exercise(
             type: .activeRecall,
             difficulty: viewModel.currentChallenge?.difficulty ?? 1,
@@ -229,6 +306,16 @@ struct ActiveRecallView: View {
         NotificationService.shared.cancelStreakRisk()
         if let streak = user?.currentStreak {
             NotificationService.shared.scheduleMilestone(streak: streak)
+        }
+
+        if let user {
+            _ = ContentView.awardXP(
+                user: user,
+                score: viewModel.score,
+                difficulty: viewModel.currentChallenge?.difficulty ?? 1,
+                achievementService: achievementService,
+                modelContext: modelContext
+            )
         }
     }
 }

@@ -6,74 +6,130 @@ struct PaywallView: View {
     @Environment(StoreService.self) private var storeService
 
     @State private var selectedPlan: String = StoreService.annualProductID
+    @State private var showExitOffer = false
+    @State private var hasSeenExitOffer = false
+    @State private var appeared = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 28) {
-                    heroSection
-                    featuresSection
-                    plansSection
-                    purchaseButton
-                    footerSection
+            ZStack(alignment: .bottom) {
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        heroSection
+                        benefitsStrip
+                            .padding(.top, 24)
+                        plansSection
+                            .padding(.top, 28)
+                        guaranteeRow
+                            .padding(.top, 20)
+                        footerSection
+                            .padding(.top, 16)
+                    }
+                    .padding(.bottom, 120)
                 }
-                .padding(.bottom, 32)
+                .pageBackground()
+
+                // Sticky CTA at bottom
+                stickyPurchaseButton
             }
-            .pageBackground()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        dismiss()
+                        if hasSeenExitOffer {
+                            dismiss()
+                        } else {
+                            showExitOffer = true
+                            hasSeenExitOffer = true
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
+                            .font(.title2)
+                            .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Close")
                 }
             }
+            .sheet(isPresented: $showExitOffer) {
+                ExitOfferSheet {
+                    showExitOffer = false
+                    Task { await purchase() }
+                } onDismiss: {
+                    showExitOffer = false
+                    dismiss()
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) { appeared = true }
         }
     }
 
     // MARK: - Hero
 
     private var heroSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "star.circle.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(AppColors.accent)
+        VStack(spacing: 20) {
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.cardBorder)
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(appeared ? 1 : 0.6)
 
-            Text("Unlock Your Full Potential")
-                .font(.title.weight(.bold))
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 44, weight: .medium))
+                        .foregroundStyle(AppColors.accent)
+                        .symbolEffect(.pulse, isActive: true)
+                }
 
-            Text("All exercises, detailed analytics,\nand unlimited training")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                VStack(spacing: 6) {
+                    Text("Unlock Your\nFull Brain Power")
+                        .font(.system(size: 28, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 10)
+
+                    Text("Unlimited training. Real cognitive gains.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .opacity(appeared ? 1 : 0)
+                }
+            }
+            .padding(.top, 16)
         }
-        .padding(.top, 24)
     }
 
-    // MARK: - Features
+    // MARK: - Benefits Strip
 
-    private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            proFeatureRow(text: "All 5 spaced repetition categories")
-            proFeatureRow(text: "Adaptive Dual N-Back (N=1-5)")
-            proFeatureRow(text: "Unlimited active recall challenges")
-            proFeatureRow(text: "Score trends & memory score")
-            proFeatureRow(text: "Detailed progress analytics")
+    private var benefitsStrip: some View {
+        VStack(spacing: 12) {
+            benefitRow(icon: "gamecontroller.fill", text: "Unlimited daily training sessions", color: AppColors.accent)
+            benefitRow(icon: "trophy.fill", text: "Leaderboards & competitive rankings", color: AppColors.amber)
+            benefitRow(icon: "brain", text: "All memory categories unlocked", color: AppColors.violet)
+            benefitRow(icon: "chart.line.uptrend.xyaxis", text: "Adaptive difficulty & personal bests", color: AppColors.teal)
+            benefitRow(icon: "sparkles", text: "Brain assessments & detailed insights", color: AppColors.indigo)
         }
         .padding(.horizontal, 24)
     }
 
-    private func proFeatureRow(text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 20)
+    private func benefitRow(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 36, height: 36)
+                .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+
             Text(text)
-                .font(.subheadline)
+                .font(.subheadline.weight(.medium))
+
             Spacer()
+
+            Image(systemName: "checkmark")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColors.accent)
         }
     }
 
@@ -82,45 +138,53 @@ struct PaywallView: View {
     private var plansSection: some View {
         VStack(spacing: 10) {
             PlanCard(
-                title: "Yearly",
-                price: storeService.annualProduct?.displayPrice ?? "$39.99/yr",
-                detail: "7-day free trial · Save 52%",
+                title: "Annual",
+                price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
+                detail: annualPerMonthDetail,
+                trialText: trialLabel(for: storeService.annualProduct),
                 badge: "Best Value",
                 isSelected: selectedPlan == StoreService.annualProductID,
-                accentColor: AppColors.accent
+                accentColor: AppColors.violet
             ) {
-                selectedPlan = StoreService.annualProductID
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedPlan = StoreService.annualProductID
+                }
             }
 
             PlanCard(
                 title: "Monthly",
-                price: storeService.monthlyProduct?.displayPrice ?? "$6.99/mo",
-                detail: "7-day free trial · Cancel anytime",
+                price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
+                detail: "Billed monthly",
+                trialText: trialLabel(for: storeService.monthlyProduct),
                 badge: nil,
                 isSelected: selectedPlan == StoreService.monthlyProductID,
-                accentColor: AppColors.accent
+                accentColor: AppColors.violet
             ) {
-                selectedPlan = StoreService.monthlyProductID
-            }
-
-            PlanCard(
-                title: "Lifetime",
-                price: storeService.lifetimeProduct?.displayPrice ?? "$14.99",
-                detail: "One-time purchase · Forever",
-                badge: nil,
-                isSelected: selectedPlan == StoreService.lifetimeProductID,
-                accentColor: AppColors.accent
-            ) {
-                selectedPlan = StoreService.lifetimeProductID
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedPlan = StoreService.monthlyProductID
+                }
             }
         }
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Purchase
+    private var annualPerMonthDetail: String {
+        if let annualProduct = storeService.annualProduct,
+           let monthlyProduct = storeService.monthlyProduct {
+            let monthlyFromAnnual = annualProduct.price / 12
+            let formatted = monthlyFromAnnual.formatted(.currency(code: annualProduct.priceFormatStyle.currencyCode ?? "USD"))
+            let diff = NSDecimalNumber(decimal: monthlyProduct.price - monthlyFromAnnual)
+            let total = NSDecimalNumber(decimal: monthlyProduct.price)
+            let savings = Int((diff.doubleValue / total.doubleValue * 100).rounded())
+            return "Just \(formatted)/month — Save \(savings)%"
+        }
+        return "Just $1.67/month — Save 58%"
+    }
 
-    private var purchaseButton: some View {
-        VStack(spacing: 12) {
+    // MARK: - Sticky Purchase Button
+
+    private var stickyPurchaseButton: some View {
+        VStack(spacing: 8) {
             Button {
                 Task { await purchase() }
             } label: {
@@ -129,20 +193,53 @@ struct PaywallView: View {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Text(selectedPlan == StoreService.lifetimeProductID ? "Purchase" : "Start 7-Day Free Trial")
+                        HStack(spacing: 8) {
+                            Image(systemName: "lock.open.fill")
+                                .font(.subheadline.weight(.semibold))
+                            Text(ctaButtonLabel)
+                                .font(.headline.weight(.bold))
+                        }
                     }
                 }
-                .accentButton()
+                .gradientButton(AppColors.premiumGradient)
             }
             .disabled(storeService.isLoading)
+            .accessibilityHint("Subscribe to the selected plan")
             .padding(.horizontal, 20)
+
+            Text(ctaDisclaimerLabel)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
 
             if let error = storeService.purchaseError {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(AppColors.error)
             }
         }
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+        .background(
+            Rectangle()
+                .fill(AppColors.cardSurface)
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    // MARK: - Guarantee
+
+    private var guaranteeRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "shield.checkered")
+                .font(.body)
+                .foregroundStyle(AppColors.accent)
+
+            Text("Cancel anytime. 30-day money-back guarantee.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 24)
     }
 
     // MARK: - Footer
@@ -152,22 +249,43 @@ struct PaywallView: View {
             Button("Restore Purchases") {
                 Task { await storeService.restorePurchases() }
             }
-            .font(.subheadline)
+            .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
 
-            Text("Cancel anytime. Your data stays on your device regardless.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            HStack(spacing: 16) {
+                Button("Terms of Use") {
+                    if let url = URL(string: "https://memori-website-sooty.vercel.app/terms") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
+                Text("|")
+                    .font(.caption2)
+                    .foregroundStyle(.quaternary)
+
+                Button("Privacy Policy") {
+                    if let url = URL(string: "https://memori-website-sooty.vercel.app/privacy") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            }
         }
         .padding(.horizontal, 24)
     }
+
+    // MARK: - Actions
 
     private func purchase() async {
         let productID = selectedPlan
         if let product = storeService.products.first(where: { $0.id == productID }) {
             await storeService.purchase(product)
             if storeService.isProUser {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                SoundService.shared.playComplete()
                 dismiss()
             }
         } else {
@@ -175,10 +293,75 @@ struct PaywallView: View {
             if let product = storeService.products.first(where: { $0.id == productID }) {
                 await storeService.purchase(product)
                 if storeService.isProUser {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    SoundService.shared.playComplete()
                     dismiss()
                 }
             }
         }
+    }
+
+    private func trialLabel(for product: Product?) -> String {
+        if let product,
+           let sub = product.subscription,
+           let intro = sub.introductoryOffer,
+           intro.paymentMode == .freeTrial {
+            let value = intro.period.value
+            let unit: String
+            switch intro.period.unit {
+            case .day:   unit = value == 1 ? "day" : "days"
+            case .week:  unit = value == 1 ? "week" : "weeks"
+            case .month: unit = value == 1 ? "month" : "months"
+            case .year:  unit = value == 1 ? "year" : "years"
+            @unknown default: unit = "days"
+            }
+            return "\(value)-\(unit) free trial"
+        }
+        return "Start Pro"
+    }
+
+    private var ctaButtonLabel: String {
+        let selectedProduct = selectedPlan == StoreService.annualProductID
+            ? storeService.annualProduct
+            : storeService.monthlyProduct
+        if let product = selectedProduct,
+           let sub = product.subscription,
+           let intro = sub.introductoryOffer,
+           intro.paymentMode == .freeTrial {
+            let value = intro.period.value
+            let unit: String
+            switch intro.period.unit {
+            case .day:   unit = value == 1 ? "Day" : "Day"
+            case .week:  unit = value == 1 ? "Week" : "Week"
+            case .month: unit = value == 1 ? "Month" : "Month"
+            case .year:  unit = value == 1 ? "Year" : "Year"
+            @unknown default: unit = "Day"
+            }
+            return "Start \(value)-\(unit) Free Trial"
+        }
+        return "Subscribe Now"
+    }
+
+    private var ctaDisclaimerLabel: String {
+        let selectedProduct = selectedPlan == StoreService.annualProductID
+            ? storeService.annualProduct
+            : storeService.monthlyProduct
+        if let product = selectedProduct,
+           let sub = product.subscription,
+           let intro = sub.introductoryOffer,
+           intro.paymentMode == .freeTrial {
+            let value = intro.period.value
+            let unit: String
+            switch intro.period.unit {
+            case .day:   unit = value == 1 ? "day" : "days"
+            case .week:  unit = value == 1 ? "week" : "weeks"
+            case .month: unit = value == 1 ? "month" : "months"
+            case .year:  unit = value == 1 ? "year" : "years"
+            @unknown default: unit = "days"
+            }
+            return "No charge for \(value) \(unit). Cancel anytime."
+        }
+        return "Cancel anytime. Manage subscription in Settings."
     }
 }
 
@@ -188,52 +371,143 @@ struct PlanCard: View {
     let title: String
     let price: String
     let detail: String
+    var trialText: String = ""
     let badge: String?
     let isSelected: Bool
-    var accentColor: Color = AppColors.accent
+    var accentColor: Color = AppColors.violet
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? accentColor : Color.gray.opacity(0.3), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    if isSelected {
+                        Circle()
+                            .fill(accentColor)
+                            .frame(width: 16, height: 16)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Text(title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.headline.weight(.bold))
+
                         if let badge {
                             Text(badge)
-                                .font(.caption2.weight(.semibold))
+                                .font(.caption2.weight(.bold))
+                                .textCase(.uppercase)
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(accentColor, in: Capsule())
+                                .padding(.vertical, 3)
+                                .background(
+                                    LinearGradient(
+                                        colors: [AppColors.violet, AppColors.indigo],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    ),
+                                    in: Capsule()
+                                )
                                 .foregroundStyle(.white)
                         }
                     }
+
                     Text(detail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if !trialText.isEmpty {
+                        Text(trialText)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(AppColors.accent)
+                    }
                 }
 
                 Spacer()
 
                 Text(price)
-                    .font(.subheadline.weight(.semibold))
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? accentColor : Color.gray.opacity(0.3))
-                    .font(.title3)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(isSelected ? accentColor : .primary)
             }
             .padding(16)
             .background(
-                Color(UIColor.secondarySystemGroupedBackground),
-                in: RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(AppColors.cardElevated)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? accentColor : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isSelected ? accentColor.opacity(0.6) : Color.clear,
+                        lineWidth: 2
+                    )
             )
-            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title) plan, \(price)\(isSelected ? ", selected" : "")")
+    }
+}
+
+// MARK: - Exit Offer Sheet
+
+struct ExitOfferSheet: View {
+    let onSubscribe: () -> Void
+    let onDismiss: () -> Void
+
+    @State private var appeared = false
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 100, height: 100)
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 44))
+                    .foregroundStyle(AppColors.accent)
+            }
+            .scaleEffect(appeared ? 1 : 0.5)
+            .opacity(appeared ? 1 : 0)
+
+            VStack(spacing: 8) {
+                Text("Wait — don't lose\nyour progress!")
+                    .font(.title2.weight(.bold))
+                    .multilineTextAlignment(.center)
+
+                Text("Pro members improve their Brain Score\n2x faster with unlimited training.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 10)
+
+            VStack(spacing: 12) {
+                Button(action: onSubscribe) {
+                    Text("Start Free Trial")
+                        .gradientButton()
+                }
+
+                Button(action: onDismiss) {
+                    Text("No thanks")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 32)
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 20)
+
+            Spacer()
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                appeared = true
+            }
+        }
     }
 }

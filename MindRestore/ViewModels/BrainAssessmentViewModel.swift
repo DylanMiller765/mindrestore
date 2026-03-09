@@ -18,7 +18,7 @@ enum AssessmentPhase: Equatable {
     case results
 }
 
-@Observable
+@MainActor @Observable
 final class BrainAssessmentViewModel {
     var phase: AssessmentPhase = .intro
     var startTime = Date()
@@ -61,7 +61,7 @@ final class BrainAssessmentViewModel {
     // MARK: - Flow Control
 
     func start() {
-        startTime = Date()
+        startTime = Date.now
         phase = .digitInstructions
         scheduleTransition(after: 2.5) { [weak self] in
             self?.startDigitSpan()
@@ -72,7 +72,7 @@ final class BrainAssessmentViewModel {
 
     private func startDigitSpan() {
         digitRound = 0
-        digitMaxCorrect = 3
+        digitMaxCorrect = 0
         digitStartLength = 4
         nextDigitRound()
     }
@@ -100,8 +100,6 @@ final class BrainAssessmentViewModel {
             return
         }
 
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
         digitTimer = Timer.scheduledTimer(withTimeInterval: 0.7, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 self?.showNextDigit()
@@ -112,7 +110,7 @@ final class BrainAssessmentViewModel {
     func submitDigitAnswer() {
         let correct = currentDigits.map(String.init).joined()
         if digitInput == correct {
-            digitMaxCorrect = digitStartLength + digitRound
+            digitMaxCorrect = currentDigits.count
             digitRound += 1
             if digitRound < 6 {
                 nextDigitRound()
@@ -120,6 +118,10 @@ final class BrainAssessmentViewModel {
                 finishDigitSpan()
             }
         } else {
+            // If they got none right, at least credit the previous round
+            if digitMaxCorrect == 0 && digitRound == 0 {
+                digitMaxCorrect = 3 // Below minimum — they couldn't do 4
+            }
             finishDigitSpan()
         }
     }
@@ -148,7 +150,7 @@ final class BrainAssessmentViewModel {
         reactionTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 self?.phase = .reactionGo
-                self?.reactionStartTime = Date()
+                self?.reactionStartTime = Date.now
                 UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
             }
         }
@@ -166,13 +168,12 @@ final class BrainAssessmentViewModel {
         }
 
         guard phase == .reactionGo, let start = reactionStartTime else { return }
-        let ms = Int(Date().timeIntervalSince(start) * 1000)
+        let ms = Int(Date.now.timeIntervalSince(start) * 1000)
         lastReactionMs = ms
         reactionTimes.append(ms)
         reactionRound += 1
 
         phase = .reactionResult
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         scheduleTransition(after: 1.0) { [weak self] in
             guard let self else { return }
@@ -199,7 +200,7 @@ final class BrainAssessmentViewModel {
 
     private func startVisualMemory() {
         visualRound = 0
-        visualMaxCorrect = 2
+        visualMaxCorrect = 0
         nextVisualRound()
     }
 
@@ -208,8 +209,6 @@ final class BrainAssessmentViewModel {
         selectedCells = []
         highlightedCells = Set((0..<(gridSize * gridSize)).shuffled().prefix(count))
         phase = .visualShow
-
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         visualTimer?.invalidate()
         visualTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
@@ -224,21 +223,24 @@ final class BrainAssessmentViewModel {
             selectedCells.remove(index)
         } else if selectedCells.count < highlightedCells.count {
             selectedCells.insert(index)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
     }
 
     func submitVisualAnswer() {
+        let cellCount = visualStartCount + visualRound
         if selectedCells == highlightedCells {
-            visualMaxCorrect = visualStartCount + visualRound
+            visualMaxCorrect = cellCount
             visualRound += 1
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
             if visualRound < 6 {
                 nextVisualRound()
             } else {
                 finishVisualMemory()
             }
         } else {
+            // Partial credit: if they got none right, credit previous round
+            if visualMaxCorrect == 0 && visualRound == 0 {
+                visualMaxCorrect = 2 // Below minimum
+            }
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             finishVisualMemory()
         }
@@ -285,7 +287,7 @@ final class BrainAssessmentViewModel {
     }
 
     var durationSeconds: Int {
-        Int(Date().timeIntervalSince(startTime))
+        Int(Date.now.timeIntervalSince(startTime))
     }
 
     // MARK: - Helpers

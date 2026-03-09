@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@MainActor @Observable
 final class ActiveRecallViewModel {
     let engine = ActiveRecallEngine()
     var currentChallenge: ActiveRecallChallenge?
@@ -23,7 +23,7 @@ final class ActiveRecallViewModel {
         phase = .reading
         userAnswers = Array(repeating: "", count: challenge.questions.count)
         isComplete = false
-        startTime = Date()
+        startTime = Date.now
         timeRemaining = challenge.displayDuration
 
         startDisplayTimer()
@@ -55,7 +55,12 @@ final class ActiveRecallViewModel {
         phase = .answering
     }
 
+    func cancelTimer() {
+        displayTimer?.invalidate()
+        displayTimer = nil
+    }
+
     var durationSeconds: Int {
-        Int(Date().timeIntervalSince(startTime))
+        Int(Date.now.timeIntervalSince(startTime))
     }
 }
