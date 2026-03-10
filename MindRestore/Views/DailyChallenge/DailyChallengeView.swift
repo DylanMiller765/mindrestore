@@ -8,10 +8,12 @@ struct DailyChallengeView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(TrainingSessionManager.self) private var trainingManager
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @State private var viewModel = DailyChallengeViewModel()
     @State private var showChallenge = false
     @State private var strategyTip: StrategyTip?
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
 
@@ -45,6 +47,28 @@ struct DailyChallengeView: View {
                 }
                 SoundService.shared.playComplete()
                 strategyTip = StrategyTipService.shared.freshTip(for: .dailyChallenge)
+
+                let ratingText: String
+                if viewModel.score >= 900 { ratingText = "Exceptional" }
+                else if viewModel.score >= 700 { ratingText = "Great" }
+                else if viewModel.score >= 500 { ratingText = "Good" }
+                else { ratingText = "Keep Practicing" }
+
+                let card = ExerciseShareCard(
+                    exerciseName: "Daily Challenge",
+                    exerciseIcon: "trophy.fill",
+                    accentColor: .orange,
+                    mainValue: "\(viewModel.score)",
+                    mainLabel: "out of 1000",
+                    ratingText: ratingText,
+                    stats: [
+                        (label: "Percentile", value: "Top \(100 - viewModel.percentile)%"),
+                        (label: "Type", value: viewModel.challengeType.displayName),
+                        (label: "Accuracy", value: viewModel.isCorrect ? "100%" : "\(viewModel.score / 10)%")
+                    ],
+                    ctaText: "Challenge yours with Memori"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640))
             }
         }
         .sheet(isPresented: $showChallenge) {
@@ -395,22 +419,28 @@ struct DailyChallengeView: View {
                         .gradientButton()
                     }
 
-                    let shareText = "Daily Challenge: \(viewModel.score)/1000\nBetter than \(viewModel.percentile)% of players!\n\nTest yours with Memori"
-
-                    ShareLink(item: shareText) {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share Result")
+                    if let shareImg = shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImg),
+                            preview: SharePreview(
+                                "Daily Challenge: \(viewModel.score)/1000",
+                                image: Image(uiImage: shareImg)
+                            )
+                        ) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(AppColors.accent.opacity(0.4), lineWidth: 1.5)
+                                    .fill(AppColors.cardSurface)
+                            )
+                            .foregroundStyle(AppColors.accent)
                         }
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(AppColors.accent.opacity(0.4), lineWidth: 1.5)
-                                .fill(AppColors.cardSurface)
-                        )
-                        .foregroundStyle(AppColors.accent)
                     }
 
                     Button {
@@ -603,7 +633,8 @@ struct DailyChallengeView: View {
                 score: Double(viewModel.score) / 1000.0,
                 difficulty: 2,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService
             )
         }
 

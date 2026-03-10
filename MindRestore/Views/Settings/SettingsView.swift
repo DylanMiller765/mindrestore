@@ -4,12 +4,17 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
 
     @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
+    #if DEBUG
+    @State private var showingScreenshotDataConfirmation = false
+    @State private var screenshotDataLoaded = false
+    #endif
     @State private var editingName = false
     @State private var editedName = ""
 
@@ -28,6 +33,10 @@ struct SettingsView: View {
                     streakFreezeCard
                     privacyCard
                     aboutCard
+
+                    #if DEBUG
+                    debugCard
+                    #endif
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -44,6 +53,14 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure? This will delete all your progress, scores, and settings.")
             }
+            #if DEBUG
+            .alert("Load Screenshot Data", isPresented: $showingScreenshotDataConfirmation) {
+                Button("Load Demo Data", role: .destructive) { loadScreenshotData() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This replaces ALL your data with demo data for App Store screenshots. Your real progress will be lost.")
+            }
+            #endif
         }
     }
 
@@ -246,6 +263,15 @@ struct SettingsView: View {
                     )
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    Task { await storeService.restorePurchases() }
+                } label: {
+                    Text("Restore Purchases")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
             }
         }
     }
@@ -544,10 +570,10 @@ struct SettingsView: View {
                         UIApplication.shared.open(url)
                     }
                 }
-            } else {
-                aboutRow(icon: "arrow.clockwise", color: .teal, title: "Restore Purchases", isLink: true) {
-                    Task { await storeService.restorePurchases() }
-                }
+                Divider().padding(.leading, 52)
+            }
+            aboutRow(icon: "arrow.clockwise", color: .teal, title: "Restore Purchases", isLink: true) {
+                Task { await storeService.restorePurchases() }
             }
             Divider().padding(.leading, 52)
             Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
@@ -581,6 +607,55 @@ struct SettingsView: View {
                         .background(Color.gray, in: RoundedRectangle(cornerRadius: 7))
 
                     Text("Terms of Use")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+            }
+            Divider().padding(.leading, 52)
+            Button {
+                if let url = URL(string: "itms-apps://itunes.apple.com/app/id") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "star.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(Color.orange, in: RoundedRectangle(cornerRadius: 7))
+
+                    Text("Rate Memori")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
+                HStack(spacing: 12) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(Color.blue, in: RoundedRectangle(cornerRadius: 7))
+
+                    Text("Support")
                         .font(.subheadline)
                         .foregroundStyle(.primary)
 
@@ -640,6 +715,114 @@ struct SettingsView: View {
             .frame(width: 28, height: 28)
             .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 7))
     }
+
+    // MARK: - Debug (Screenshot Data)
+
+    #if DEBUG
+    private var debugCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Debug")
+
+            // Pro toggle
+            HStack(spacing: 12) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(AppColors.amber, in: RoundedRectangle(cornerRadius: 7))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Debug Pro Mode")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text(storeService.isProUser ? "Pro ON — tap to disable" : "Pro OFF — tap to enable")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Circle()
+                    .fill(storeService.isProUser ? Color.green : Color.gray.opacity(0.3))
+                    .frame(width: 12, height: 12)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                storeService.isProUser.toggle()
+            }
+
+            // Reset daily limit
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(AppColors.coral, in: RoundedRectangle(cornerRadius: 7))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Reset Daily Limit")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("Resets the 3/day exercise counter")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UserDefaults.standard.removeObject(forKey: "daily_exercise_count")
+                UserDefaults.standard.removeObject(forKey: "daily_exercise_date")
+            }
+
+            // Load screenshot data
+            Button {
+                showingScreenshotDataConfirmation = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 7))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Load Screenshot Data")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        Text("Fills app with demo data for App Store screenshots")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    if screenshotDataLoaded {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .appCard()
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(AppColors.accent.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private func loadScreenshotData() {
+        guard let user else { return }
+        ScreenshotDataGenerator.generate(modelContext: modelContext, user: user, gameCenterService: gameCenterService)
+        screenshotDataLoaded = true
+    }
+    #endif
 
     // MARK: - Reset
 

@@ -9,6 +9,9 @@ final class GameCenterService {
 
     var isAuthenticated = false
 
+    /// When true, loadLeaderboardEntries returns mock data for screenshots (debug only)
+    var useMockData = false
+
     // MARK: - Leaderboard IDs
 
     static let brainScoreLeaderboard = "com.dylanmiller.mindrestore.leaderboard.brainScore"
@@ -26,6 +29,23 @@ final class GameCenterService {
 
     static func gameCenterAchievementID(for type: AchievementType) -> String {
         "com.dylanmiller.mindrestore.achievement.\(type.rawValue)"
+    }
+
+    // MARK: - Category → Leaderboard ID
+
+    static func leaderboardID(for category: LeaderboardCategory) -> String {
+        switch category {
+        case .brainScore: return brainScoreLeaderboard
+        case .weeklyXP: return weeklyXPLeaderboard
+        case .streak: return longestStreakLeaderboard
+        case .reactionTime: return reactionTimeLeaderboard
+        case .colorMatch: return colorMatchLeaderboard
+        case .speedMatch: return speedMatchLeaderboard
+        case .visualMemory: return visualMemoryLeaderboard
+        case .numberMemory: return numberMemoryLeaderboard
+        case .mathSpeed: return mathSpeedLeaderboard
+        case .dualNBack: return dualNBackLeaderboard
+        }
     }
 
     // MARK: - Authentication
@@ -50,6 +70,90 @@ final class GameCenterService {
         }
     }
 
+    // MARK: - Load Leaderboard Entries
+
+    struct LeaderboardResult {
+        let entries: [LeaderboardEntryData]
+        let localPlayerEntry: LeaderboardEntryData?
+        let totalPlayerCount: Int
+    }
+
+    func loadLeaderboardEntries(
+        category: LeaderboardCategory,
+        timeFilter: LeaderboardTimeFilter,
+        range: NSRange = NSRange(location: 1, length: 50)
+    ) async -> LeaderboardResult {
+        if useMockData {
+            return Self.mockLeaderboardResult(for: category)
+        }
+
+        guard isAuthenticated else {
+            return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
+        }
+
+        let leaderboardID = Self.leaderboardID(for: category)
+
+        let timeScope: GKLeaderboard.TimeScope
+        switch timeFilter {
+        case .today: timeScope = .today
+        case .thisWeek: timeScope = .week
+        case .allTime: timeScope = .allTime
+        }
+
+        do {
+            let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardID])
+            guard let leaderboard = leaderboards.first else {
+                return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
+            }
+
+            let (localEntry, globalEntries, totalCount) = try await leaderboard.loadEntries(
+                for: .global,
+                timeScope: timeScope,
+                range: range
+            )
+
+            var entries: [LeaderboardEntryData] = []
+            let localPlayerID = GKLocalPlayer.local.teamPlayerID
+
+            for (index, entry) in (globalEntries ?? []).enumerated() {
+                entries.append(LeaderboardEntryData(
+                    rank: entry.rank,
+                    username: entry.player.displayName,
+                    score: entry.score,
+                    avatarEmoji: "",
+                    level: 0,
+                    isCurrentUser: entry.player.teamPlayerID == localPlayerID
+                ))
+            }
+
+            var localPlayerData: LeaderboardEntryData?
+            if let localEntry {
+                localPlayerData = LeaderboardEntryData(
+                    rank: localEntry.rank,
+                    username: localEntry.player.displayName,
+                    score: localEntry.score,
+                    avatarEmoji: "",
+                    level: 0,
+                    isCurrentUser: true
+                )
+                // If local player isn't in the global list, add them
+                if !entries.contains(where: { $0.isCurrentUser }) {
+                    entries.append(localPlayerData!)
+                    entries.sort { $0.rank < $1.rank }
+                }
+            }
+
+            return LeaderboardResult(
+                entries: entries,
+                localPlayerEntry: localPlayerData,
+                totalPlayerCount: totalCount
+            )
+        } catch {
+            print("[GameCenterService] Failed to load leaderboard: \(error.localizedDescription)")
+            return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
+        }
+    }
+
     // MARK: - Score Reporting
 
     func reportScore(_ score: Int, leaderboardID: String) {
@@ -57,14 +161,16 @@ final class GameCenterService {
 
         Task {
             do {
+                print("[GameCenterService] Submitting score \(score) to leaderboard \(leaderboardID)")
                 try await GKLeaderboard.submitScore(
                     score,
                     context: 0,
                     player: GKLocalPlayer.local,
                     leaderboardIDs: [leaderboardID]
                 )
+                print("[GameCenterService] Successfully submitted score \(score) to \(leaderboardID)")
             } catch {
-                print("[GameCenterService] Failed to report score: \(error.localizedDescription)")
+                print("[GameCenterService] Failed to report score \(score) to \(leaderboardID): \(error.localizedDescription)")
             }
         }
     }
@@ -103,6 +209,78 @@ final class GameCenterService {
     func showAchievements() {
         guard isAuthenticated else { return }
         presentGameCenterVC(state: .achievements)
+    }
+
+    // MARK: - Private
+
+    // MARK: - Mock Data for Screenshots
+
+    static func mockLeaderboardResult(for category: LeaderboardCategory) -> LeaderboardResult {
+        let names = ["NeuroPilot", "MindMaster", "BrainWave99", "CognitoX", "MemoryKing",
+                     "ThinkFast", "SynapseGod", "MentalAce", "QuickMind", "IronFocus",
+                     "Dylan", "SharpEdge", "PuzzlePro", "FocusZone", "CortexMax"]
+
+        // Generate scores appropriate for each category
+        let (scores, isLowBetter) = mockScores(for: category)
+
+        var entries: [LeaderboardEntryData] = []
+        for i in 0..<min(names.count, scores.count) {
+            entries.append(LeaderboardEntryData(
+                rank: i + 1,
+                username: names[i],
+                score: scores[i],
+                avatarEmoji: "",
+                level: 0,
+                isCurrentUser: names[i] == "Dylan"
+            ))
+        }
+
+        // Sort appropriately
+        if isLowBetter {
+            entries.sort { $0.score < $1.score }
+        } else {
+            entries.sort { $0.score > $1.score }
+        }
+
+        // Re-rank
+        entries = entries.enumerated().map { i, e in
+            LeaderboardEntryData(rank: i + 1, username: e.username, score: e.score,
+                                 avatarEmoji: e.avatarEmoji, level: e.level, isCurrentUser: e.isCurrentUser)
+        }
+
+        let localEntry = entries.first(where: { $0.isCurrentUser })
+
+        return LeaderboardResult(
+            entries: entries,
+            localPlayerEntry: localEntry,
+            totalPlayerCount: 847 // Fake total for percentile
+        )
+    }
+
+    private static func mockScores(for category: LeaderboardCategory) -> (scores: [Int], isLowBetter: Bool) {
+        switch category {
+        case .brainScore:
+            return ([892, 845, 810, 788, 765, 748, 730, 715, 698, 680, 665, 641, 620, 590, 550], false)
+        case .reactionTime:
+            // Lower is better; Dylan at 288ms
+            return ([178, 195, 210, 222, 238, 245, 255, 268, 275, 288, 298, 315, 330, 355, 390], true)
+        case .colorMatch:
+            return ([98, 96, 95, 94, 93, 92, 90, 89, 87, 85, 82, 80, 78, 75, 70], false)
+        case .speedMatch:
+            return ([96, 94, 93, 91, 90, 88, 87, 85, 83, 80, 78, 75, 72, 68, 65], false)
+        case .visualMemory:
+            return ([12, 11, 10, 9, 9, 8, 8, 7, 7, 7, 6, 6, 6, 5, 5], false)
+        case .numberMemory:
+            return ([14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 8, 8, 7, 7, 6], false)
+        case .mathSpeed:
+            return ([24, 22, 21, 20, 19, 18, 17, 16, 16, 15, 14, 13, 12, 11, 10], false)
+        case .dualNBack:
+            return ([8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2], false)
+        case .weeklyXP:
+            return ([2400, 2100, 1850, 1700, 1550, 1420, 1300, 1180, 1050, 950, 850, 750, 650, 550, 450], false)
+        case .streak:
+            return ([180, 120, 95, 78, 65, 52, 45, 38, 30, 25, 21, 18, 14, 10, 7], false)
+        }
     }
 
     // MARK: - Private

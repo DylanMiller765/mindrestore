@@ -148,23 +148,33 @@ struct BrainScoreChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: .stride(by: .day, count: xAxisStride)) { _ in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4, 4]))
-                    .foregroundStyle(.secondary.opacity(0.2))
-                AxisValueLabel(format: .dateTime.month(.abbreviated).day(), centered: true)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            if chartScores.count > 2 {
+                AxisMarks(values: .stride(by: .day, count: xAxisStride)) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4, 4]))
+                        .foregroundStyle(.secondary.opacity(0.2))
+                    AxisValueLabel(format: xAxisDateFormat, centered: true)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                AxisMarks { _ in }
             }
         }
         .frame(height: height)
+        .clipped()
     }
 
     // MARK: - Axis Helpers
 
     private var yAxisDomain: ClosedRange<Int> {
         let allScores = chartScores.map(\.brainScore)
-        let minScore = max(0, (allScores.min() ?? 0) - 50)
-        let maxScore = min(1000, (allScores.max() ?? 1000) + 50)
+        let rawMin = allScores.min() ?? 0
+        let rawMax = allScores.max() ?? 1000
+        let span = max(rawMax - rawMin, 1)
+        // Use 20% padding to make the line fill more of the chart
+        let padding = max(20, span / 5)
+        let minScore = max(0, rawMin - padding)
+        let maxScore = min(1000, rawMax + padding)
         return minScore...maxScore
     }
 
@@ -187,10 +197,24 @@ struct BrainScoreChart: View {
         return values
     }
 
+    private var dateSpanDays: Int {
+        guard let first = chartScores.first, let last = chartScores.last else { return 0 }
+        return max(1, Calendar.current.dateComponents([.day], from: first.date, to: last.date).day ?? 1)
+    }
+
     private var xAxisStride: Int {
-        let count = chartScores.count
-        if count <= 7 { return 1 }
-        if count <= 14 { return 2 }
+        let span = dateSpanDays
+        if span <= 7 { return 1 }
+        if span <= 14 { return 2 }
+        if span <= 30 { return 5 }
         return 7
+    }
+
+    private var xAxisDateFormat: Date.FormatStyle {
+        let span = dateSpanDays
+        if span <= 7 {
+            return .dateTime.weekday(.abbreviated)
+        }
+        return .dateTime.month(.narrow).day()
     }
 }

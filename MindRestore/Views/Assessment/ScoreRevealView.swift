@@ -8,6 +8,7 @@ struct ScoreRevealView: View {
 
     @Query private var users: [User]
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
 
     @State private var showingPaywall = false
     @State private var displayedScore: Int = 0
@@ -193,8 +194,6 @@ struct ScoreRevealView: View {
                         LeaderboardRankCard(
                             exerciseType: nil,
                             userScore: viewModel.brainScore,
-                            userName: user?.username ?? "You",
-                            userLevel: user?.level ?? 1,
                             isPro: isProUser,
                             onUpgradeTap: { showingPaywall = true }
                         )
@@ -239,29 +238,36 @@ struct ScoreRevealView: View {
                                 }
                             }
 
-                            Button {
-                                showChallenge = true
-                            } label: {
-                                HStack {
-                                    Image(systemName: "person.2.fill")
-                                    Text("Challenge a Friend")
+                            HStack(spacing: 12) {
+                                Button {
+                                    showChallenge = true
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "person.2.fill")
+                                        Text("Challenge")
+                                    }
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(AppColors.accent)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
                                 }
-                                .gradientButton()
-                            }
 
-                            Button(action: onDone) {
-                                Text("Done")
-                                    .font(.headline)
-                                    .foregroundStyle(.secondary)
+                                Button(action: onDone) {
+                                    Text("Done")
+                                        .font(.subheadline.weight(.bold))
+                                        .foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                                }
                             }
                         }
                         .padding(.horizontal, 32)
                         .transition(.opacity)
                     }
-
-                    Spacer(minLength: 20)
                 }
-                .padding(.bottom, 16)
+                .safeAreaPadding(.bottom, 24)
             }
 
             if showConfetti {
@@ -275,6 +281,7 @@ struct ScoreRevealView: View {
             }
         }
         .onAppear { startRevealSequence() }
+        .task { await fetchRealPercentile() }
         .sheet(isPresented: $showChallenge) {
             ChallengeView(
                 challengeType: .brainScore(
@@ -297,64 +304,119 @@ struct ScoreRevealView: View {
     // MARK: - Brain Age Overlay View
 
     private var brainAgeOverlayView: some View {
-        ZStack {
+        let ageColor = brainAgeColor(for: displayedBrainAge)
+        let ageProgress = min(1.0, max(0, Double(displayedBrainAge - 18) / 62.0)) // 18-80 range
+        let emoji = brainAgeEmoji(viewModel.brainAge)
+
+        return ZStack {
             AppColors.pageBg.ignoresSafeArea()
 
-            // Solid circle behind the number
+            // Radial glow that pulses after reveal
             if countUpFinished {
                 Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 200, height: 200)
-                    .accessibilityHidden(true)
+                    .fill(
+                        RadialGradient(
+                            colors: [ageColor.opacity(pulseGlow ? 0.20 : 0.10), .clear],
+                            center: .center,
+                            startRadius: 40,
+                            endRadius: 220
+                        )
+                    )
+                    .frame(width: 440, height: 440)
+                    .offset(y: -60)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: pulseGlow)
             }
 
-            VStack(spacing: 24) {
+            VStack(spacing: 16) {
                 Spacer()
 
-                // "Your Brain Age" label
+                // Emoji reaction
+                if countUpFinished {
+                    Text(emoji)
+                        .font(.system(size: 56))
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                // "YOUR BRAIN AGE" label
                 if showBrainAgeLabel {
-                    Text("Your Brain Age")
-                        .font(.caption.weight(.medium))
+                    Text("YOUR BRAIN AGE")
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .tracking(2)
+                        .tracking(3)
                         .transition(.opacity)
                 }
 
-                // The big number
+                // Gauge ring with number
                 if isCountingUp || countUpFinished {
-                    Text("\(displayedBrainAge)")
-                        .font(.system(size: 96, weight: .bold, design: .rounded))
-                        .foregroundStyle(brainAgeColor(for: displayedBrainAge))
-                        .contentTransition(.numericText(value: Double(displayedBrainAge)))
-                        .scaleEffect(countUpFinished ? 1.05 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
-                        .accessibilityLabel("Your brain age is \(viewModel.brainAge)")
+                    ZStack {
+                        // Background ring
+                        Circle()
+                            .stroke(Color.gray.opacity(0.08), lineWidth: 16)
+                            .frame(width: 210, height: 210)
+
+                        // Progress ring — gap at start to avoid overlap
+                        Circle()
+                            .trim(from: 0.02, to: max(0.02, ageProgress))
+                            .stroke(
+                                ageColor,
+                                style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                            )
+                            .frame(width: 210, height: 210)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.easeOut(duration: 0.5), value: ageProgress)
+
+                        // The big number
+                        VStack(spacing: 0) {
+                            Text("\(displayedBrainAge)")
+                                .font(.system(size: 80, weight: .black, design: .rounded))
+                                .foregroundStyle(ageColor)
+                                .contentTransition(.numericText(value: Double(displayedBrainAge)))
+
+                            Text("years")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .scaleEffect(countUpFinished ? 1.0 : 0.9)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: countUpFinished)
+                    .accessibilityLabel("Your brain age is \(viewModel.brainAge)")
                 }
 
-                // Snarky subtitle
+                // Verdict + comparison
                 if showBrainAgeSubtitle {
-                    Text("You have the brain of a \(viewModel.brainAge)-year-old")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.center)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    VStack(spacing: 12) {
+                        // Big verdict badge
+                        Text(brainAgeVerdict(viewModel.brainAge))
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(ageColor, in: Capsule())
+                            .shadow(color: ageColor.opacity(0.3), radius: 8, y: 4)
+
+                        // The viral line
+                        Text("You have the brain of a \(viewModel.brainAge)-year-old")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
 
                 // Percentile
                 if showBrainAgePercentile {
-                    Text("Sharper than \(viewModel.percentile)% of people your age")
-                        .font(.subheadline)
+                    Text("Better than \(viewModel.percentile)% of players")
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel("Sharper than \(viewModel.percentile) percent of people your age")
+                        .accessibilityLabel("Better than \(viewModel.percentile) percent of players")
                         .transition(.opacity)
                 }
 
                 Spacer()
 
-                // Share button
+                // Share + Continue
                 if showBrainAgeShare {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 14) {
                         if let shareImage {
                             ShareLink(
                                 item: Image(uiImage: shareImage),
@@ -371,7 +433,7 @@ struct ScoreRevealView: View {
                         Button {
                             dismissBrainAgeOverlay()
                         } label: {
-                            Text("See Brain Score")
+                            Text("See Brain Score →")
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
                         }
@@ -383,6 +445,26 @@ struct ScoreRevealView: View {
                 Spacer()
                     .frame(height: 40)
             }
+        }
+        .onAppear {
+            if countUpFinished {
+                pulseGlow = true
+            }
+        }
+        .onChange(of: countUpFinished) { _, finished in
+            if finished { pulseGlow = true }
+        }
+    }
+
+    private func brainAgeEmoji(_ age: Int) -> String {
+        switch age {
+        case ...20: return "🤯"
+        case 21...25: return "🔥"
+        case 26...30: return "🧠"
+        case 31...35: return "😐"
+        case 36...45: return "😬"
+        case 46...55: return "💀"
+        default: return "🪦"
         }
     }
 
@@ -402,7 +484,19 @@ struct ScoreRevealView: View {
     }
 
     private var brainAgeShareText: String {
-        "My Brain Age is \(viewModel.brainAge)! Sharper than \(viewModel.percentile)% of people my age.\n\nTest yours with Memori"
+        "My Brain Age is \(viewModel.brainAge)! Better than \(viewModel.percentile)% of players.\n\nTest yours with Memori"
+    }
+
+    private func brainAgeVerdict(_ age: Int) -> String {
+        switch age {
+        case ...20: return "Basically a supercomputer"
+        case 21...25: return "Your brain is cracked"
+        case 26...30: return "Not bad, not bad at all"
+        case 31...35: return "Average — you can do better"
+        case 36...45: return "Your brain needs a gym membership"
+        case 46...55: return "Did you forget to train?"
+        default: return "Your brain just filed for retirement"
+        }
     }
 
     private func brainAgeColor(for age: Int) -> Color {
@@ -495,9 +589,31 @@ struct ScoreRevealView: View {
         }
     }
 
+    // MARK: - Real Percentile from Leaderboard
+
+    private func fetchRealPercentile() async {
+        guard gameCenterService.isAuthenticated || gameCenterService.useMockData else { return }
+        let result = await gameCenterService.loadLeaderboardEntries(
+            category: .brainScore,
+            timeFilter: .allTime
+        )
+        guard result.totalPlayerCount >= 10 else { return }
+        if let localEntry = result.localPlayerEntry {
+            viewModel.updatePercentileFromLeaderboard(
+                rank: localEntry.rank,
+                totalPlayers: result.totalPlayerCount
+            )
+        }
+    }
+
     // MARK: - Reveal Sequence
 
     private func startRevealSequence() {
+        // Report brain score to GameCenter
+        if gameCenterService.isAuthenticated {
+            gameCenterService.reportScore(viewModel.brainScore, leaderboardID: GameCenterService.brainScoreLeaderboard)
+        }
+
         // Brain Age overlay comes FIRST — this is the viral moment
         SoundService.shared.playTap()
         showBrainAgeOverlay = true

@@ -8,6 +8,7 @@ struct DualNBackView: View {
     @Environment(AchievementService.self) private var achievementService
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = DualNBackViewModel()
@@ -15,6 +16,7 @@ struct DualNBackView: View {
     @State private var gameStarted = false
     @State private var strategyTip: StrategyTip?
     @State private var showingPaywall = false
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -48,6 +50,21 @@ struct DualNBackView: View {
                 strategyTip = StrategyTipService.shared.freshTip(for: .nBack)
                 SoundService.shared.playComplete()
                 HapticService.complete()
+                let card = ExerciseShareCard(
+                    exerciseName: "Dual N-Back",
+                    exerciseIcon: "square.grid.3x3",
+                    accentColor: AppColors.sky,
+                    mainValue: "N=\(viewModel.currentN)",
+                    mainLabel: "Level",
+                    ratingText: viewModel.overallScore >= 0.9 ? "Master" : viewModel.overallScore >= 0.7 ? "Great" : "Keep Going",
+                    stats: [
+                        ("Position", viewModel.positionScore.percentString),
+                        ("Overall", viewModel.overallScore.percentString),
+                        ("Trials", "\(viewModel.totalTrials)")
+                    ],
+                    ctaText: "Can you match this?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
                 if viewModel.nextN > viewModel.currentN {
                     HapticService.levelUp()
                 }
@@ -85,13 +102,13 @@ struct DualNBackView: View {
                     .tracking(1)
 
                 instructionRow(icon: "square.grid.3x3", color: AppColors.accent,
-                    text: "A square lights up on the grid each round")
-                instructionRow(icon: "arrow.uturn.backward", color: AppColors.teal,
-                    text: "Tap **Position** if the square is in the same spot as **N rounds ago**")
-                instructionRow(icon: "speaker.wave.2", color: AppColors.indigo,
-                    text: "In dual mode, a letter is spoken — tap **Sound** if it matches **N rounds ago**")
+                    text: "Each round: a square lights up + a letter appears")
+                instructionRow(icon: "square.grid.3x3", color: AppColors.teal,
+                    text: "Tap **Position** if the square is in the **same spot** as the previous round")
+                instructionRow(icon: "textformat", color: AppColors.indigo,
+                    text: "Tap **Letter** if the letter is the **same** as the previous round")
                 instructionRow(icon: "brain.head.profile", color: AppColors.violet,
-                    text: "Start with N=1 (match the previous round) and work your way up!")
+                    text: "Track both at once! That's what makes it the #1 brain exercise")
             }
             .appCard()
             .padding(.horizontal)
@@ -142,7 +159,7 @@ struct DualNBackView: View {
                 }
 
                 if !isProUser {
-                    Text("Free: N=1 position only. Pro: Adaptive N=1-5 dual mode.")
+                    Text("Free: N=1 position only. Pro unlocks dual mode (position + letter).")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -244,9 +261,9 @@ struct DualNBackView: View {
                         viewModel.tapSound()
                     } label: {
                         VStack(spacing: 6) {
-                            Image(systemName: "speaker.wave.2")
+                            Image(systemName: "textformat")
                                 .font(.title3)
-                            Text("Sound")
+                            Text("Letter")
                                 .font(.caption.weight(.semibold))
                         }
                         .frame(maxWidth: .infinity)
@@ -297,7 +314,7 @@ struct DualNBackView: View {
                     resultRow(label: "Position Accuracy", value: viewModel.positionScore.percentString)
                         .accessibilityElement(children: .combine)
                     if viewModel.isDual {
-                        resultRow(label: "Sound Accuracy", value: viewModel.soundScore.percentString)
+                        resultRow(label: "Letter Accuracy", value: viewModel.soundScore.percentString)
                             .accessibilityElement(children: .combine)
                     }
                     resultRow(label: "Overall Score", value: viewModel.overallScore.percentString)
@@ -343,21 +360,32 @@ struct DualNBackView: View {
                 LeaderboardRankCard(
                     exerciseType: .dualNBack,
                     userScore: viewModel.currentN,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Dual N-Back: N=\(viewModel.currentN)", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         selectedN = viewModel.nextN
                         gameStarted = true
                         viewModel.startGame(n: selectedN, dual: isProUser)
                     } label: {
                         Text("Play Again (N=\(viewModel.nextN))")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -435,7 +463,10 @@ struct DualNBackView: View {
                 score: viewModel.overallScore,
                 difficulty: viewModel.currentN,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .dualNBack,
+                gameScore: viewModel.currentN
             )
         }
     }

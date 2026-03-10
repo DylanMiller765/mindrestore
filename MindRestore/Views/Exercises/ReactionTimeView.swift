@@ -115,6 +115,7 @@ struct ReactionTimeView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = ReactionTimeViewModel()
@@ -385,8 +386,6 @@ struct ReactionTimeView: View {
                 LeaderboardRankCard(
                     exerciseType: .reactionTime,
                     userScore: viewModel.averageMs,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -486,7 +485,10 @@ struct ReactionTimeView: View {
                 score: viewModel.score,
                 difficulty: 1,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .reactionTime,
+                gameScore: viewModel.averageMs
             )
         }
     }

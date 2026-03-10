@@ -440,6 +440,11 @@ final class PersonalBestTracker {
         return false
     }
 
+    /// Force-set a score (used by screenshot data generator).
+    func forceSet(score: Int, for type: ExerciseType) {
+        defaults.set(score, forKey: prefix + type.rawValue)
+    }
+
     /// Reset all personal bests.
     func resetAll() {
         for type in ExerciseType.allCases {

@@ -104,33 +104,82 @@ struct PaywallView: View {
     // MARK: - Benefits Strip
 
     private var benefitsStrip: some View {
-        VStack(spacing: 12) {
-            benefitRow(icon: "gamecontroller.fill", text: "Unlimited daily training sessions", color: AppColors.accent)
-            benefitRow(icon: "trophy.fill", text: "Leaderboards & competitive rankings", color: AppColors.amber)
-            benefitRow(icon: "brain", text: "All memory categories unlocked", color: AppColors.violet)
-            benefitRow(icon: "chart.line.uptrend.xyaxis", text: "Adaptive difficulty & personal bests", color: AppColors.teal)
-            benefitRow(icon: "sparkles", text: "Brain assessments & detailed insights", color: AppColors.indigo)
+        VStack(spacing: 16) {
+            // Free vs Pro comparison
+            VStack(spacing: 0) {
+                // Header row
+                HStack(spacing: 0) {
+                    Text("")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Free")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56)
+                    Text("Pro")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(AppColors.accent)
+                        .frame(width: 56)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+
+                Divider()
+
+                comparisonRow("Daily games", free: "3/day", pro: true)
+                Divider().padding(.leading, 16)
+                comparisonRow("All 8 exercises", free: nil, pro: true)
+                Divider().padding(.leading, 16)
+                comparisonRow("Personal records", free: nil, pro: true)
+                Divider().padding(.leading, 16)
+                comparisonRow("Score trends & analytics", free: nil, pro: true, freeHas: false)
+                Divider().padding(.leading, 16)
+                comparisonRow("Performance sparklines", free: nil, pro: true, freeHas: false)
+                Divider().padding(.leading, 16)
+                comparisonRow("Leaderboards", free: nil, pro: true)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.cardSurface)
+                    .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+            )
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
     }
 
-    private func benefitRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 36, height: 36)
-                .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+    private func comparisonRow(_ feature: String, free: String? = nil, pro: Bool, freeHas: Bool = true) -> some View {
+        HStack(spacing: 0) {
+            Text(feature)
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(text)
-                .font(.subheadline.weight(.medium))
+            Group {
+                if let free {
+                    Text(free)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                } else if freeHas {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary.opacity(0.5))
+                } else {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary.opacity(0.3))
+                }
+            }
+            .frame(width: 56)
 
-            Spacer()
-
-            Image(systemName: "checkmark")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(AppColors.accent)
+            Group {
+                if pro {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(AppColors.accent)
+                }
+            }
+            .frame(width: 56)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
     }
 
     // MARK: - Plans

@@ -11,9 +11,30 @@ struct ProgressDashboardView: View {
 
     @State private var viewModel = ProgressViewModel()
     @State private var showingPaywall = false
+    @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+
+    /// The 8 games available on the Train tab
+    private static let availableGames: [ExerciseType] = [
+        .reactionTime, .colorMatch, .speedMatch, .visualMemory,
+        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining
+    ]
+
+    private var triedExerciseTypes: Set<ExerciseType> {
+        Set(exercises.map(\.type)).intersection(Self.availableGames)
+    }
+
+    private var consistencyPercent: Int {
+        let calendar = Calendar.current
+        let now = Date.now
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else { return 0 }
+        let dayOfMonth = calendar.component(.day, from: now)
+        let daysTrainedThisMonth = viewModel.trainingDays.filter { $0 >= monthStart }.count
+        guard dayOfMonth > 0 else { return 0 }
+        return Int(Double(daysTrainedThisMonth) / Double(dayOfMonth) * 100)
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,14 +63,19 @@ struct ProgressDashboardView: View {
 
                         streakSection
                         calendarHeatmap
-                        basicStats
+
+                        // NEW: Consistency + Exercise Library
+                        consistencyAndLibrary
+
+                        // NEW: Personal Records (free)
+                        personalRecordsSection
 
                         // Achievements summary
                         achievementsSummary
 
                         if isProUser {
+                            exerciseScoreTrends
                             scoreChart
-                            memoryScoreCard
                         } else {
                             proUpsell
                         }
@@ -287,37 +313,45 @@ struct ProgressDashboardView: View {
         HStack(spacing: 10) {
             streakMiniCard(
                 value: "\(user?.currentStreak ?? 0)",
-                label: "Current",
+                unit: "day streak",
                 icon: "flame.fill",
                 color: AppColors.coral
             )
             streakMiniCard(
                 value: "\(user?.longestStreak ?? 0)",
-                label: "Longest",
+                unit: "best streak",
                 icon: "trophy.fill",
                 color: AppColors.amber
             )
             streakMiniCard(
                 value: "\(sessions.count)",
-                label: "Sessions",
+                unit: "total sessions",
                 icon: "brain.head.profile",
                 color: AppColors.indigo
             )
         }
     }
 
-    private func streakMiniCard(value: String, label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(color)
+    private func streakMiniCard(value: String, unit: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(color)
+            }
 
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.textPrimary)
 
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
+            Text(unit)
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(AppColors.textTertiary)
+                .textCase(.uppercase)
+                .tracking(0.5)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
@@ -333,7 +367,7 @@ struct ProgressDashboardView: View {
                 .padding(.horizontal, 12)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(value)")
+        .accessibilityLabel("\(unit): \(value)")
     }
 
     // MARK: - Calendar Heatmap
@@ -343,48 +377,275 @@ struct ProgressDashboardView: View {
             .appCard()
     }
 
-    // MARK: - Basic Stats (2x2 Grid)
+    // MARK: - Consistency + Exercise Library
 
-    private var basicStats: some View {
+    private var consistencyAndLibrary: some View {
+        HStack(spacing: 10) {
+            // Consistency Score
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .stroke(AppColors.cardBorder, lineWidth: 6)
+                        .frame(width: 56, height: 56)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(consistencyPercent) / 100.0)
+                        .stroke(AppColors.teal, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .frame(width: 56, height: 56)
+                        .rotationEffect(.degrees(-90))
+                    Text("\(consistencyPercent)%")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                }
+                Text("Consistency")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("this month")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.cardSurface)
+                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Consistency: \(consistencyPercent) percent this month")
+
+            // Exercise Library Progress
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .stroke(AppColors.cardBorder, lineWidth: 6)
+                        .frame(width: 56, height: 56)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(triedExerciseTypes.count) / CGFloat(Self.availableGames.count))
+                        .stroke(AppColors.indigo, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .frame(width: 56, height: 56)
+                        .rotationEffect(.degrees(-90))
+                    Text("\(triedExerciseTypes.count)/\(Self.availableGames.count)")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                }
+                Text("Games Tried")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("keep exploring!")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.cardSurface)
+                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(triedExerciseTypes.count) of \(Self.availableGames.count) games tried")
+        }
+    }
+
+    // MARK: - Personal Records
+
+    private var personalRecordsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Overview")
+            SectionHeader(title: "Personal Records")
 
-            let totalExercises = sessions.reduce(0) { $0 + $1.exercisesCompleted.count }
-            let totalTime = sessions.reduce(0) { $0 + $1.durationSeconds }
+            let records = Self.availableGames.compactMap { type -> (type: ExerciseType, best: Int)? in
+                let best = PersonalBestTracker.shared.best(for: type)
+                guard best > 0 else { return nil }
+                return (type: type, best: best)
+            }
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                statGridCard(icon: "list.bullet.rectangle", value: "\(sessions.count)", label: "Sessions", color: AppColors.teal)
-                statGridCard(icon: "figure.mind.and.body", value: "\(totalExercises)", label: "Exercises", color: AppColors.indigo)
-                statGridCard(icon: "clock.fill", value: totalTime.durationString, label: "Training Time", color: AppColors.violet)
-                statGridCard(icon: "star.fill", value: "\(user?.totalXP ?? 0)", label: "Total XP", color: AppColors.amber)
+            if records.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "trophy")
+                        .font(.system(size: 32))
+                        .foregroundStyle(AppColors.amber.opacity(0.4))
+                    Text("No records yet")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Play some games to set your first records!")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .background {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.cardSurface)
+                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(records.enumerated()), id: \.offset) { index, record in
+                        HStack(spacing: 12) {
+                            Image(systemName: record.type.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 32, height: 32)
+                                .background(exerciseColor(record.type), in: RoundedRectangle(cornerRadius: 8))
+
+                            Text(record.type.displayName)
+                                .font(.subheadline.weight(.medium))
+
+                            Spacer()
+
+                            Text(personalBestDisplay(type: record.type, value: record.best))
+                                .font(.subheadline.weight(.bold).monospacedDigit())
+                                .foregroundStyle(exerciseColor(record.type))
+
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(AppColors.amber)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 14)
+
+                        if index < records.count - 1 {
+                            Divider().padding(.leading, 58)
+                        }
+                    }
+                }
+                .background {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.cardSurface)
+                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+                }
             }
         }
     }
 
-    private func statGridCard(icon: String, value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(color)
-
-            Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(AppColors.textTertiary)
+    private func personalBestDisplay(type: ExerciseType, value: Int) -> String {
+        switch type {
+        case .reactionTime: return "\(1000 - value)ms"
+        case .dualNBack: return "N=\(value)"
+        case .sequentialMemory: return "\(value) digits"
+        case .visualMemory: return "Level \(value)"
+        default: return "\(value)"
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(AppColors.cardSurface)
-                .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+    }
+
+    private func exerciseColor(_ type: ExerciseType) -> Color {
+        switch type {
+        case .reactionTime: return AppColors.coral
+        case .colorMatch: return AppColors.violet
+        case .speedMatch: return AppColors.sky
+        case .visualMemory: return AppColors.indigo
+        case .sequentialMemory: return AppColors.teal
+        case .mathSpeed: return AppColors.amber
+        case .dualNBack: return AppColors.sky
+        case .chunkingTraining: return AppColors.teal
+        default: return AppColors.accent
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(value)")
+    }
+
+    // MARK: - Exercise Score Trends (Pro)
+
+    private var exerciseScoreTrends: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Performance by Exercise")
+
+            let recentExercises = exercises.prefix(100)
+            let grouped = Dictionary(grouping: recentExercises) { $0.type }
+            let matchedGames = Self.availableGames.filter { grouped[$0] != nil }
+
+            if matchedGames.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 32))
+                        .foregroundStyle(AppColors.indigo.opacity(0.4))
+                    Text("No performance data yet")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Complete some exercises to track your performance")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .background {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.cardSurface)
+                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+                }
+            } else {
+
+            VStack(spacing: 0) {
+                ForEach(Array(matchedGames.enumerated()), id: \.element) { index, type in
+                    let typeExercises = grouped[type]!.sorted(by: { $0.completedAt < $1.completedAt }).suffix(7)
+                    let scores = Array(typeExercises.map(\.score))
+                    let avg = scores.isEmpty ? 0.0 : scores.reduce(0, +) / Double(scores.count)
+                    let trend = scores.count >= 2 ? (scores.last! - scores.first!) : 0.0
+
+                    HStack(spacing: 12) {
+                        Image(systemName: type.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(exerciseColor(type), in: RoundedRectangle(cornerRadius: 8))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(type.displayName)
+                                .font(.subheadline.weight(.medium))
+                            Text("\(scores.count) session\(scores.count == 1 ? "" : "s")")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        Spacer()
+
+                        // Mini sparkline
+                        if scores.count >= 2 {
+                            miniSparkline(scores: scores, color: exerciseColor(type))
+                                .frame(width: 50, height: 20)
+                        }
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(avg.percentString)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                            if trend != 0 {
+                                Text("\(trend > 0 ? "+" : "")\(Int(trend * 100))%")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(trend > 0 ? Color.green : AppColors.coral)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+
+                    if index < matchedGames.count - 1 {
+                        Divider().padding(.leading, 58)
+                    }
+                }
+            }
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.cardSurface)
+                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
+            }
+
+            } // else
+        }
+    }
+
+    private func miniSparkline(scores: [Double], color: Color) -> some View {
+        GeometryReader { geo in
+            let maxVal = max(scores.max() ?? 1, 0.01)
+            let minVal = scores.min() ?? 0
+            let range = max(maxVal - minVal, 0.01)
+            Path { path in
+                for (index, score) in scores.enumerated() {
+                    let x = geo.size.width * CGFloat(index) / CGFloat(max(scores.count - 1, 1))
+                    let y = geo.size.height * (1 - CGFloat((score - minVal) / range))
+                    if index == 0 {
+                        path.move(to: CGPoint(x: x, y: y))
+                    } else {
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                }
+            }
+            .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+        }
     }
 
     // MARK: - Score Chart (Pro)
@@ -394,11 +655,19 @@ struct ProgressDashboardView: View {
             SectionHeader(title: "Score Trends")
 
             if viewModel.weeklyScores.isEmpty {
-                Text("Complete exercises to see trends")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 32))
+                        .foregroundStyle(AppColors.accent.opacity(0.4))
+                    Text("No trends yet")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Complete a few sessions to see your progress over time")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
             } else {
                 Chart {
                     ForEach(viewModel.weeklyScores.indices, id: \.self) { index in
@@ -433,6 +702,16 @@ struct ProgressDashboardView: View {
                     }
                 }
                 .chartYScale(domain: 0...1)
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                        AxisValueLabel {
+                            if let date = value.as(Date.self) {
+                                Text(date, format: .dateTime.month(.abbreviated).day())
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
                 .chartYAxis {
                     AxisMarks(values: [0, 0.25, 0.5, 0.75, 1.0]) { value in
                         AxisValueLabel {
@@ -449,75 +728,40 @@ struct ProgressDashboardView: View {
         .appCard()
     }
 
-    // MARK: - Memory Score (Pro) — Angular Gradient Ring
-
-    private var memoryScoreCard: some View {
-        VStack(spacing: 14) {
-            Text("MEMORY SCORE")
-                .font(.caption.weight(.bold))
-                .tracking(1)
-                .foregroundStyle(.secondary)
-
-            ZStack {
-                // Background ring
-                Circle()
-                    .stroke(AppColors.cardBorder, lineWidth: 10)
-                    .frame(width: 120, height: 120)
-
-                // Angular gradient ring
-                Circle()
-                    .trim(from: 0, to: min(viewModel.memoryScore, 1.0))
-                    .stroke(
-                        AngularGradient(
-                            colors: [AppColors.teal, AppColors.accent, AppColors.violet, AppColors.accent],
-                            center: .center,
-                            startAngle: .degrees(-90),
-                            endAngle: .degrees(270)
-                        ),
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                    )
-                    .frame(width: 120, height: 120)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.8, dampingFraction: 0.7), value: viewModel.memoryScore)
-
-                Text(viewModel.memoryScore.percentString)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.accent)
-            }
-
-            Text("7-day weighted average")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .heroCard(color: AppColors.teal)
-    }
-
     // MARK: - Pro Upsell
 
     private var proUpsell: some View {
         Button {
             showingPaywall = true
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Unlock Detailed Analytics")
-                        .font(.subheadline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.title2)
                         .foregroundStyle(.white)
-                    Text("Score trends, memory score, and more")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.8))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Unlock Pro Analytics")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("See where you're improving")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.6))
                 }
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                // What you get
+                HStack(spacing: 16) {
+                    proFeaturePill(icon: "chart.xyaxis.line", text: "Trends")
+                    proFeaturePill(icon: "arrow.up.right", text: "+/- Stats")
+                    proFeaturePill(icon: "sparkles", text: "Sparklines")
+                }
             }
             .padding(16)
             .background(
@@ -526,5 +770,18 @@ struct ProgressDashboardView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func proFeaturePill(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .bold))
+            Text(text)
+                .font(.system(size: 10, weight: .semibold))
+        }
+        .foregroundStyle(.white.opacity(0.8))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.white.opacity(0.15), in: Capsule())
     }
 }

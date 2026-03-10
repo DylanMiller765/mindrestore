@@ -190,11 +190,13 @@ struct MathSpeedView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = MathSpeedViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
+    @State private var shareImage: UIImage?
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -219,6 +221,21 @@ struct MathSpeedView: View {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
+                let card = ExerciseShareCard(
+                    exerciseName: "Math Speed",
+                    exerciseIcon: "function",
+                    accentColor: AppColors.amber,
+                    mainValue: "\(viewModel.correctCount)",
+                    mainLabel: "Correct",
+                    ratingText: viewModel.score >= 0.9 ? "Math Genius" : viewModel.score >= 0.7 ? "Quick Thinker" : "Keep Practicing",
+                    stats: [
+                        ("Time", String(format: "%.1fs", viewModel.elapsedSeconds)),
+                        ("Avg/Problem", String(format: "%.1fs", viewModel.averageTimePerProblem)),
+                        ("Score", viewModel.score.percentString)
+                    ],
+                    ctaText: "Can you solve faster?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
         }
         .onAppear {
@@ -480,19 +497,30 @@ struct MathSpeedView: View {
                 LeaderboardRankCard(
                     exerciseType: .mathSpeed,
                     userScore: viewModel.correctCount,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Math Speed: \(viewModel.correctCount) correct", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -560,7 +588,10 @@ struct MathSpeedView: View {
                 score: viewModel.score,
                 difficulty: viewModel.difficulty.difficultyValue,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .mathSpeed,
+                gameScore: viewModel.correctCount
             )
         }
     }

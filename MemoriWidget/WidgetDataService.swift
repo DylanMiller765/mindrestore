@@ -19,6 +19,7 @@ enum WidgetDataService {
         static let exercisesToday = "widget_exercisesToday"
         static let dailyGoal    = "widget_dailyGoal"
         static let trainedToday = "widget_trainedToday"
+        static let brainScore   = "widget_brainScore"
         static let lastUpdated  = "widget_lastUpdated"
     }
 
@@ -32,6 +33,7 @@ enum WidgetDataService {
         xpForNextLevel: Int = 0,
         exercisesToday: Int,
         dailyGoal: Int,
+        brainScore: Int = 0,
         trainedToday: Bool
     ) {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
@@ -42,6 +44,7 @@ enum WidgetDataService {
         defaults.set(xpForNextLevel, forKey: Key.xpForNextLevel)
         defaults.set(exercisesToday, forKey: Key.exercisesToday)
         defaults.set(dailyGoal, forKey: Key.dailyGoal)
+        defaults.set(brainScore, forKey: Key.brainScore)
         defaults.set(trainedToday, forKey: Key.trainedToday)
         defaults.set(Date().timeIntervalSince1970, forKey: Key.lastUpdated)
 
@@ -58,6 +61,7 @@ enum WidgetDataService {
         var xpForNextLevel: Int
         var exercisesToday: Int
         var dailyGoal: Int
+        var brainScore: Int
         var trainedToday: Bool
     }
 
@@ -71,6 +75,7 @@ enum WidgetDataService {
             xpForNextLevel: defaults?.integer(forKey: Key.xpForNextLevel) ?? 500,
             exercisesToday: defaults?.integer(forKey: Key.exercisesToday) ?? 0,
             dailyGoal: defaults?.integer(forKey: Key.dailyGoal) ?? 3,
+            brainScore: defaults?.integer(forKey: Key.brainScore) ?? 0,
             trainedToday: defaults?.bool(forKey: Key.trainedToday) ?? false
         )
     }

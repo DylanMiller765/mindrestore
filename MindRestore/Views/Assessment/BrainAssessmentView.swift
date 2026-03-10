@@ -7,6 +7,7 @@ struct BrainAssessmentView: View {
     @Environment(AchievementService.self) private var achievementService
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @State private var viewModel = BrainAssessmentViewModel()
     @State private var hasSaved = false
@@ -68,7 +69,7 @@ struct BrainAssessmentView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            if viewModel.phase != .intro && viewModel.phase != .results && viewModel.phase != .calculating {
+            if !isReactionFullscreen && viewModel.phase != .intro && viewModel.phase != .results && viewModel.phase != .calculating {
                 VStack(spacing: 4) {
                     HStack(spacing: 16) {
                         assessmentStepLabel("MEM", active: assessmentProgress >= 0.1 && assessmentProgress < 0.4)
@@ -82,6 +83,7 @@ struct BrainAssessmentView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 8)
+                .background(backgroundColor)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
@@ -92,6 +94,13 @@ struct BrainAssessmentView: View {
             .foregroundStyle(active ? AppColors.accent : .secondary)
             .frame(maxWidth: .infinity)
             .accessibilityLabel("\(text == "MEM" ? "Memory" : text == "SPD" ? "Speed" : "Visual") phase\(active ? ", active" : "")")
+    }
+
+    private var isReactionFullscreen: Bool {
+        switch viewModel.phase {
+        case .reactionWait, .reactionGo, .reactionTooEarly: return true
+        default: return false
+        }
     }
 
     private var backgroundColor: Color {
@@ -202,28 +211,44 @@ struct BrainAssessmentView: View {
 
     private var digitShowView: some View {
         VStack(spacing: 24) {
+            HStack {
+                Text("\(viewModel.currentDigits.count) digits")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.accent)
+                Spacer()
+                Text("Round \(viewModel.digitRound + 1)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+
+            ProgressView(value: Double(viewModel.displayDigitIndex + 1), total: Double(viewModel.currentDigits.count))
+                .tint(AppColors.accent)
+                .padding(.horizontal)
+
             Spacer()
 
-            Text("Round \(viewModel.digitRound + 1)")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            if let digit = viewModel.currentDisplayDigit {
-                Text("\(digit)")
-                    .font(.system(size: 96, weight: .bold, design: .rounded))
+            if viewModel.isShowingDigit {
+                Text(viewModel.currentDisplayDigit)
+                    .font(.system(size: 96, weight: .bold, design: .monospaced))
                     .foregroundStyle(AppColors.accent)
-                    .transition(.scale.combined(with: .opacity))
-                    .id("digit_\(viewModel.displayDigitIndex)")
-                    .accessibilityLabel("Remember this number: \(digit)")
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                    .animation(.easeOut(duration: 0.15), value: viewModel.displayDigitIndex)
+                    .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+            } else {
+                Text("...")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundStyle(.secondary)
             }
 
-            Text("\(viewModel.currentDigits.count) digits")
+            Spacer()
+
+            Text("Watch carefully")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
+                .padding(.bottom, 32)
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.displayDigitIndex)
+        .padding(.vertical, 24)
     }
 
     private var digitInputView: some View {
@@ -262,52 +287,60 @@ struct BrainAssessmentView: View {
     // MARK: - Reaction Time
 
     private var reactionWaitView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Text("Wait...")
-                .font(.system(size: 48, weight: .bold))
-                .foregroundStyle(.white)
-            Text("Round \(viewModel.reactionRound + 1) of 5")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.tapReaction()
-        }
+        Color(red: 0.8, green: 0.15, blue: 0.15)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 24) {
+                    Text("Round \(viewModel.reactionRound + 1) of 5")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.5))
+
+                    Text("Wait for green...")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+            )
+            .onTapGesture {
+                viewModel.tapReaction()
+            }
     }
 
     private var reactionGoView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Text("TAP!")
-                .font(.system(size: 64, weight: .bold))
-                .foregroundStyle(.white)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.tapReaction()
-        }
+        Color(red: 0.15, green: 0.75, blue: 0.3)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 24) {
+                    Image(systemName: "hand.tap.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.white)
+
+                    Text("TAP!")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            )
+            .onTapGesture {
+                viewModel.tapReaction()
+            }
     }
 
     private var reactionTooEarlyView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.white)
-            Text("Too early!")
-                .font(.title.bold())
-                .foregroundStyle(.white)
-            Text("Wait for the green screen")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.8))
-            Spacer()
-        }
+        Color(red: 0.85, green: 0.55, blue: 0.1)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 20) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.white)
+
+                    Text("Too Early!")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                    Text("Wait for the green screen before tapping")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            )
     }
 
     private var reactionResultView: some View {
@@ -445,45 +478,8 @@ struct BrainAssessmentView: View {
         let result = viewModel.createResult()
         modelContext.insert(result)
 
-        // Also save as an exercise for streak/session tracking
-        let exercise = Exercise(
-            type: .activeRecall,
-            difficulty: 3,
-            score: Double(viewModel.brainScore) / 1000.0,
-            durationSeconds: viewModel.durationSeconds
-        )
-        modelContext.insert(exercise)
-
-        let descriptor = FetchDescriptor<DailySession>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        let allSessions = (try? modelContext.fetch(descriptor)) ?? []
-        let session: DailySession
-        if let existing = allSessions.first(where: { Calendar.current.isDateInToday($0.date) }) {
-            session = existing
-        } else {
-            session = DailySession()
-            modelContext.insert(session)
-        }
-        session.addExercise(exercise)
-
-        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
-        let currentUser = users.first
-        currentUser?.updateStreak()
-        NotificationService.shared.cancelStreakRisk()
-        if let streak = currentUser?.currentStreak {
-            NotificationService.shared.scheduleMilestone(streak: streak)
-        }
-
-        if let currentUser {
-            _ = ContentView.awardXP(
-                user: currentUser,
-                score: Double(viewModel.brainScore) / 1000.0,
-                difficulty: 3,
-                achievementService: achievementService,
-                modelContext: modelContext
-            )
-        }
+        // Brain assessment does NOT count toward daily exercise limit
+        // It's a diagnostic tool, not a training session
 
         // Schedule retake reminder 7 days from now
         NotificationService.shared.scheduleRetakeReminder(lastAssessmentDate: Date())

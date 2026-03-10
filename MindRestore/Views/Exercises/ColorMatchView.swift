@@ -163,10 +163,12 @@ struct ColorMatchView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = ColorMatchViewModel()
     @State private var showingPaywall = false
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -189,6 +191,25 @@ struct ColorMatchView: View {
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Color Match")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: viewModel.phase) { _, newPhase in
+            if newPhase == .finished {
+                let card = ExerciseShareCard(
+                    exerciseName: "Color Match",
+                    exerciseIcon: "paintpalette.fill",
+                    accentColor: AppColors.violet,
+                    mainValue: viewModel.accuracy.percentString,
+                    mainLabel: "Accuracy",
+                    ratingText: viewModel.ratingText,
+                    stats: [
+                        ("Correct", "\(viewModel.correctCount) / \(viewModel.totalRounds)"),
+                        ("Avg Response", "\(viewModel.averageResponseMs) ms"),
+                        ("Score", viewModel.score.percentString)
+                    ],
+                    ctaText: "Test your focus"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+            }
+        }
     }
 
     // MARK: - Setup
@@ -399,19 +420,30 @@ struct ColorMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .colorMatch,
                     userScore: Int(viewModel.accuracy * 100),
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Color Match: \(viewModel.accuracy.percentString)", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -482,7 +514,10 @@ struct ColorMatchView: View {
                 score: viewModel.score,
                 difficulty: 3,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .colorMatch,
+                gameScore: Int(viewModel.accuracy * 100)
             )
         }
     }

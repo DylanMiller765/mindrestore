@@ -5,7 +5,8 @@ import SwiftUI
 /// The only difference: instead of saving to modelContext + dismissing,
 /// it passes the result back via `onComplete`.
 struct OnboardingAssessmentView: View {
-    let onComplete: (BrainScoreResult) -> Void
+    @Binding var backgroundColor: Color
+    let onComplete: (BrainScoreResult?) -> Void
 
     @State private var viewModel = BrainAssessmentViewModel()
     @State private var hasSaved = false
@@ -21,9 +22,16 @@ struct OnboardingAssessmentView: View {
         }
     }
 
+    private var isReactionFullscreen: Bool {
+        switch viewModel.phase {
+        case .reactionWait, .reactionGo, .reactionTooEarly: return true
+        default: return false
+        }
+    }
+
     var body: some View {
         ZStack {
-            backgroundColor.ignoresSafeArea()
+            phaseBgColor.ignoresSafeArea()
 
             switch viewModel.phase {
             case .intro:
@@ -63,7 +71,7 @@ struct OnboardingAssessmentView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            if viewModel.phase != .intro && viewModel.phase != .results && viewModel.phase != .calculating {
+            if !isReactionFullscreen && viewModel.phase != .intro && viewModel.phase != .results && viewModel.phase != .calculating {
                 VStack(spacing: 4) {
                     HStack(spacing: 16) {
                         assessmentStepLabel("MEM", active: assessmentProgress >= 0.1 && assessmentProgress < 0.4)
@@ -77,9 +85,22 @@ struct OnboardingAssessmentView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 8)
+                .background(phaseBgColor)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .onChange(of: viewModel.phase) { _, newPhase in
+            backgroundColor = phaseBackgroundColor(for: newPhase)
+        }
+    }
+
+    private func phaseBackgroundColor(for phase: AssessmentPhase) -> Color {
+        switch phase {
+        case .reactionWait: return Color(red: 0.8, green: 0.15, blue: 0.15)
+        case .reactionGo: return Color(red: 0.15, green: 0.75, blue: 0.15)
+        case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
+        default: return AppColors.pageBg
+        }
     }
 
     private func assessmentStepLabel(_ text: String, active: Bool) -> some View {
@@ -88,10 +109,10 @@ struct OnboardingAssessmentView: View {
             .frame(maxWidth: .infinity)
     }
 
-    private var backgroundColor: Color {
+    private var phaseBgColor: Color {
         switch viewModel.phase {
-        case .reactionWait: return Color(red: 0.8, green: 0.2, blue: 0.2)
-        case .reactionGo: return Color(red: 0.2, green: 0.8, blue: 0.2)
+        case .reactionWait: return Color(red: 0.8, green: 0.15, blue: 0.15)
+        case .reactionGo: return Color(red: 0.15, green: 0.75, blue: 0.15)
         case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
         default: return AppColors.pageBg
         }
@@ -140,11 +161,22 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
 
-            Button {
-                viewModel.start()
-            } label: {
-                Text("Begin Assessment")
-                    .gradientButton()
+            VStack(spacing: 12) {
+                Button {
+                    viewModel.start()
+                } label: {
+                    Text("Begin Assessment")
+                        .gradientButton()
+                }
+
+                Button {
+                    onComplete(nil)
+                } label: {
+                    Text("Skip for now")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
@@ -195,20 +227,27 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Text("Round \(viewModel.digitRound + 1)")
-                .font(.caption.weight(.medium))
+            Text("Watch carefully")
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            if let digit = viewModel.currentDisplayDigit {
-                Text("\(digit)")
-                    .font(.system(size: 96, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.accent)
-                    .transition(.scale.combined(with: .opacity))
-                    .id("digit_\(viewModel.displayDigitIndex)")
+            Text(viewModel.isShowingDigit ? viewModel.currentDisplayDigit : " ")
+                .font(.system(size: 96, weight: .bold, design: .monospaced))
+                .foregroundStyle(AppColors.accent)
+                .transition(.scale.combined(with: .opacity))
+                .id("digit_\(viewModel.displayDigitIndex)")
+
+            // Progress dots
+            HStack(spacing: 6) {
+                ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                    Circle()
+                        .fill(i <= viewModel.displayDigitIndex ? AppColors.accent : Color.gray.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                }
             }
 
-            Text("\(viewModel.currentDigits.count) digits")
-                .font(.subheadline)
+            Text("Round \(viewModel.digitRound + 1) · \(viewModel.currentDigits.count) digits")
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -251,52 +290,53 @@ struct OnboardingAssessmentView: View {
     // MARK: - Reaction Time
 
     private var reactionWaitView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Text("Wait...")
-                .font(.system(size: 48, weight: .bold))
-                .foregroundStyle(.white)
-            Text("Round \(viewModel.reactionRound + 1) of 5")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.tapReaction()
-        }
+        Color(red: 0.8, green: 0.15, blue: 0.15)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 24) {
+                    Text("Round \(viewModel.reactionRound + 1) of 5")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("Wait for green...")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+            )
+            .onTapGesture { viewModel.tapReaction() }
     }
 
     private var reactionGoView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Text("TAP!")
-                .font(.system(size: 64, weight: .bold))
-                .foregroundStyle(.white)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.tapReaction()
-        }
+        Color(red: 0.15, green: 0.75, blue: 0.15)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 16) {
+                    Text("TAP!")
+                        .font(.system(size: 64, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Round \(viewModel.reactionRound + 1) of 5")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            )
+            .onTapGesture { viewModel.tapReaction() }
     }
 
     private var reactionTooEarlyView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.white)
-            Text("Too early!")
-                .font(.title.bold())
-                .foregroundStyle(.white)
-            Text("Wait for the green screen")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.8))
-            Spacer()
-        }
+        Color(red: 0.9, green: 0.5, blue: 0.1)
+            .ignoresSafeArea()
+            .overlay(
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.white)
+                    Text("Too early!")
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
+                    Text("Wait for the green screen")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            )
     }
 
     private var reactionResultView: some View {

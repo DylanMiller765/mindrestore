@@ -10,7 +10,7 @@ final class SpeedMatchViewModel {
     var phase: Phase = .setup
     var startTime: Date?
     var currentRound = 0
-    let totalRounds = 25
+    let totalRounds = 30
     var correctCount = 0
     var currentSymbol: String = ""
     var previousSymbol: String = ""
@@ -20,17 +20,33 @@ final class SpeedMatchViewModel {
     var roundStartTime: Date?
     var falsePositives = 0
     var misses = 0
+    var currentStreak = 0
+    var bestStreak = 0
+    var difficulty = 1 // 1-3, affects symbol count and speed
 
-    let symbols = ["star.fill", "heart.fill", "moon.fill", "bolt.fill", "flame.fill", "leaf.fill", "drop.fill", "snowflake"]
+    // Difficulty 1: 6 symbols, Difficulty 2: 8, Difficulty 3: 10 + similar shapes
+    var activeSymbols: [String] {
+        switch difficulty {
+        case 1: return ["star.fill", "heart.fill", "moon.fill", "bolt.fill", "flame.fill", "leaf.fill"]
+        case 2: return ["star.fill", "heart.fill", "moon.fill", "bolt.fill", "flame.fill", "leaf.fill", "drop.fill", "snowflake"]
+        default: return ["star.fill", "heart.fill", "moon.fill", "bolt.fill", "flame.fill", "leaf.fill", "drop.fill", "snowflake", "circle.fill", "diamond.fill"]
+        }
+    }
+
+    var feedbackDelay: Double {
+        switch difficulty {
+        case 1: return 0.5
+        case 2: return 0.35
+        default: return 0.25
+        }
+    }
 
     var score: Double {
         guard totalRounds > 0 else { return 0 }
         return Double(correctCount) / Double(totalRounds)
     }
 
-    var accuracy: Double {
-        score
-    }
+    var accuracy: Double { score }
 
     var averageResponseMs: Int {
         guard !responseTimes.isEmpty else { return 0 }
@@ -44,14 +60,22 @@ final class SpeedMatchViewModel {
 
     var ratingText: String {
         let pct = accuracy
-        if pct >= 0.95 { return "Perfect!" }
-        if pct >= 0.85 { return "Excellent!" }
-        if pct >= 0.70 { return "Great Job!" }
-        if pct >= 0.50 { return "Good Effort!" }
-        return "Keep Practicing!"
+        if pct >= 0.95 { return "Lightning Fast!" }
+        if pct >= 0.85 { return "Sharp Mind!" }
+        if pct >= 0.70 { return "Quick Thinker!" }
+        if pct >= 0.50 { return "Getting Faster!" }
+        return "Keep Training!"
     }
 
-    // Generate whether next card should match (~30% match rate)
+    var speedRating: String {
+        let avg = averageResponseMs
+        if avg == 0 { return "—" }
+        if avg < 500 { return "Elite" }
+        if avg < 700 { return "Fast" }
+        if avg < 1000 { return "Average" }
+        return "Warming Up"
+    }
+
     private func nextShouldMatch() -> Bool {
         Double.random(in: 0...1) < 0.30
     }
@@ -62,6 +86,8 @@ final class SpeedMatchViewModel {
         correctCount = 0
         falsePositives = 0
         misses = 0
+        currentStreak = 0
+        bestStreak = 0
         responseTimes = []
         lastAnswerCorrect = nil
         previousSymbol = ""
@@ -75,8 +101,7 @@ final class SpeedMatchViewModel {
         currentRound += 1
 
         if currentRound == 1 {
-            // First card — pick a random symbol, no match possible
-            currentSymbol = symbols.randomElement()!
+            currentSymbol = activeSymbols.randomElement()!
             isMatch = false
         } else {
             let shouldMatch = nextShouldMatch()
@@ -84,10 +109,9 @@ final class SpeedMatchViewModel {
                 currentSymbol = previousSymbol
                 isMatch = true
             } else {
-                // Pick a different symbol
-                var next = symbols.randomElement()!
+                var next = activeSymbols.randomElement()!
                 while next == previousSymbol {
-                    next = symbols.randomElement()!
+                    next = activeSymbols.randomElement()!
                 }
                 currentSymbol = next
                 isMatch = false
@@ -110,10 +134,15 @@ final class SpeedMatchViewModel {
 
         if correct {
             correctCount += 1
-        } else if yes && !isMatch {
-            falsePositives += 1
-        } else if !yes && isMatch {
-            misses += 1
+            currentStreak += 1
+            bestStreak = max(bestStreak, currentStreak)
+        } else {
+            currentStreak = 0
+            if yes && !isMatch {
+                falsePositives += 1
+            } else if !yes && isMatch {
+                misses += 1
+            }
         }
 
         if correct {
@@ -124,8 +153,7 @@ final class SpeedMatchViewModel {
 
         phase = .feedback
 
-        // Brief feedback then advance
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + feedbackDelay) { [weak self] in
             guard let self else { return }
             if self.currentRound >= self.totalRounds {
                 self.phase = .finished
@@ -143,6 +171,8 @@ final class SpeedMatchViewModel {
         correctCount = 0
         falsePositives = 0
         misses = 0
+        currentStreak = 0
+        bestStreak = 0
         responseTimes = []
         lastAnswerCorrect = nil
         previousSymbol = ""
@@ -159,10 +189,12 @@ struct SpeedMatchView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = SpeedMatchViewModel()
     @State private var showingPaywall = false
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -186,20 +218,38 @@ struct SpeedMatchView: View {
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Speed Match")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: viewModel.phase) { _, newPhase in
+            if newPhase == .finished {
+                let card = ExerciseShareCard(
+                    exerciseName: "Speed Match",
+                    exerciseIcon: "bolt.square.fill",
+                    accentColor: AppColors.sky,
+                    mainValue: "\(viewModel.averageResponseMs)ms",
+                    mainLabel: "Avg Response",
+                    ratingText: viewModel.ratingText,
+                    stats: [
+                        ("Accuracy", viewModel.accuracy.percentString),
+                        ("Speed", viewModel.speedRating),
+                        ("Best Streak", "\(viewModel.bestStreak)")
+                    ],
+                    ctaText: "How fast can you match?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+            }
+        }
     }
 
     // MARK: - Setup
 
     private var setupView: some View {
-        VStack(spacing: 32) {
-            Spacer()
-
+        ScrollView {
+        VStack(spacing: 24) {
             ZStack {
                 Circle()
                     .fill(AppColors.cardBorder)
                     .frame(width: 120, height: 120)
                     .accessibilityHidden(true)
-                Image(systemName: "brain.head.profile")
+                Image(systemName: "bolt.square.fill")
                     .font(.system(size: 52, weight: .medium))
                     .foregroundStyle(AppColors.accent)
             }
@@ -207,22 +257,75 @@ struct SpeedMatchView: View {
             VStack(spacing: 8) {
                 Text("Speed Match")
                     .font(.title.weight(.bold))
-                Text("Does this match the last one?")
+                Text("How fast can you spot patterns?")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                infoRow(icon: "eye", text: "Symbols appear one at a time")
-                infoRow(icon: "checkmark.circle", text: "Tap YES if it matches the previous symbol")
-                infoRow(icon: "xmark.circle", text: "Tap NO if it's different")
-                infoRow(icon: "timer", text: "25 rounds — be fast and accurate")
+            // What this trains
+            VStack(alignment: .leading, spacing: 10) {
+                Text("WHAT THIS TRAINS")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .tracking(1)
+
+                infoRow(icon: "bolt.fill", text: "Processing speed — how fast your brain processes visual info")
+                infoRow(icon: "eye.fill", text: "Pattern recognition — quickly identify same vs. different")
+                infoRow(icon: "brain.head.profile", text: "Inhibitory control — resist impulsive wrong answers")
             }
             .appCard()
             .padding(.horizontal)
 
-            Spacer()
+            // Difficulty picker
+            VStack(spacing: 12) {
+                Text("Difficulty")
+                    .font(.headline)
+
+                HStack(spacing: 10) {
+                    ForEach(1...3, id: \.self) { level in
+                        Button {
+                            viewModel.difficulty = level
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(level == 1 ? "Easy" : level == 2 ? "Medium" : "Hard")
+                                    .font(.subheadline.weight(.bold))
+                                Text(level == 1 ? "6 symbols" : level == 2 ? "8 symbols" : "10 symbols")
+                                    .font(.caption2)
+                                    .foregroundStyle(viewModel.difficulty == level ? .white.opacity(0.7) : .secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(viewModel.difficulty == level ? AppColors.accentGradient : LinearGradient(colors: [AppColors.cardSurface], startPoint: .top, endPoint: .bottom))
+                            )
+                            .foregroundStyle(viewModel.difficulty == level ? .white : .primary)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(viewModel.difficulty == level ? Color.clear : Color(.separator).opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                    }
+                }
+            }
+            .appCard()
+            .padding(.horizontal)
+
+            // How to play
+            VStack(alignment: .leading, spacing: 10) {
+                Text("HOW TO PLAY")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .tracking(1)
+
+                infoRow(icon: "eye", text: "Symbols appear one at a time")
+                infoRow(icon: "checkmark.circle", text: "Tap YES if it matches the previous symbol")
+                infoRow(icon: "xmark.circle", text: "Tap NO if it's different")
+                infoRow(icon: "timer", text: "30 rounds — be fast and accurate")
+            }
+            .appCard()
+            .padding(.horizontal)
 
             Button {
                 viewModel.startGame()
@@ -234,6 +337,7 @@ struct SpeedMatchView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        }
     }
 
     private func infoRow(icon: String, text: String) -> some View {
@@ -251,12 +355,24 @@ struct SpeedMatchView: View {
 
     private var gameView: some View {
         VStack(spacing: 24) {
-            // Header: round counter + progress
+            // Header: round counter + streak + progress
             HStack {
                 Text("Round \(viewModel.currentRound)")
                     .font(.headline)
                     .foregroundStyle(AppColors.accent)
                 Spacer()
+                if viewModel.currentStreak >= 3 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(AppColors.coral)
+                        Text("\(viewModel.currentStreak)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(AppColors.coral)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppColors.coral.opacity(0.12), in: Capsule())
+                }
                 Text("\(viewModel.currentRound) / \(viewModel.totalRounds)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
@@ -400,16 +516,16 @@ struct SpeedMatchView: View {
                 VStack(spacing: 12) {
                     resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
                         .accessibilityElement(children: .combine)
-                    resultRow(label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalRounds)")
-                        .accessibilityElement(children: .combine)
                     resultRow(label: "Avg Response", value: "\(viewModel.averageResponseMs) ms")
+                        .accessibilityElement(children: .combine)
+                    resultRow(label: "Speed Rating", value: viewModel.speedRating)
                         .accessibilityElement(children: .combine)
 
                     Divider()
 
-                    resultRow(label: "False Positives", value: "\(viewModel.falsePositives)")
+                    resultRow(label: "Best Streak", value: "\(viewModel.bestStreak)")
                         .accessibilityElement(children: .combine)
-                    resultRow(label: "Misses", value: "\(viewModel.misses)")
+                    resultRow(label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalRounds)")
                         .accessibilityElement(children: .combine)
                     resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
                         .accessibilityElement(children: .combine)
@@ -420,19 +536,30 @@ struct SpeedMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .speedMatch,
                     userScore: Int(viewModel.accuracy * 100),
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Speed Match: \(viewModel.accuracy.percentString)", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -503,7 +630,10 @@ struct SpeedMatchView: View {
                 score: viewModel.score,
                 difficulty: 1,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .speedMatch,
+                gameScore: Int(viewModel.accuracy * 100)
             )
         }
     }

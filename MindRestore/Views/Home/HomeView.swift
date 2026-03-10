@@ -89,9 +89,11 @@ struct HomeView: View {
                     streakWeekCard
                         .staggeredEntrance(index: 2)
 
-                    // Today's Session (curated workout)
-                    todaysSessionCard
-                        .staggeredEntrance(index: 3)
+                    // Today's Session (curated workout) — hide once goal met
+                    if viewModel.todaySessionCount < viewModel.dailyGoal {
+                        todaysSessionCard
+                            .staggeredEntrance(index: 3)
+                    }
 
                     // Daily Challenge — high priority, brings users back
                     dailyChallengeCard
@@ -101,17 +103,11 @@ struct HomeView: View {
                         getStartedCard
                             .staggeredEntrance(index: 5)
                     } else {
-                        // XP Progress
-                        if let user {
-                            levelBar(user)
-                                .staggeredEntrance(index: 5)
-                        }
-
                         // Brain Score History Chart
                         if brainScores.count >= 2 {
                             BrainScoreChart(scores: brainScores, height: 150, showHeader: true)
                                 .glowingCard(color: AppColors.accent, intensity: 0.15)
-                                .staggeredEntrance(index: 6)
+                                .staggeredEntrance(index: 5)
                         }
 
                         TrainingLimitBanner(trainingMinutes: trainingManager.todayTrainingMinutes)

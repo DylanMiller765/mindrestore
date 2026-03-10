@@ -55,6 +55,7 @@
 		B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1091C68DA4412E2434189 /* EducationFeedView.swift */; };
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
 		BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB01 /* PaywallTriggerService.swift */; };
+		DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEP0001000000000000DD01 /* DeepLinkRouter.swift */; };
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
 		C93B5314318FD0ED427CDDE3 /* BrainScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05276B66D71D60017E61FBAC /* BrainScore.swift */; };
@@ -75,6 +76,7 @@
 		DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD07 /* ChunkingTrainingView.swift */; };
 		DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD08 /* ProspectiveMemoryView.swift */; };
 		DD000001000000000000DD09 /* SoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD09 /* SoundService.swift */; };
+		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
 		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
 		DD000001000000000000DD10 /* AchievementDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD10 /* AchievementDetailView.swift */; };
@@ -176,6 +178,7 @@
 		ACBF181734EEB2DE916FE0ED /* EducationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationDetailView.swift; sourceTree = "<group>"; };
 		B0EF9610B969A47D9CF45857 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		DEEP0001000000000000DD01 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
@@ -195,6 +198,7 @@
 		DD000002000000000000DD07 /* ChunkingTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkingTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD08 /* ProspectiveMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectiveMemoryView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD09 /* SoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundService.swift; sourceTree = "<group>"; };
+		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD10 /* AchievementDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementDetailView.swift; sourceTree = "<group>"; };
@@ -358,10 +362,12 @@
 				EE000002000000000000EE03 /* GameCenterService.swift */,
 				AA000002000000000000AA04 /* LeaderboardService.swift */,
 				E02E7BAD4ADED91F69A38C14 /* NotificationService.swift */,
+				DEEP0001000000000000DD01 /* DeepLinkRouter.swift */,
 				BB000002000000000000BB01 /* PaywallTriggerService.swift */,
 				DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */,
 				49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */,
 				4ABD9792A0473A14E54F8F87 /* StoreService.swift */,
+				SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */,
 				DD000002000000000000DD09 /* SoundService.swift */,
 				II000002000000000000II01 /* HapticService.swift */,
 				II000002000000000000II02 /* ReviewPromptService.swift */,
@@ -677,6 +683,7 @@
 				B2B156597E1FCA3F78F1370F /* Extensions.swift in Sources */,
 				EE000001000000000000EE03 /* GameCenterService.swift in Sources */,
 				DD000001000000000000DD03 /* MixedTrainingView.swift in Sources */,
+				SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */,
 				DD000001000000000000DD09 /* SoundService.swift in Sources */,
 				II000001000000000000II01 /* HapticService.swift in Sources */,
 				II000001000000000000II02 /* ReviewPromptService.swift in Sources */,
@@ -697,6 +704,7 @@
 				BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */,
 				E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */,
 				BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */,
+				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
 				CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */,
 				15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */,
@@ -761,7 +769,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -821,7 +829,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -847,7 +855,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -913,7 +921,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;

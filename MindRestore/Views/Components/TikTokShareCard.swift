@@ -11,15 +11,16 @@ private func brainTypeSwiftColor(_ type: BrainType) -> Color {
     }
 }
 
-// MARK: - Shared Components
+// MARK: - Shared Components (Warm Light Design)
 
+/// Warm cream background matching the app's pageBg
 private struct CardBackground: View {
     var body: some View {
         LinearGradient(
             colors: [
-                Color(red: 0.04, green: 0.04, blue: 0.08),
-                Color(red: 0.06, green: 0.08, blue: 0.18),
-                Color(red: 0.04, green: 0.04, blue: 0.12)
+                Color(red: 0.969, green: 0.961, blue: 0.941), // #F7F5F0
+                Color(red: 0.955, green: 0.945, blue: 0.925), // slightly warmer
+                Color(red: 0.969, green: 0.961, blue: 0.941)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -36,7 +37,7 @@ private struct BrandingHeader: View {
             Text("MEMORI")
                 .font(.system(size: 12, weight: .heavy))
                 .tracking(3)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40))
         }
     }
 }
@@ -45,32 +46,29 @@ private struct BrandingFooter: View {
     var body: some View {
         Text("Test yours free \u{2014} Memori")
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.35))
+            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
     }
 }
 
-private struct GlowingPill<Content: View>: View {
+/// Pill badge with soft colored background
+private struct RatingPill<Content: View>: View {
     let color: Color
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         content()
             .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(color)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(color.opacity(0.25))
-                    .overlay(
-                        Capsule()
-                            .stroke(color.opacity(0.6), lineWidth: 1.5)
-                    )
+                    .fill(color.opacity(0.12))
             )
     }
 }
 
-// MARK: - Score Bar
+// MARK: - Score Bar (Light)
 
 private struct ScoreBar: View {
     let label: String
@@ -87,13 +85,13 @@ private struct ScoreBar: View {
         HStack(spacing: 10) {
             Text(label)
                 .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(color)
                 .frame(width: 36, alignment: .leading)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(.white.opacity(0.15))
+                        .fill(color.opacity(0.12))
 
                     RoundedRectangle(cornerRadius: 6)
                         .fill(color)
@@ -110,7 +108,22 @@ private struct ScoreBar: View {
     }
 }
 
-// MARK: - 1. TikTokBrainScoreCard
+/// Inner card surface (white card on cream bg)
+private struct ShareCardSurface<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        content()
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+            )
+    }
+}
+
+// MARK: - 1. BrainScoreShareCard
 
 struct TikTokBrainScoreCard: View {
     let brainScore: Int
@@ -127,88 +140,76 @@ struct TikTokBrainScoreCard: View {
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
-
                 BrandingHeader()
+                Spacer().frame(height: 28)
 
-                Spacer().frame(height: 36)
+                ShareCardSurface {
+                    VStack(spacing: 16) {
+                        // Big brain score
+                        Text("\(brainScore)")
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColors.accent)
 
-                // Massive brain score
-                Text("\(brainScore)")
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(AppColors.accent)
+                        Text("BRAIN SCORE")
+                            .font(.system(size: 13, weight: .heavy))
+                            .tracking(4)
+                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
 
-                Text("BRAIN SCORE")
-                    .font(.system(size: 14, weight: .heavy))
-                    .tracking(4)
-                    .foregroundStyle(.white.opacity(0.5))
+                        // Brain Age
+                        Text("Brain Age: \(brainAge)")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
 
-                Spacer().frame(height: 20)
-
-                // Brain Age
-                Text("BRAIN AGE: \(brainAge)")
-                    .font(.system(size: 28, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
-
-                Spacer().frame(height: 20)
-
-                // Brain type badge
-                HStack(spacing: 8) {
-                    Image(systemName: brainType.icon)
-                        .font(.system(size: 18, weight: .bold))
+                        // Brain type badge
+                        HStack(spacing: 6) {
+                            Image(systemName: brainType.icon)
+                                .font(.system(size: 14, weight: .bold))
+                            Text(brainType.displayName)
+                                .font(.system(size: 13, weight: .bold))
+                        }
                         .foregroundStyle(brainTypeSwiftColor(brainType))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule().fill(brainTypeSwiftColor(brainType).opacity(0.12))
+                        )
 
-                    Text(brainType.displayName.uppercased())
-                        .font(.system(size: 16, weight: .heavy))
-                        .tracking(1.5)
-                        .foregroundStyle(brainTypeSwiftColor(brainType))
-                }
+                        // Percentile
+                        RatingPill(color: AppColors.accent) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chart.bar.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Better than \(percentile)% of players")
+                            }
+                        }
 
-                Text(brainType.description)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .padding(.top, 4)
-
-                Spacer().frame(height: 24)
-
-                // Percentile pill
-                GlowingPill(color: AppColors.accent) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chart.bar.fill")
-                            .font(.system(size: 12, weight: .bold))
-                        Text("Better than \(percentile)% of players")
+                        // Score breakdown
+                        VStack(spacing: 8) {
+                            Divider()
+                            ScoreBar(label: "MEM", value: digitScore, maxValue: 100, color: AppColors.violet)
+                            ScoreBar(label: "SPD", value: reactionScore, maxValue: 100, color: AppColors.coral)
+                            ScoreBar(label: "VIS", value: visualScore, maxValue: 100, color: AppColors.sky)
+                        }
                     }
                 }
-
-                Spacer().frame(height: 32)
-
-                // Score breakdown bars
-                VStack(spacing: 10) {
-                    ScoreBar(label: "MEM", value: digitScore, maxValue: 100, color: AppColors.violet)
-                    ScoreBar(label: "SPD", value: reactionScore, maxValue: 100, color: AppColors.coral)
-                    ScoreBar(label: "VIS", value: visualScore, maxValue: 100, color: AppColors.sky)
-                }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 24)
 
                 Spacer()
 
-                // CTA
                 Text("Can you beat me?")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
 
-                Spacer().frame(height: 12)
-
+                Spacer().frame(height: 10)
                 BrandingFooter()
-
                 Spacer().frame(height: 28)
             }
         }
         .frame(width: 360, height: 640)
-        .clipShape(RoundedRectangle(cornerRadius: 0))
     }
 }
 
-// MARK: - 2. TikTokChallengeCard
+// MARK: - 2. ChallengeShareCard
 
 struct TikTokChallengeCard: View {
     let challengerName: String
@@ -221,101 +222,77 @@ struct TikTokChallengeCard: View {
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
-
                 BrandingHeader()
-
                 Spacer().frame(height: 28)
 
-                // CHALLENGE header
-                Text("CHALLENGE")
-                    .font(.system(size: 42, weight: .bold))
-                    .tracking(6)
-                    .foregroundStyle(AppColors.coral)
+                ShareCardSurface {
+                    VStack(spacing: 16) {
+                        Text("CHALLENGE")
+                            .font(.system(size: 36, weight: .bold))
+                            .tracking(6)
+                            .foregroundStyle(AppColors.coral)
 
-                Text(challengeType.uppercased())
-                    .font(.system(size: 14, weight: .heavy))
-                    .tracking(3)
-                    .foregroundStyle(.white.opacity(0.4))
-                    .padding(.top, 6)
+                        Text(challengeType.uppercased())
+                            .font(.system(size: 13, weight: .heavy))
+                            .tracking(3)
+                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
 
-                Spacer().frame(height: 36)
+                        Divider()
 
-                // Challenger
-                VStack(spacing: 8) {
-                    Text(challengerName.uppercased())
-                        .font(.system(size: 20, weight: .bold))
-                        .tracking(1)
-                        .foregroundStyle(.white)
+                        VStack(spacing: 6) {
+                            Text(challengerName)
+                                .font(.system(size: 18, weight: .bold))
 
-                    Text("\(challengerScore)")
-                        .font(.system(size: 52, weight: .bold, design: .monospaced))
-                        .foregroundStyle(AppColors.accent)
-                }
+                            Text("\(challengerScore)")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColors.accent)
+                        }
 
-                Spacer().frame(height: 20)
+                        // VS
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.coral)
+                                .frame(width: 52, height: 52)
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
 
-                // VS Badge
-                ZStack {
-                    Circle()
-                        .fill(AppColors.coral)
-                        .frame(width: 64, height: 64)
+                        // Mystery slot
+                        VStack(spacing: 6) {
+                            Text("???")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(.secondary.opacity(0.3))
 
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-
-                Text("VS")
-                    .font(.system(size: 18, weight: .bold))
-                    .tracking(4)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.top, 8)
-
-                Spacer().frame(height: 20)
-
-                // Mystery challenger slot
-                VStack(spacing: 8) {
-                    Text("???")
-                        .font(.system(size: 52, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.2))
-
-                    Text("YOUR SCORE HERE")
-                        .font(.system(size: 14, weight: .heavy))
-                        .tracking(2)
-                        .foregroundStyle(.white.opacity(0.3))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [.white.opacity(0.15), .white.opacity(0.05)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            style: StrokeStyle(lineWidth: 2, dash: [8, 6])
+                            Text("YOUR SCORE")
+                                .font(.system(size: 12, weight: .heavy))
+                                .tracking(2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(
+                                    Color.secondary.opacity(0.2),
+                                    style: StrokeStyle(lineWidth: 2, dash: [8, 6])
+                                )
                         )
-                )
-                .padding(.horizontal, 50)
+                    }
+                }
+                .padding(.horizontal, 24)
 
                 Spacer()
 
-                // CTA
                 Text("Accept the Challenge")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
-                    .background(
-                        AppColors.coral,
-                        in: Capsule()
-                    )
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(AppColors.coral, in: Capsule())
 
-                Spacer().frame(height: 16)
-
+                Spacer().frame(height: 12)
                 BrandingFooter()
-
                 Spacer().frame(height: 28)
             }
         }
@@ -323,7 +300,7 @@ struct TikTokChallengeCard: View {
     }
 }
 
-// MARK: - 3. TikTokDuelResultCard
+// MARK: - 3. DuelResultShareCard
 
 struct TikTokDuelResultCard: View {
     let player1Name: String
@@ -340,95 +317,73 @@ struct TikTokDuelResultCard: View {
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
-
                 BrandingHeader()
-
                 Spacer().frame(height: 24)
 
-                // 1v1 DUEL header
-                Text("1v1 DUEL")
-                    .font(.system(size: 44, weight: .bold))
-                    .tracking(4)
-                    .foregroundStyle(AppColors.violet)
+                ShareCardSurface {
+                    VStack(spacing: 16) {
+                        Text("1v1 DUEL")
+                            .font(.system(size: 36, weight: .bold))
+                            .tracking(4)
+                            .foregroundStyle(AppColors.violet)
 
-                Text(exerciseType.uppercased())
-                    .font(.system(size: 14, weight: .heavy))
-                    .tracking(3)
-                    .foregroundStyle(.white.opacity(0.4))
-                    .padding(.top, 6)
+                        Text(exerciseType.uppercased())
+                            .font(.system(size: 13, weight: .heavy))
+                            .tracking(3)
+                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
 
-                Spacer().frame(height: 44)
+                        Divider()
 
-                // Side by side comparison
-                HStack(spacing: 0) {
-                    // Player 1
-                    playerColumn(
-                        name: player1Name,
-                        score: player1Score,
-                        isWinner: player1Wins,
-                        color: AppColors.accent
-                    )
+                        // Side by side
+                        HStack(spacing: 0) {
+                            playerColumn(
+                                name: player1Name,
+                                score: player1Score,
+                                isWinner: player1Wins,
+                                color: AppColors.accent
+                            )
 
-                    // VS divider
-                    VStack(spacing: 8) {
-                        Rectangle()
-                            .fill(.white.opacity(0.1))
-                            .frame(width: 1.5, height: 40)
+                            VStack(spacing: 6) {
+                                Rectangle()
+                                    .fill(Color.secondary.opacity(0.15))
+                                    .frame(width: 1, height: 30)
+                                Text("VS")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                Rectangle()
+                                    .fill(Color.secondary.opacity(0.15))
+                                    .frame(width: 1, height: 30)
+                            }
+                            .frame(width: 44)
 
-                        Text("VS")
-                            .font(.system(size: 14, weight: .bold))
-                            .tracking(2)
-                            .foregroundStyle(.white.opacity(0.4))
+                            playerColumn(
+                                name: player2Name,
+                                score: player2Score,
+                                isWinner: !player1Wins,
+                                color: AppColors.coral
+                            )
+                        }
 
-                        Rectangle()
-                            .fill(.white.opacity(0.1))
-                            .frame(width: 1.5, height: 40)
+                        // Winner
+                        HStack(spacing: 6) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(AppColors.amber)
+                            Text("\(player1Wins ? player1Name : player2Name) wins!")
+                                .font(.system(size: 18, weight: .bold))
+                        }
                     }
-                    .frame(width: 50)
-
-                    // Player 2
-                    playerColumn(
-                        name: player2Name,
-                        score: player2Score,
-                        isWinner: !player1Wins,
-                        color: AppColors.coral
-                    )
                 }
-                .padding(.horizontal, 20)
-
-                Spacer().frame(height: 40)
-
-                // Winner announcement
-                HStack(spacing: 8) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(Color(red: 1.0, green: 0.84, blue: 0.0))
-
-                    Text("\(player1Wins ? player1Name : player2Name) wins!")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-
-                // Score difference
-                let diff = abs(player1Score - player2Score)
-                if diff > 0 {
-                    Text("by \(diff) points")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                        .padding(.top, 6)
-                }
+                .padding(.horizontal, 24)
 
                 Spacer()
 
-                // CTA
                 Text("Think you can do better?")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.primary)
 
-                Spacer().frame(height: 16)
-
+                Spacer().frame(height: 12)
                 BrandingFooter()
-
                 Spacer().frame(height: 28)
             }
         }
@@ -437,45 +392,39 @@ struct TikTokDuelResultCard: View {
 
     @ViewBuilder
     private func playerColumn(name: String, score: Int, isWinner: Bool, color: Color) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             if isWinner {
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color(red: 1.0, green: 0.84, blue: 0.0))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(AppColors.amber)
             } else {
-                Spacer().frame(height: 24)
+                Spacer().frame(height: 18)
             }
 
-            // Avatar circle
             ZStack {
                 Circle()
-                    .fill(color.opacity(isWinner ? 0.25 : 0.1))
-                    .frame(width: 72, height: 72)
+                    .fill(color.opacity(isWinner ? 0.15 : 0.06))
+                    .frame(width: 56, height: 56)
 
                 if isWinner {
                     Circle()
-                        .stroke(color.opacity(0.6), lineWidth: 2.5)
-                        .frame(width: 72, height: 72)
+                        .stroke(color.opacity(0.4), lineWidth: 2)
+                        .frame(width: 56, height: 56)
                 }
 
                 Text(String(name.prefix(1)).uppercased())
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(isWinner ? color : .white.opacity(0.5))
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(isWinner ? color : .secondary)
             }
 
-            Text(name.uppercased())
-                .font(.system(size: 13, weight: .heavy))
-                .tracking(1)
-                .foregroundStyle(isWinner ? .white : .white.opacity(0.5))
+            Text(name)
+                .font(.system(size: 12, weight: .heavy))
+                .foregroundStyle(isWinner ? .primary : .secondary)
                 .lineLimit(1)
 
             Text("\(score)")
-                .font(.system(size: 44, weight: .bold, design: .monospaced))
-                .foregroundStyle(
-                    isWinner
-                        ? AnyShapeStyle(color)
-                        : AnyShapeStyle(.white.opacity(0.3))
-                )
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundStyle(isWinner ? color : .secondary.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
     }
@@ -503,81 +452,159 @@ struct ReactionTimeShareCard: View {
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
-
                 BrandingHeader()
-
                 Spacer().frame(height: 28)
 
-                // REACTION TIME header
-                HStack(spacing: 8) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("REACTION TIME")
-                        .font(.system(size: 14, weight: .heavy))
-                        .tracking(3)
-                }
-                .foregroundStyle(AppColors.coral)
-
-                Spacer().frame(height: 32)
-
-                // Big average time
-                Text("\(averageMs)")
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(ratingColor)
-
-                Text("MILLISECONDS")
-                    .font(.system(size: 14, weight: .heavy))
-                    .tracking(4)
-                    .foregroundStyle(.white.opacity(0.5))
-
-                Spacer().frame(height: 16)
-
-                // Rating badge
-                GlowingPill(color: ratingColor) {
-                    Text(ratingText.uppercased())
-                }
-
-                Spacer().frame(height: 28)
-
-                // Round breakdown
-                HStack(spacing: 0) {
-                    ForEach(Array(roundTimes.enumerated()), id: \.offset) { index, ms in
-                        VStack(spacing: 6) {
-                            Text("R\(index + 1)")
-                                .font(.system(size: 11, weight: .heavy))
-                                .foregroundStyle(.white.opacity(0.4))
-                            Text("\(ms)")
-                                .font(.system(size: 18, weight: .bold, design: .monospaced))
-                                .foregroundStyle(ms == bestMs ? ratingColor : .white.opacity(0.7))
+                ShareCardSurface {
+                    VStack(spacing: 16) {
+                        // Exercise header
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 16, weight: .bold))
+                            Text("REACTION TIME")
+                                .font(.system(size: 13, weight: .heavy))
+                                .tracking(3)
                         }
-                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(AppColors.coral)
+
+                        // Big average
+                        Text("\(averageMs)")
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .foregroundStyle(ratingColor)
+
+                        Text("MILLISECONDS")
+                            .font(.system(size: 13, weight: .heavy))
+                            .tracking(4)
+                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+
+                        // Rating
+                        RatingPill(color: ratingColor) {
+                            Text(ratingText.uppercased())
+                        }
+
+                        Divider()
+
+                        // Round breakdown
+                        HStack(spacing: 0) {
+                            ForEach(Array(roundTimes.enumerated()), id: \.offset) { index, ms in
+                                VStack(spacing: 4) {
+                                    Text("R\(index + 1)")
+                                        .font(.system(size: 10, weight: .heavy))
+                                        .foregroundStyle(.secondary)
+                                    Text("\(ms)")
+                                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                                        .foregroundStyle(ms == bestMs ? ratingColor : .primary.opacity(0.7))
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+
+                        // Best
+                        HStack(spacing: 6) {
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppColors.amber)
+                            Text("Best: \(bestMs)ms")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .padding(.horizontal, 30)
-
-                Spacer().frame(height: 16)
-
-                // Best time highlight
-                HStack(spacing: 6) {
-                    Image(systemName: "trophy.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 1.0, green: 0.84, blue: 0.0))
-                    Text("Best: \(bestMs)ms")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
+                .padding(.horizontal, 24)
 
                 Spacer()
 
-                // CTA
                 Text("How fast are you?")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
 
-                Spacer().frame(height: 12)
-
+                Spacer().frame(height: 10)
                 BrandingFooter()
+                Spacer().frame(height: 28)
+            }
+        }
+        .frame(width: 360, height: 640)
+    }
+}
 
+// MARK: - 5. Generic ExerciseShareCard
+
+struct ExerciseShareCard: View {
+    let exerciseName: String
+    let exerciseIcon: String
+    let accentColor: Color
+    let mainValue: String
+    let mainLabel: String
+    let ratingText: String
+    let stats: [(label: String, value: String)]
+    let ctaText: String
+
+    var body: some View {
+        ZStack {
+            CardBackground()
+
+            VStack(spacing: 0) {
+                Spacer().frame(height: 32)
+                BrandingHeader()
+                Spacer().frame(height: 28)
+
+                ShareCardSurface {
+                    VStack(spacing: 16) {
+                        // Exercise header
+                        HStack(spacing: 8) {
+                            Image(systemName: exerciseIcon)
+                                .font(.system(size: 16, weight: .bold))
+                            Text(exerciseName.uppercased())
+                                .font(.system(size: 13, weight: .heavy))
+                                .tracking(3)
+                        }
+                        .foregroundStyle(accentColor)
+
+                        // Big stat
+                        Text(mainValue)
+                            .font(.system(size: 64, weight: .bold, design: .rounded))
+                            .foregroundStyle(accentColor)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+
+                        Text(mainLabel.uppercased())
+                            .font(.system(size: 13, weight: .heavy))
+                            .tracking(4)
+                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+
+                        // Rating
+                        RatingPill(color: accentColor) {
+                            Text(ratingText.uppercased())
+                        }
+
+                        Divider()
+
+                        // Stats
+                        VStack(spacing: 10) {
+                            ForEach(Array(stats.enumerated()), id: \.offset) { _, stat in
+                                HStack {
+                                    Text(stat.label)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text(stat.value)
+                                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Spacer()
+
+                Text(ctaText)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
+
+                Spacer().frame(height: 10)
+                BrandingFooter()
                 Spacer().frame(height: 28)
             }
         }
@@ -614,5 +641,22 @@ struct ReactionTimeShareCard: View {
         player2Name: "Alex",
         player2Score: 72,
         exerciseType: "Dual N-Back"
+    )
+}
+
+#Preview("Exercise Card") {
+    ExerciseShareCard(
+        exerciseName: "Color Match",
+        exerciseIcon: "paintpalette.fill",
+        accentColor: AppColors.violet,
+        mainValue: "95%",
+        mainLabel: "Accuracy",
+        ratingText: "Stroop Master",
+        stats: [
+            ("Correct", "19 / 20"),
+            ("Avg Response", "842 ms"),
+            ("Score", "92%")
+        ],
+        ctaText: "Test your focus"
     )
 }

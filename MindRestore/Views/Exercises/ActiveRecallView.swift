@@ -8,6 +8,7 @@ struct ActiveRecallView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = ActiveRecallViewModel()
@@ -247,8 +248,6 @@ struct ActiveRecallView: View {
                 LeaderboardRankCard(
                     exerciseType: .activeRecall,
                     userScore: Int(viewModel.score * 100),
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -314,7 +313,9 @@ struct ActiveRecallView: View {
                 score: viewModel.score,
                 difficulty: viewModel.currentChallenge?.difficulty ?? 1,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .activeRecall
             )
         }
     }

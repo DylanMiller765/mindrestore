@@ -1,5 +1,4 @@
 import Foundation
-import AVFoundation
 import UIKit
 
 @MainActor @Observable
@@ -10,7 +9,6 @@ final class DualNBackViewModel {
     var startTime = Date()
     var isDual = true
     private var trialTimer: Timer?
-    private var synthesizer = AVSpeechSynthesizer()
 
     var currentN: Int { engine.currentN }
     var trialIndex: Int { engine.trialIndex }
@@ -33,10 +31,6 @@ final class DualNBackViewModel {
 
     private func scheduleNextTrial() {
         trialTimer?.invalidate()
-
-        if isDual && !currentLetter.isEmpty {
-            speakLetter(currentLetter)
-        }
 
         trialTimer = Timer.scheduledTimer(withTimeInterval: Constants.Exercise.dualNBackTrialInterval, repeats: false) { [weak self] _ in
             Task { @MainActor in
@@ -79,7 +73,6 @@ final class DualNBackViewModel {
 
     func stop() {
         trialTimer?.invalidate()
-        synthesizer.stopSpeaking(at: .immediate)
         engine.endGame()
         isPlaying = false
         showResults = true
@@ -88,7 +81,6 @@ final class DualNBackViewModel {
     func cleanup() {
         trialTimer?.invalidate()
         trialTimer = nil
-        synthesizer.stopSpeaking(at: .immediate)
     }
 
     var nextN: Int {
@@ -99,10 +91,4 @@ final class DualNBackViewModel {
         Int(Date.now.timeIntervalSince(startTime))
     }
 
-    private func speakLetter(_ letter: String) {
-        let utterance = AVSpeechUtterance(string: letter)
-        utterance.rate = 0.5
-        utterance.volume = 0.8
-        synthesizer.speak(utterance)
-    }
 }

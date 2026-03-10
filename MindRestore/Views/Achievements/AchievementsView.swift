@@ -241,5 +241,13 @@ struct AchievementsView: View {
                 )
         )
         .opacity(isUnlocked ? 1 : 0.55)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel({
+            if isUnlocked, let achievement = achievements.first(where: { $0.typeRaw == type.rawValue }) {
+                return "\(type.displayName), unlocked on \(achievement.unlockedAt.formatted(.dateTime.month(.abbreviated).day()))"
+            } else {
+                return "\(type.displayName), locked"
+            }
+        }())
     }
 }

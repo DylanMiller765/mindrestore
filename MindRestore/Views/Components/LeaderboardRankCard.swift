@@ -1,22 +1,24 @@
 import SwiftUI
+import GameKit
 
 /// Shows the user's leaderboard rank after completing an exercise.
-/// Pro users see their exact rank + nearby competitors.
-/// Free users see a blurred tease with upgrade CTA.
+/// Pro users see their exact rank + nearby competitors from Game Center.
+/// Free users see an upgrade CTA.
 struct LeaderboardRankCard: View {
     let exerciseType: ExerciseType?  // nil for brain score
     let userScore: Int
-    let userName: String
-    let userLevel: Int
     let isPro: Bool
     var onUpgradeTap: (() -> Void)?
+
+    @Environment(GameCenterService.self) private var gameCenterService
 
     @State private var entries: [LeaderboardEntryData] = []
     @State private var userRank: Int = 0
     @State private var totalPlayers: Int = 0
+    @State private var isLoading = true
     @State private var animateIn = false
 
-    private var leaderboardCategory: LeaderboardCategory {
+    private var leaderboardCategory: LeaderboardCategory? {
         guard let type = exerciseType else { return .brainScore }
         switch type {
         case .reactionTime: return .reactionTime
@@ -26,7 +28,7 @@ struct LeaderboardRankCard: View {
         case .sequentialMemory: return .numberMemory
         case .mathSpeed: return .mathSpeed
         case .dualNBack: return .dualNBack
-        default: return .brainScore
+        default: return nil  // exercises without leaderboards
         }
     }
 
@@ -47,17 +49,32 @@ struct LeaderboardRankCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if isPro {
+            if leaderboardCategory == nil {
+                // Exercise type has no leaderboard
+                EmptyView()
+            } else if !gameCenterService.isAuthenticated {
+                // Not signed in to Game Center
+                EmptyView()
+            } else if isLoading {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Loading rank...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .appCard(padding: 0)
+            } else if totalPlayers <= 1 {
+                // Not enough players for meaningful ranking
+                EmptyView()
+            } else if isPro {
                 proRankView
             } else {
                 freeTeaseView
             }
         }
-        .appCard(padding: 0)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(isPro ? accentColor.opacity(0.2) : AppColors.amber.opacity(0.3), lineWidth: 1)
-        )
         .opacity(animateIn ? 1 : 0)
         .offset(y: animateIn ? 0 : 12)
         .onAppear {
@@ -122,6 +139,11 @@ struct LeaderboardRankCard: View {
                 .padding(.vertical, 4)
             }
         }
+        .appCard(padding: 0)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(accentColor.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: - Free User: Blurred Tease
@@ -169,6 +191,11 @@ struct LeaderboardRankCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .appCard(padding: 0)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(AppColors.amber.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Subviews
@@ -216,7 +243,7 @@ struct LeaderboardRankCard: View {
                 .foregroundStyle(entry.isCurrentUser ? accentColor : AppColors.textTertiary)
                 .frame(width: 28, alignment: .trailing)
 
-            Text(entry.username)
+            Text(entry.isCurrentUser ? "You" : entry.username)
                 .font(.system(size: 12, weight: entry.isCurrentUser ? .bold : .medium))
                 .foregroundStyle(entry.isCurrentUser ? AppColors.textPrimary : AppColors.textSecondary)
                 .lineLimit(1)
@@ -235,17 +262,18 @@ struct LeaderboardRankCard: View {
     // MARK: - Data
 
     private var percentileText: String {
-        guard totalPlayers > 0 else { return "" }
-        let percentile = Int((1.0 - Double(userRank - 1) / Double(totalPlayers)) * 100)
-        return "Top \(max(1, percentile))%"
+        guard totalPlayers > 0, userRank > 0 else { return "" }
+        // rank 1 of 100 = Top 1%, rank 50 of 100 = Top 50%
+        let pct = max(1, min(100, Int(ceil(Double(userRank) / Double(totalPlayers) * 100))))
+        return "Top \(pct)%"
     }
 
     private var percentileBracket: String {
-        guard totalPlayers > 0 else { return "in the top half" }
-        let percentile = (1.0 - Double(userRank - 1) / Double(totalPlayers)) * 100
-        if percentile >= 90 { return "in the Top 10%" }
-        if percentile >= 75 { return "in the Top 25%" }
-        if percentile >= 50 { return "in the Top 50%" }
+        guard totalPlayers > 0, userRank > 0 else { return "in the top half" }
+        let pct = ceil(Double(userRank) / Double(totalPlayers) * 100)
+        if pct <= 10 { return "in the Top 10%" }
+        if pct <= 25 { return "in the Top 25%" }
+        if pct <= 50 { return "in the Top 50%" }
         return "in the Top 75%"
     }
 
@@ -257,17 +285,59 @@ struct LeaderboardRankCard: View {
     }
 
     private func loadRank() {
-        let leaderboard = LeaderboardService.shared.generateLeaderboard(
-            category: leaderboardCategory,
-            filter: .allTime,
-            userScore: userScore,
-            userName: userName,
-            userLevel: userLevel
-        )
-        entries = leaderboard
-        totalPlayers = leaderboard.count
-        if let userEntry = leaderboard.first(where: { $0.isCurrentUser }) {
-            userRank = userEntry.rank
+        guard gameCenterService.isAuthenticated, let category = leaderboardCategory else {
+            isLoading = false
+            return
+        }
+
+        Task {
+            let result = await gameCenterService.loadLeaderboardEntries(
+                category: category,
+                timeFilter: .allTime
+            )
+            var loadedEntries = result.entries
+            var playerCount = result.totalPlayerCount
+
+            if let userEntry = result.localPlayerEntry {
+                userRank = userEntry.rank
+            } else if userScore > 0 {
+                // GameCenter hasn't propagated yet — inject local score
+                let isLowToHigh = category == .reactionTime
+                let localEntry = LeaderboardEntryData(
+                    rank: 0,
+                    username: GKLocalPlayer.local.displayName,
+                    score: userScore,
+                    avatarEmoji: "",
+                    level: 0,
+                    isCurrentUser: true
+                )
+                loadedEntries.append(localEntry)
+
+                if isLowToHigh {
+                    loadedEntries.sort { $0.score < $1.score }
+                } else {
+                    loadedEntries.sort { $0.score > $1.score }
+                }
+
+                // Find injected rank
+                if let idx = loadedEntries.firstIndex(where: { $0.isCurrentUser }) {
+                    userRank = idx + 1
+                }
+                playerCount = max(playerCount, loadedEntries.count)
+            }
+
+            entries = loadedEntries.enumerated().map { index, entry in
+                LeaderboardEntryData(
+                    rank: index + 1,
+                    username: entry.username,
+                    score: entry.score,
+                    avatarEmoji: entry.avatarEmoji,
+                    level: entry.level,
+                    isCurrentUser: entry.isCurrentUser
+                )
+            }
+            totalPlayers = max(playerCount, 1)
+            isLoading = false
         }
     }
 }
@@ -278,21 +348,19 @@ struct LeaderboardRankCard: View {
     LeaderboardRankCard(
         exerciseType: .reactionTime,
         userScore: 245,
-        userName: "You",
-        userLevel: 5,
         isPro: true
     )
     .padding()
+    .environment(GameCenterService())
 }
 
 #Preview("Free User") {
     LeaderboardRankCard(
         exerciseType: .reactionTime,
         userScore: 245,
-        userName: "You",
-        userLevel: 5,
         isPro: false,
         onUpgradeTap: {}
     )
     .padding()
+    .environment(GameCenterService())
 }

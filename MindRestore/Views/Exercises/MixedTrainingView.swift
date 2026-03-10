@@ -413,6 +413,7 @@ struct MixedTrainingView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var vm = MixedTrainingViewModel()
@@ -1149,8 +1150,6 @@ struct MixedTrainingView: View {
                 LeaderboardRankCard(
                     exerciseType: .activeRecall,
                     userScore: Int(vm.overallScore * 100),
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -1208,7 +1207,8 @@ struct MixedTrainingView: View {
                 score: vm.overallScore,
                 difficulty: 2,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService
             )
         }
     }

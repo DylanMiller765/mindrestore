@@ -12,41 +12,45 @@ struct LevelUpShareCard: View {
             Text("LEVEL UP")
                 .font(.caption.weight(.bold))
                 .tracking(3)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40))
 
             ZStack {
                 ForEach(0..<3) { i in
                     Circle()
-                        .stroke(.white.opacity(0.1 - Double(i) * 0.03), lineWidth: 2)
+                        .stroke(AppColors.violet.opacity(0.15 - Double(i) * 0.04), lineWidth: 2)
                         .frame(width: CGFloat(80 + i * 30), height: CGFloat(80 + i * 30))
                 }
 
                 Text("\(level)")
                     .font(.system(size: 56, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.violet)
             }
 
             VStack(spacing: 4) {
                 Text(levelName)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text("\(totalXP) XP earned")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             }
 
             Text("Memori")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }
         .padding(32)
         .frame(width: 300)
         .background(
             LinearGradient(
-                colors: [AppColors.violet, AppColors.indigo, AppColors.sky],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.969, green: 0.961, blue: 0.941),
+                    Color(red: 0.955, green: 0.945, blue: 0.925),
+                    Color(red: 0.969, green: 0.961, blue: 0.941)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             ),
             in: RoundedRectangle(cornerRadius: 24)
         )
@@ -58,46 +62,54 @@ struct LevelUpShareCard: View {
 struct AchievementShareCard: View {
     let achievementType: AchievementType
 
+    private var accentColor: Color {
+        achievementType.gradientColors.first ?? AppColors.violet
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             Text("ACHIEVEMENT UNLOCKED")
                 .font(.caption.weight(.bold))
                 .tracking(2)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40))
 
             ZStack {
                 Circle()
-                    .fill(.white.opacity(0.15))
+                    .fill(accentColor.opacity(0.12))
                     .frame(width: 80, height: 80)
 
                 Image(systemName: achievementType.icon)
                     .font(.system(size: 36, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(accentColor)
             }
 
             VStack(spacing: 4) {
                 Text(achievementType.displayName)
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text(achievementType.description)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
 
             Text("Memori")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }
         .padding(32)
         .frame(width: 300)
         .background(
             LinearGradient(
-                colors: achievementType.gradientColors + [achievementType.gradientColors[0].opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.969, green: 0.961, blue: 0.941),
+                    Color(red: 0.955, green: 0.945, blue: 0.925),
+                    Color(red: 0.969, green: 0.961, blue: 0.941)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             ),
             in: RoundedRectangle(cornerRadius: 24)
         )
@@ -123,43 +135,47 @@ struct ProfileShareCard: View {
             VStack(spacing: 4) {
                 Text(username.isEmpty ? "Brain Trainer" : username)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text("Level \(level) — \(levelName)")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 24) {
-                profileStat(value: "\(brainScore)", label: "Brain Score")
-                profileStat(value: "\(streak)d", label: "Streak")
-                profileStat(value: "\(achievements)", label: "Badges")
+                profileStat(value: "\(brainScore)", label: "Brain Score", color: AppColors.accent)
+                profileStat(value: "\(streak)d", label: "Streak", color: AppColors.coral)
+                profileStat(value: "\(achievements)", label: "Badges", color: AppColors.violet)
             }
 
             Text("Memori")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }
         .padding(32)
         .frame(width: 300)
         .background(
             LinearGradient(
-                colors: [AppColors.accent, AppColors.teal, AppColors.mint],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.969, green: 0.961, blue: 0.941),
+                    Color(red: 0.955, green: 0.945, blue: 0.925),
+                    Color(red: 0.969, green: 0.961, blue: 0.941)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             ),
             in: RoundedRectangle(cornerRadius: 24)
         )
     }
 
-    private func profileStat(value: String, label: String) -> some View {
+    private func profileStat(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(color)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.secondary)
         }
     }
 }

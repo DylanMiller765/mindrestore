@@ -80,16 +80,9 @@ final class ChunkingViewModel {
     private var startTime: Date?
     private let hasSeenIntroKey = "chunkingTraining_hasSeenIntro"
 
-    init() {
-        hasSeenIntro = UserDefaults.standard.bool(forKey: hasSeenIntroKey)
-        if hasSeenIntro {
-            phase = .memorize
-        }
-    }
+    init() {}
 
-    func dismissIntro() {
-        hasSeenIntro = true
-        UserDefaults.standard.set(true, forKey: hasSeenIntroKey)
+    func startFromIntro() {
         startChallenge()
     }
 
@@ -202,7 +195,7 @@ final class ChunkingViewModel {
             self.timeRemaining -= 0.1
             if self.timeRemaining <= 0 {
                 self.timeRemaining = 0
-                self.skipToChunkHint()
+                self.skipToRecall()
             }
         }
     }
@@ -222,10 +215,12 @@ struct ChunkingTrainingView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = ChunkingViewModel()
     @State private var showingPaywall = false
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -238,7 +233,8 @@ struct ChunkingTrainingView: View {
             case .memorize:
                 memorizeView
             case .chunkHint:
-                chunkHintView
+                // Skip chunk hint, go straight to recall
+                recallView
             case .recall:
                 recallView
             case .results:
@@ -248,59 +244,95 @@ struct ChunkingTrainingView: View {
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Chunking Training")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: viewModel.phase) { _, newPhase in
+            if newPhase == .results {
+                let card = ExerciseShareCard(
+                    exerciseName: "Chunking",
+                    exerciseIcon: "square.grid.4x3.fill",
+                    accentColor: AppColors.teal,
+                    mainValue: viewModel.score.percentString,
+                    mainLabel: "Score",
+                    ratingText: viewModel.score >= 0.9 ? "Perfect Chunks" : viewModel.score >= 0.7 ? "Great Memory" : "Keep Chunking",
+                    stats: [
+                        ("Correct Digits", "\(viewModel.correctDigits) / \(viewModel.totalDigits)"),
+                        ("Difficulty", "Level \(viewModel.difficulty)")
+                    ],
+                    ctaText: "Can you chunk better?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+            }
+        }
     }
 
     // MARK: - Intro
 
     private var introView: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 24) {
             Spacer()
 
             ZStack {
                 Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
+                    .fill(AppColors.teal.opacity(0.12))
+                    .frame(width: 100, height: 100)
                 Image(systemName: "square.grid.4x3.fill")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(AppColors.accent)
-            }
-
-            VStack(spacing: 12) {
-                Text("Chunking Training")
-                    .font(.title.weight(.bold))
-
-                Text("Multiply Your Memory Capacity")
-                    .font(.headline)
+                    .font(.system(size: 44, weight: .medium))
                     .foregroundStyle(AppColors.teal)
             }
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 8) {
+                Text("Chunking Training")
+                    .font(.title2.weight(.bold))
+
+                Text("Group digits into chunks to remember more")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(alignment: .leading, spacing: 14) {
                 introPoint(
-                    icon: "brain",
-                    text: "Your brain holds about 4 chunks at a time in working memory."
+                    icon: "1.circle.fill",
+                    text: "You'll see a string of digits for a few seconds"
                 )
                 introPoint(
-                    icon: "arrow.up.right",
-                    text: "By grouping items into meaningful chunks, you multiply your capacity."
+                    icon: "2.circle.fill",
+                    text: "Try grouping them — like phone numbers or dates"
                 )
                 introPoint(
-                    icon: "trophy",
-                    text: "Ericsson & Chase (1980) expanded digit span from 7 to 80+ through chunking alone."
+                    icon: "3.circle.fill",
+                    text: "Type them back from memory"
                 )
             }
             .appCard()
+            .padding(.horizontal)
+
+            // Strategy tip
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(AppColors.amber)
+                    Text("Pro Tip")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(AppColors.amber)
+                }
+                Text("Break \"5329184\" into \"532-918-4\" — smaller groups are easier to hold in memory")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+            .background(AppColors.amber.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal)
 
             Spacer()
 
             Button {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.dismissIntro()
+                viewModel.startFromIntro()
             } label: {
-                Text("Start Training")
+                Text("I'm Ready")
                     .accentButton(color: AppColors.teal)
             }
-            .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
@@ -362,7 +394,7 @@ struct ChunkingTrainingView: View {
 
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                viewModel.skipToChunkHint()
+                viewModel.skipToRecall()
             } label: {
                 Text("I'm Ready")
                     .accentButton(color: AppColors.teal)
@@ -559,14 +591,25 @@ struct ChunkingTrainingView: View {
                 LeaderboardRankCard(
                     exerciseType: .chunkingTraining,
                     userScore: viewModel.correctDigits,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Chunking: \(viewModel.score.percentString)", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         viewModel.startChallenge()
@@ -670,7 +713,10 @@ struct ChunkingTrainingView: View {
                 score: viewModel.score,
                 difficulty: viewModel.difficulty,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .chunkingTraining,
+                gameScore: viewModel.correctDigits
             )
         }
     }

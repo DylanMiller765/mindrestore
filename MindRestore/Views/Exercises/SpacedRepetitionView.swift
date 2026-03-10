@@ -8,6 +8,7 @@ struct SpacedRepetitionView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(StoreService.self) private var storeService
     @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @Query private var allCards: [SpacedRepetitionCard]
 
@@ -611,7 +612,9 @@ struct SpacedRepetitionView: View {
                 score: viewModel.sessionScore,
                 difficulty: 1,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .spacedRepetition
             )
         }
     }

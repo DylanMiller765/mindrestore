@@ -179,11 +179,13 @@ struct VisualMemoryView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = VisualMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
+    @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -215,6 +217,21 @@ struct VisualMemoryView: View {
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .visualMemory, correct: viewModel.maxLevelReached, total: viewModel.level)
+                let card = ExerciseShareCard(
+                    exerciseName: "Visual Memory",
+                    exerciseIcon: "square.grid.3x3.fill",
+                    accentColor: AppColors.indigo,
+                    mainValue: "Level \(viewModel.maxLevelReached)",
+                    mainLabel: "Max Level",
+                    ratingText: viewModel.ratingText,
+                    stats: [
+                        ("Accuracy", viewModel.accuracy.percentString),
+                        ("Lives Left", "\(viewModel.lives) / 3"),
+                        ("Score", viewModel.score.percentString)
+                    ],
+                    ctaText: "How far can you get?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
         }
     }
@@ -546,20 +563,31 @@ struct VisualMemoryView: View {
 
                 LeaderboardRankCard(
                     exerciseType: .visualMemory,
-                    userScore: viewModel.level,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
+                    userScore: viewModel.maxLevelReached,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Visual Memory: Level \(viewModel.maxLevelReached)", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -627,7 +655,10 @@ struct VisualMemoryView: View {
                 score: viewModel.score,
                 difficulty: viewModel.maxLevelReached,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .visualMemory,
+                gameScore: viewModel.maxLevelReached
             )
         }
     }

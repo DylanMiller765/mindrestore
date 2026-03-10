@@ -8,6 +8,7 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
     @State private var assessmentResult: BrainScoreResult?
+    @State private var assessmentBgColor: Color = AppColors.pageBg
     @State private var notificationsEnabled = false
     @State private var enteredName: String = ""
     @FocusState private var nameFieldFocused: Bool
@@ -18,7 +19,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            AppColors.pageBg.ignoresSafeArea()
+            (currentPage == 3 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
@@ -77,7 +78,7 @@ struct OnboardingView: View {
             }
 
             VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(icon: CognitiveDomain.memory.icon, color: CognitiveDomain.memory.color, title: "Memory Training", subtitle: "Spaced repetition & active recall")
+                FeatureRow(icon: CognitiveDomain.memory.icon, color: CognitiveDomain.memory.color, title: "Memory Training", subtitle: "Visual, sequential & chunking games")
                 FeatureRow(icon: CognitiveDomain.attention.icon, color: CognitiveDomain.attention.color, title: "Dual N-Back", subtitle: "Working memory & attention")
                 FeatureRow(icon: CognitiveDomain.speed.icon, color: CognitiveDomain.speed.color, title: "Processing Speed", subtitle: "Reaction time challenges")
                 FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.amber, title: "Brain Score", subtitle: "Track your cognitive improvement")
@@ -95,60 +96,82 @@ struct OnboardingView: View {
 
     private var namePage: some View {
         ScrollView {
-            VStack(spacing: 28) {
-                Spacer(minLength: 40)
+            VStack(spacing: 32) {
+                Spacer(minLength: 60)
 
-                ZStack {
-                    Circle()
-                        .fill(AppColors.cardBorder)
-                        .frame(width: 120, height: 120)
-                    Image(systemName: "person.crop.circle")
-                        .font(.system(size: 52))
-                        .foregroundStyle(AppColors.accent)
-                }
+                // Animated greeting emoji
+                Text("👋")
+                    .font(.system(size: 64))
 
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     Text("What should we\ncall you?")
-                        .font(.title.bold())
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
-                    Text("Used for greetings and leaderboards.")
+                    Text("Used for greetings and leaderboards")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppColors.textTertiary)
                         .multilineTextAlignment(.center)
                 }
 
                 TextField("Your name", text: $enteredName)
-                    .font(.title3.weight(.medium))
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .multilineTextAlignment(.center)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 16)
                     .padding(.horizontal, 24)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(AppColors.cardSurface)
+                            .shadow(color: AppColors.accent.opacity(nameFieldFocused ? 0.15 : 0), radius: 12, y: 4)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.accent.opacity(0.2), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                nameFieldFocused ? AppColors.accent.opacity(0.5) : AppColors.cardBorder,
+                                lineWidth: nameFieldFocused ? 1.5 : 1
+                            )
                     )
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 32)
                     .focused($nameFieldFocused)
                     .submitLabel(.continue)
                     .onSubmit { dismissAndAdvance() }
-
-                VStack(spacing: 12) {
-                    continueButton { dismissAndAdvance() }
-
-                    Button {
-                        enteredName = ""
-                        dismissAndAdvance()
-                    } label: {
-                        Text("Skip")
+                    .animation(.easeInOut(duration: 0.2), value: nameFieldFocused)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Button("Skip") {
+                                enteredName = ""
+                                dismissAndAdvance()
+                            }
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
-                            .padding(.vertical, 8)
+
+                            Spacer()
+
+                            Button {
+                                dismissAndAdvance()
+                            } label: {
+                                Text("Continue")
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
                     }
+
+                if !nameFieldFocused {
+                    VStack(spacing: 12) {
+                        continueButton { dismissAndAdvance() }
+
+                        Button {
+                            enteredName = ""
+                            dismissAndAdvance()
+                        } label: {
+                            Text("Skip")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 8)
+                        }
+                    }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 8)
             }
             .padding(.bottom, 16)
         }
@@ -201,13 +224,20 @@ struct OnboardingView: View {
     // MARK: - Brain Assessment Page
 
     private var assessmentPage: some View {
-        OnboardingAssessmentView { result in
+        OnboardingAssessmentView(backgroundColor: $assessmentBgColor) { result in
             assessmentResult = result
+            // Save brain score immediately so it's not lost
+            if let result {
+                modelContext.insert(result)
+                try? modelContext.save()
+            }
             withAnimation {
                 currentPage = 4
             }
         }
     }
+
+    // Note: OnboardingAssessmentView's onComplete now passes nil when skipped
 
     // MARK: - Notifications Page
 
@@ -325,9 +355,8 @@ struct OnboardingView: View {
         user.notificationsEnabled = notificationsEnabled
 
         // Save brain score result and create initial session
+        // (result was already inserted when assessment completed)
         if let result = assessmentResult {
-            modelContext.insert(result)
-
             // Create exercise entry for the assessment
             let exercise = Exercise(
                 type: .activeRecall,

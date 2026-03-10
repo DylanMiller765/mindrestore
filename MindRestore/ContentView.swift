@@ -9,6 +9,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var users: [User]
     @Query private var sessions: [DailySession]
+    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScoreResults: [BrainScoreResult]
     @State private var showOnboarding = false
     @State private var selectedTab = 0
     @State private var storeService = StoreService()
@@ -16,6 +17,7 @@ struct ContentView: View {
     @State private var paywallTrigger = PaywallTriggerService()
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
+    @State private var deepLinkRouter = DeepLinkRouter()
 
     // Toast state
     @State private var showingXPToast = false
@@ -50,6 +52,10 @@ struct ContentView: View {
         .environment(paywallTrigger)
         .environment(trainingManager)
         .environment(gameCenterService)
+        .environment(deepLinkRouter)
+        .onOpenURL { url in
+            deepLinkRouter.handle(url)
+        }
         .onAppear {
             if users.isEmpty {
                 let newUser = User()
@@ -159,6 +165,22 @@ struct ContentView: View {
                 withAnimation { showingStreakCelebration = true }
             }
         }
+        .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
+            guard let destination else { return }
+            switch destination {
+            case .home:
+                selectedTab = 0
+            case .train, .game(_), .dailyChallenge:
+                selectedTab = 1
+            case .compete:
+                selectedTab = 2
+            case .insights:
+                selectedTab = 3
+            case .profile:
+                selectedTab = 4
+            }
+            deepLinkRouter.pendingDestination = nil
+        }
     }
 
     private func scheduleStreakRiskIfNeeded() {
@@ -184,6 +206,8 @@ struct ContentView: View {
         let todaySession = sessions.first { Calendar.current.isDateInToday($0.date) }
         let exercisesToday = todaySession?.exercisesCompleted.count ?? 0
 
+        let latestBrainScore = brainScoreResults.first?.brainScore ?? 0
+
         WidgetDataService.updateWidgetData(
             streak: user.currentStreak,
             level: user.level,
@@ -192,6 +216,7 @@ struct ContentView: View {
             xpForNextLevel: user.xpForNextLevel,
             exercisesToday: exercisesToday,
             dailyGoal: user.dailyGoal,
+            brainScore: latestBrainScore,
             trainedToday: trainedToday
         )
     }
@@ -218,7 +243,7 @@ struct ContentView: View {
 // MARK: - XP Helper
 
 extension ContentView {
-    static func awardXP(user: User, score: Double, difficulty: Int, achievementService: AchievementService, modelContext: ModelContext, gameCenterService: GameCenterService? = nil) -> (xp: Int, leveledUp: Bool) {
+    static func awardXP(user: User, score: Double, difficulty: Int, achievementService: AchievementService, modelContext: ModelContext, gameCenterService: GameCenterService? = nil, exerciseType: ExerciseType? = nil, gameScore: Int? = nil) -> (xp: Int, leveledUp: Bool) {
         let xp = user.xpForExercise(score: score, difficulty: difficulty)
         let leveledUp = user.addXP(xp)
         user.totalExercises += 1
@@ -241,6 +266,12 @@ extension ContentView {
             return todaySession?.exercisesCompleted.count ?? 0
         }()
 
+        let latestBrainScore: Int = {
+            var descriptor = FetchDescriptor<BrainScoreResult>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+            descriptor.fetchLimit = 1
+            return (try? modelContext.fetch(descriptor))?.first?.brainScore ?? 0
+        }()
+
         WidgetDataService.updateWidgetData(
             streak: user.currentStreak,
             level: user.level,
@@ -249,16 +280,34 @@ extension ContentView {
             xpForNextLevel: user.xpForNextLevel,
             exercisesToday: exercisesToday,
             dailyGoal: user.dailyGoal,
+            brainScore: latestBrainScore,
             trainedToday: true
         )
 
         // Report to Game Center
         if let gc = gameCenterService, gc.isAuthenticated {
-            // Report total XP to the brain score leaderboard
-            gc.reportScore(user.totalXP, leaderboardID: GameCenterService.brainScoreLeaderboard)
-
             // Report longest streak
             gc.reportScore(user.longestStreak, leaderboardID: GameCenterService.longestStreakLeaderboard)
+
+            // Report weekly XP
+            gc.reportScore(user.totalXP, leaderboardID: GameCenterService.weeklyXPLeaderboard)
+
+            // Report individual exercise score to its leaderboard
+            if let type = exerciseType, let rawScore = gameScore, rawScore > 0 {
+                let leaderboardID: String? = switch type {
+                case .reactionTime: GameCenterService.reactionTimeLeaderboard
+                case .colorMatch: GameCenterService.colorMatchLeaderboard
+                case .speedMatch: GameCenterService.speedMatchLeaderboard
+                case .visualMemory: GameCenterService.visualMemoryLeaderboard
+                case .sequentialMemory: GameCenterService.numberMemoryLeaderboard
+                case .mathSpeed: GameCenterService.mathSpeedLeaderboard
+                case .dualNBack: GameCenterService.dualNBackLeaderboard
+                default: nil
+                }
+                if let leaderboardID {
+                    gc.reportScore(rawScore, leaderboardID: leaderboardID)
+                }
+            }
 
             // Sync any newly unlocked achievements
             for achievementType in achievementService.newlyUnlocked {
@@ -297,6 +346,9 @@ struct TrainingView: View {
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
     @State private var showingPaywall = false
+    @State private var selectedExercise: ExerciseType?
+    @State private var navigateToMixedTraining = false
+    @State private var navigateToDailyChallenge = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -337,17 +389,26 @@ struct TrainingView: View {
                     }
 
                     // Featured: Daily Session
-                    NavigationLink {
-                        MixedTrainingView()
+                    Button {
+                        if hasReachedLimit {
+                            showingPaywall = true
+                        } else {
+                            navigateToMixedTraining = true
+                        }
                     } label: {
                         sessionCardContent
+                            .opacity(hasReachedLimit ? 0.5 : 1)
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal)
 
                     // Daily Challenge
-                    NavigationLink {
-                        DailyChallengeView()
+                    Button {
+                        if hasReachedLimit {
+                            showingPaywall = true
+                        } else {
+                            navigateToDailyChallenge = true
+                        }
                     } label: {
                         HStack(alignment: .center, spacing: 16) {
                             VStack(alignment: .leading, spacing: 6) {
@@ -381,6 +442,7 @@ struct TrainingView: View {
                             ),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
+                        .opacity(hasReachedLimit ? 0.5 : 1)
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal)
@@ -391,14 +453,18 @@ struct TrainingView: View {
 
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(Self.featuredGames, id: \.type) { game in
-                            NavigationLink {
-                                exerciseDestination(for: game.type)
+                            Button {
+                                if hasReachedLimit {
+                                    showingPaywall = true
+                                } else {
+                                    selectedExercise = game.type
+                                }
                             } label: {
                                 TrainingTile(
                                     title: game.title,
                                     type: game.type,
                                     color: game.color,
-                                    isLocked: false,
+                                    isLocked: hasReachedLimit,
                                     lastPlayedText: lastPlayedText(for: game.type)
                                 )
                             }
@@ -406,6 +472,15 @@ struct TrainingView: View {
                         }
                     }
                     .padding(.horizontal)
+                    .navigationDestination(item: $selectedExercise) { type in
+                        exerciseDestination(for: type)
+                    }
+                    .navigationDestination(isPresented: $navigateToMixedTraining) {
+                        MixedTrainingView()
+                    }
+                    .navigationDestination(isPresented: $navigateToDailyChallenge) {
+                        DailyChallengeView()
+                    }
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 32)
@@ -445,6 +520,10 @@ struct TrainingView: View {
             AppColors.accentGradient,
             in: RoundedRectangle(cornerRadius: 12)
         )
+    }
+
+    private var hasReachedLimit: Bool {
+        !isProUser && paywallTrigger.hasReachedDailyLimit
     }
 
     private var dailyLimitBanner: some View {
@@ -552,7 +631,7 @@ struct TrainingTile: View {
             VStack(spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(isLocked ? .secondary : .primary)
+                    .foregroundStyle(isLocked ? color.opacity(0.5) : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
@@ -586,10 +665,22 @@ struct TrainingTile: View {
     private var miniPreview: some View {
         if isLocked {
             ZStack {
-                color.opacity(0.05)
-                Image(systemName: "lock.fill")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                // Keep the game's color identity but muted
+                color.opacity(0.06)
+
+                // Blurred version of the game icon as background
+                Image(systemName: type.icon)
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(color.opacity(0.12))
+
+                // Lock badge
+                VStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(color.opacity(0.6))
+                        .padding(8)
+                        .background(color.opacity(0.1), in: Circle())
+                }
             }
         } else {
             switch type {

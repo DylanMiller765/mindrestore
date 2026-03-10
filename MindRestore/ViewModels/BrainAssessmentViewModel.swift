@@ -83,7 +83,6 @@ final class BrainAssessmentViewModel {
         displayDigitIndex = -1
         digitInput = ""
         phase = .digitShow
-
         showNextDigit()
     }
 
@@ -92,19 +91,25 @@ final class BrainAssessmentViewModel {
         displayDigitIndex += 1
 
         if displayDigitIndex >= currentDigits.count {
-            digitTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
                 Task { @MainActor in
+                    self?.displayDigitIndex = -1
                     self?.phase = .digitInput
                 }
             }
             return
         }
 
-        digitTimer = Timer.scheduledTimer(withTimeInterval: 0.7, repeats: false) { [weak self] _ in
+        let interval: TimeInterval = currentDigits.count <= 5 ? 0.8 : 0.65
+        digitTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 self?.showNextDigit()
             }
         }
+    }
+
+    var isShowingDigit: Bool {
+        displayDigitIndex >= 0 && displayDigitIndex < currentDigits.count
     }
 
     func submitDigitAnswer() {
@@ -266,6 +271,14 @@ final class BrainAssessmentViewModel {
         }
     }
 
+    /// Update percentile using real leaderboard data if available (10+ players)
+    func updatePercentileFromLeaderboard(rank: Int, totalPlayers: Int) {
+        guard totalPlayers >= 10, rank > 0 else { return }
+        // rank 1 of 100 = top 1% = better than 99%
+        let realPercentile = max(1, min(99, Int((1.0 - Double(rank) / Double(totalPlayers)) * 100)))
+        percentile = realPercentile
+    }
+
     func createResult() -> BrainScoreResult {
         let result = BrainScoreResult()
         result.brainScore = brainScore
@@ -281,9 +294,9 @@ final class BrainAssessmentViewModel {
         return result
     }
 
-    var currentDisplayDigit: Int? {
-        guard displayDigitIndex >= 0, displayDigitIndex < currentDigits.count else { return nil }
-        return currentDigits[displayDigitIndex]
+    var currentDisplayDigit: String {
+        guard displayDigitIndex >= 0, displayDigitIndex < currentDigits.count else { return "" }
+        return "\(currentDigits[displayDigitIndex])"
     }
 
     var durationSeconds: Int {

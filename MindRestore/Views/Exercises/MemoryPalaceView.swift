@@ -548,6 +548,7 @@ struct MemoryPalaceView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = MemoryPalaceViewModel()
@@ -1087,8 +1088,6 @@ struct MemoryPalaceView: View {
                 LeaderboardRankCard(
                     exerciseType: .memoryPalace,
                     userScore: Int(viewModel.score * 100),
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -1165,7 +1164,9 @@ struct MemoryPalaceView: View {
                 score: viewModel.score,
                 difficulty: viewModel.difficultyLevel,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .memoryPalace
             )
         }
     }

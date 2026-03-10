@@ -139,11 +139,13 @@ struct SequentialMemoryView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
+    @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
 
     @State private var viewModel = SequentialMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
+    @State private var shareImage: UIImage?
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -172,6 +174,20 @@ struct SequentialMemoryView: View {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
+                let card = ExerciseShareCard(
+                    exerciseName: "Number Memory",
+                    exerciseIcon: "number.circle.fill",
+                    accentColor: AppColors.teal,
+                    mainValue: "\(viewModel.maxCorrectLength)",
+                    mainLabel: "Digit Span",
+                    ratingText: viewModel.maxCorrectLength >= 9 ? "Genius" : viewModel.maxCorrectLength >= 7 ? "Excellent" : viewModel.maxCorrectLength >= 5 ? "Good" : "Keep Training",
+                    stats: [
+                        ("Rounds Passed", "\(viewModel.roundResults.filter(\.correct).count)"),
+                        ("Score", viewModel.score.percentString)
+                    ],
+                    ctaText: "How many digits can you remember?"
+                )
+                shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
         }
     }
@@ -436,19 +452,30 @@ struct SequentialMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .sequentialMemory,
                     userScore: viewModel.maxCorrectLength,
-                    userName: user?.username ?? "You",
-                    userLevel: user?.level ?? 1,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
                 VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Number Memory: \(viewModel.maxCorrectLength) digits", image: Image(uiImage: shareImage))
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+
                     Button {
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
-                            .accentButton()
+                            .gradientButton()
                     }
 
                     Button {
@@ -516,7 +543,10 @@ struct SequentialMemoryView: View {
                 score: viewModel.score,
                 difficulty: viewModel.maxCorrectLength,
                 achievementService: achievementService,
-                modelContext: modelContext
+                modelContext: modelContext,
+                gameCenterService: gameCenterService,
+                exerciseType: .sequentialMemory,
+                gameScore: viewModel.maxCorrectLength
             )
         }
     }

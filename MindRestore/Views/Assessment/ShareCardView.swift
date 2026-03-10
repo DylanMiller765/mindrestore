@@ -118,7 +118,7 @@ struct ShareCardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "chart.bar.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("Sharper than \(percentile)% of people your age")
+                    Text("Better than \(percentile)% of players")
                         .font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(scoreColor)
