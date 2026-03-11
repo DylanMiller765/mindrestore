@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		5E6F9CE7047B08D03664CD1F /* VisualMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */; };
 		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
 		B10B3396842B4C6C456D4A98 /* ColorMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50EFACDD30017932D713E7A /* ColorMatchView.swift */; };
@@ -146,6 +147,7 @@
 		3EDD34095382917612B530DD /* MindRestore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindRestore.entitlements; sourceTree = "<group>"; };
 		3FD9448D12FB29A1CB1FEDA6 /* ShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardView.swift; sourceTree = "<group>"; };
 		41D1091C68DA4412E2434189 /* EducationFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationFeedView.swift; sourceTree = "<group>"; };
+		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
 		43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapCalendar.swift; sourceTree = "<group>"; };
 		49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionEngine.swift; sourceTree = "<group>"; };
 		4ABD9792A0473A14E54F8F87 /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 				69BA16CD97233B209118C979 /* ConfettiView.swift */,
 				DEA102E53FDC05BEB37936DB /* ExerciseCard.swift */,
 				HH000002000000000000HH02 /* ExerciseResultView.swift */,
+				BSCARD00000000000001 /* BrainScoreCard.swift */,
 				43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */,
 				HH000002000000000000HH01 /* LeaderboardRankCard.swift */,
 				B0EF9610B969A47D9CF45857 /* ProgressRing.swift */,
@@ -647,6 +650,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BSCARD00000000000002 /* BrainScoreCard.swift in Sources */,
 				AA000001000000000000AA01 /* Achievement.swift in Sources */,
 				DD000001000000000000DD01 /* AdaptiveDifficultyEngine.swift in Sources */,
 				AA000001000000000000AA03 /* AchievementService.swift in Sources */,
@@ -777,7 +781,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = targeted;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -863,7 +867,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = targeted;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -959,7 +963,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -986,7 +990,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

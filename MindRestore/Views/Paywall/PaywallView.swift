@@ -284,7 +284,7 @@ struct PaywallView: View {
                 .font(.body)
                 .foregroundStyle(AppColors.accent)
 
-            Text("Cancel anytime. 30-day money-back guarantee.")
+            Text("Cancel anytime.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

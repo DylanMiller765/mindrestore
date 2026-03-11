@@ -129,7 +129,7 @@ final class User {
         let nextLevelXP = UserLevel.xpRequired(for: level + 1)
         let range = nextLevelXP - currentLevelXP
         guard range > 0 else { return 1.0 }
-        return Double(totalXP - currentLevelXP) / Double(range)
+        return min(1.0, max(0.0, Double(totalXP - currentLevelXP) / Double(range)))
     }
 
     var levelName: String {

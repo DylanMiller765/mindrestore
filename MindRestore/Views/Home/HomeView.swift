@@ -245,66 +245,7 @@ struct HomeView: View {
         Group {
             if let score = latestBrainScore {
                 VStack(spacing: 0) {
-                    // Top section: Score + Ring
-                    HStack(spacing: 16) {
-                        // Score ring (compact)
-                        BrainScoreRing(score: score.brainScore, maxScore: 1000, size: 100, lineWidth: 10)
-                            .accessibilityLabel("Brain Score \(score.brainScore) out of 1000")
-
-                        // Right side: stats stack
-                        VStack(alignment: .leading, spacing: 10) {
-                            // Brain type badge
-                            HStack(spacing: 4) {
-                                Image(systemName: score.brainType.icon)
-                                    .font(.system(size: 10, weight: .bold))
-                                Text(score.brainType.displayName)
-                                    .font(.system(size: 11, weight: .bold))
-                            }
-                            .foregroundStyle(brainTypeColor(score.brainType))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule()
-                                    .fill(brainTypeColor(score.brainType).opacity(0.1))
-                            )
-
-                            HStack(spacing: 16) {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text("\(score.brainAge)")
-                                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    Text("Brain Age")
-                                        .font(.system(size: 9, weight: .semibold))
-                                        .foregroundStyle(AppColors.textTertiary)
-                                        .tracking(0.5)
-                                }
-
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text("Top \(100 - score.percentile)%")
-                                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    Text("Percentile")
-                                        .font(.system(size: 9, weight: .semibold))
-                                        .foregroundStyle(AppColors.textTertiary)
-                                        .tracking(0.5)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(16)
-
-                    // Divider
-                    Rectangle()
-                        .fill(AppColors.cardBorder)
-                        .frame(height: 1)
-
-                    // Bottom: Domain breakdown bars
-                    HStack(spacing: 0) {
-                        domainMiniBar(icon: "brain.head.profile", label: "MEM", value: score.digitSpanScore, color: AppColors.violet)
-                        domainMiniBar(icon: "bolt.fill", label: "SPD", value: score.reactionTimeScore, color: AppColors.coral)
-                        domainMiniBar(icon: "eye.fill", label: "VIS", value: score.visualMemoryScore, color: AppColors.sky)
-                    }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 8)
+                    BrainScoreCard(score: score, compact: false)
 
                     // Divider
                     Rectangle()
@@ -408,44 +349,6 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-        }
-    }
-
-    private func domainMiniBar(icon: String, label: String, value: Double, color: Color) -> some View {
-        VStack(spacing: 6) {
-            // Score bar
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(color.opacity(0.10))
-                    .frame(height: 40)
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(color)
-                    .frame(height: max(4, 40 * value / 100))
-            }
-            .frame(width: 36)
-
-            // Label
-            HStack(spacing: 3) {
-                Image(systemName: icon)
-                    .font(.system(size: 8, weight: .bold))
-                Text(label)
-                    .font(.system(size: 9, weight: .bold))
-            }
-            .foregroundStyle(color)
-
-            Text("\(Int(value))")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func brainTypeColor(_ type: BrainType) -> Color {
-        switch type {
-        case .lightningReflex: return AppColors.coral
-        case .numberCruncher: return AppColors.sky
-        case .patternMaster: return AppColors.violet
-        case .balancedBrain: return AppColors.accent
         }
     }
 

@@ -45,7 +45,7 @@ struct HeatmapCalendarView: View {
                 Text(monthName)
                     .font(.subheadline.weight(.bold))
                 Spacer()
-                Text("\(trainedThisMonth) days trained")
+                Text("\(trainedThisMonth) \(trainedThisMonth == 1 ? "day" : "days") trained")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

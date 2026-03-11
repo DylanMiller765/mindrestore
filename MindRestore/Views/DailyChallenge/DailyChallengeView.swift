@@ -14,6 +14,7 @@ struct DailyChallengeView: View {
     @State private var showChallenge = false
     @State private var strategyTip: StrategyTip?
     @State private var shareImage: UIImage?
+    @AppStorage("daily_challenge_completed_date") private var completedDateString: String = ""
 
     private var user: User? { users.first }
 
@@ -47,6 +48,11 @@ struct DailyChallengeView: View {
                 }
                 SoundService.shared.playComplete()
                 strategyTip = StrategyTipService.shared.freshTip(for: .dailyChallenge)
+
+                // Mark daily challenge as completed for today
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                completedDateString = formatter.string(from: Date.now)
 
                 let ratingText: String
                 if viewModel.score >= 900 { ratingText = "Exceptional" }

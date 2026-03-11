@@ -214,31 +214,6 @@ struct LeaderboardView: View {
 
             // Mini podium with metallic avatars
             VStack(spacing: 0) {
-                // Trophy with glow
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [podiumColor(1).opacity(0.15), .clear],
-                                center: .center,
-                                startRadius: 10,
-                                endRadius: 50
-                            )
-                        )
-                        .frame(width: 80, height: 80)
-
-                    Image(systemName: "trophy.fill")
-                        .font(.system(size: 40))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 0.93, green: 0.65, blue: 0.0)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: podiumColor(1).opacity(0.4), radius: 8)
-                }
-
                 // Mini avatar podium
                 HStack(alignment: .bottom, spacing: 8) {
                     // 2nd
@@ -253,6 +228,31 @@ struct LeaderboardView: View {
                     }
                     // 1st
                     VStack(spacing: 4) {
+                        // Trophy centered above 1st
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [podiumColor(1).opacity(0.15), .clear],
+                                        center: .center,
+                                        startRadius: 10,
+                                        endRadius: 40
+                                    )
+                                )
+                                .frame(width: 64, height: 64)
+
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 0.93, green: 0.65, blue: 0.0)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .shadow(color: podiumColor(1).opacity(0.4), radius: 8)
+                        }
+
                         Circle()
                             .fill(LinearGradient(colors: podiumGradientColors(1), startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 34, height: 34)

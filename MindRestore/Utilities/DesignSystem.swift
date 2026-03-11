@@ -288,58 +288,6 @@ enum CognitiveDomain: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Brain Score Ring
-
-struct BrainScoreRing: View {
-    let score: Int
-    let maxScore: Int
-    var size: CGFloat = 140
-    var lineWidth: CGFloat = 12
-
-    private var progress: CGFloat {
-        guard maxScore > 0 else { return 0 }
-        return min(CGFloat(score) / CGFloat(maxScore), 1.0)
-    }
-
-    private var scoreColor: Color {
-        if progress >= 0.7 { return AppColors.accent }
-        if progress >= 0.4 { return AppColors.sky }
-        return AppColors.coral
-    }
-
-    var body: some View {
-        VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .stroke(AppColors.cardBorder, lineWidth: lineWidth)
-
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        scoreColor,
-                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.8, dampingFraction: 0.7), value: progress)
-
-                Text("\(score)")
-                    .font(.system(size: size * 0.34, weight: .bold, design: .rounded))
-            }
-            .frame(width: size, height: size)
-
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(scoreColor)
-                    .frame(width: 6, height: 6)
-                Text("BRAIN SCORE")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(AppColors.textTertiary)
-                    .tracking(1.5)
-            }
-        }
-    }
-}
-
 // MARK: - Streak Week Calendar
 
 struct StreakWeekView: View {

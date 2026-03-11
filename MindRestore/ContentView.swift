@@ -349,6 +349,13 @@ struct TrainingView: View {
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToMixedTraining = false
     @State private var navigateToDailyChallenge = false
+    @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
+
+    private var hasDoneDailyChallenge: Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return dailyChallengeCompletedDate == formatter.string(from: Date.now)
+    }
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -402,11 +409,9 @@ struct TrainingView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal)
 
-                    // Daily Challenge
+                    // Daily Challenge — always accessible, once per day
                     Button {
-                        if hasReachedLimit {
-                            showingPaywall = true
-                        } else {
+                        if !hasDoneDailyChallenge {
                             navigateToDailyChallenge = true
                         }
                     } label: {
@@ -416,17 +421,17 @@ struct TrainingView: View {
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundStyle(.white.opacity(0.7))
                                     .tracking(1.5)
-                                Text("Today's Challenge")
+                                Text(hasDoneDailyChallenge ? "Completed!" : "Today's Challenge")
                                     .font(.title3.weight(.bold))
                                     .foregroundStyle(.white)
-                                Text("Compete for the daily high score")
+                                Text(hasDoneDailyChallenge ? "Come back tomorrow" : "Compete for the daily high score")
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.75))
                             }
 
                             Spacer()
 
-                            Image(systemName: "star.fill")
+                            Image(systemName: hasDoneDailyChallenge ? "checkmark.circle.fill" : "star.fill")
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
@@ -436,13 +441,12 @@ struct TrainingView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             LinearGradient(
-                                colors: [AppColors.amber, AppColors.coral],
+                                colors: hasDoneDailyChallenge ? [AppColors.teal, AppColors.teal.opacity(0.8)] : [AppColors.amber, AppColors.coral],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
-                        .opacity(hasReachedLimit ? 0.5 : 1)
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal)

@@ -134,96 +134,8 @@ struct ProgressDashboardView: View {
     // MARK: - Brain Score Progress Card
 
     private func brainScoreProgressCard(_ score: BrainScoreResult) -> some View {
-        VStack(spacing: 16) {
-            // Top row: ring on left, stats on right
-            HStack(spacing: 16) {
-                BrainScoreRing(score: score.brainScore, maxScore: 1000, size: 100, lineWidth: 10)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    // Brain type badge
-                    HStack(spacing: 5) {
-                        Image(systemName: score.brainType.icon)
-                            .font(.system(size: 11, weight: .bold))
-                        Text(score.brainType.displayName)
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundStyle(AppColors.accent)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.accent.opacity(0.12))
-                    )
-
-                    // Stats row
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("Brain Age")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(AppColors.textTertiary)
-                            Text("\(score.brainAge)")
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
-                        }
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("Percentile")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(AppColors.textTertiary)
-                            Text("Top \(100 - score.percentile)%")
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColors.accent)
-                        }
-                    }
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            // Domain breakdown bars
-            VStack(spacing: 8) {
-                Divider()
-                    .padding(.bottom, 4)
-
-                domainBar(label: "MEM", value: score.digitSpanScore, color: AppColors.violet, icon: "brain.head.profile")
-                domainBar(label: "SPD", value: score.reactionTimeScore, color: AppColors.coral, icon: "bolt.fill")
-                domainBar(label: "VIS", value: score.visualMemoryScore, color: AppColors.sky, icon: "eye.fill")
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Brain Score \(score.brainScore) out of 1000, \(score.brainType.displayName), brain age \(score.brainAge), top \(100 - score.percentile) percent")
-        .heroCard(color: AppColors.accent)
-    }
-
-    private func domainBar(label: String, value: Double, color: Color, icon: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(color)
-                .frame(width: 14)
-
-            Text(label)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(color)
-                .frame(width: 30, alignment: .leading)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color.opacity(0.12))
-
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color)
-                        .frame(width: max(4, geo.size.width * min(value / 100.0, 1.0)))
-                }
-            }
-            .frame(height: 8)
-
-            Text("\(Int(value))")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textSecondary)
-                .frame(width: 28, alignment: .trailing)
-        }
+        BrainScoreCard(score: score, compact: false)
+            .heroCard(color: AppColors.accent)
     }
 
     // MARK: - Level Progress Card
@@ -235,7 +147,7 @@ struct ProgressDashboardView: View {
                     .fill(AppColors.cardBorder)
                     .frame(width: 68, height: 68)
                 Circle()
-                    .fill(AppColors.violet)
+                    .fill(AppColors.accent)
                     .frame(width: 52, height: 52)
 
                 Text("\(user.level)")
@@ -250,11 +162,11 @@ struct ProgressDashboardView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(AppColors.violet.opacity(0.15))
+                            .fill(AppColors.accent.opacity(0.15))
                             .frame(height: 8)
 
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(AppColors.violet)
+                            .fill(AppColors.accent)
                             .frame(width: max(4, geo.size.width * user.xpProgress), height: 8)
                     }
                 }
@@ -263,11 +175,11 @@ struct ProgressDashboardView: View {
                 HStack {
                     Text("\(user.totalXP) XP")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(AppColors.violet)
+                        .foregroundStyle(AppColors.accent)
                     Spacer()
                     Text("\(Int(user.xpProgress * 100))%")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.violet)
+                        .foregroundStyle(AppColors.accent)
                 }
             }
         }
@@ -313,26 +225,28 @@ struct ProgressDashboardView: View {
         HStack(spacing: 10) {
             streakMiniCard(
                 value: "\(user?.currentStreak ?? 0)",
-                unit: "day streak",
+                unit: "streak",
                 icon: "flame.fill",
-                color: AppColors.coral
-            )
-            streakMiniCard(
-                value: "\(user?.longestStreak ?? 0)",
-                unit: "best streak",
-                icon: "trophy.fill",
-                color: AppColors.amber
+                color: AppColors.coral,
+                detail: "Best: \(user?.longestStreak ?? 0)"
             )
             streakMiniCard(
                 value: "\(sessions.count)",
-                unit: "total sessions",
+                unit: "sessions",
                 icon: "brain.head.profile",
                 color: AppColors.indigo
+            )
+            let totalMins = sessions.reduce(0) { $0 + $1.durationSeconds } / 60
+            streakMiniCard(
+                value: totalMins > 60 ? "\(totalMins / 60)h" : "\(totalMins)m",
+                unit: "trained",
+                icon: "clock.fill",
+                color: AppColors.teal
             )
         }
     }
 
-    private func streakMiniCard(value: String, unit: String, icon: String, color: Color) -> some View {
+    private func streakMiniCard(value: String, unit: String, icon: String, color: Color, detail: String? = nil) -> some View {
         VStack(spacing: 6) {
             ZStack {
                 Circle()
@@ -346,12 +260,23 @@ struct ProgressDashboardView: View {
             Text(value)
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary)
+                .frame(height: 34)
 
             Text(unit)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(AppColors.textTertiary)
                 .textCase(.uppercase)
                 .tracking(0.5)
+
+            if let detail {
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(AppColors.textTertiary)
+            } else {
+                Text(" ")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.clear)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

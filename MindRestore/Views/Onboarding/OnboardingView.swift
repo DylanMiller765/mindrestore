@@ -354,25 +354,8 @@ struct OnboardingView: View {
         user.focusGoals = Array(selectedGoals)
         user.notificationsEnabled = notificationsEnabled
 
-        // Save brain score result and create initial session
-        // (result was already inserted when assessment completed)
-        if let result = assessmentResult {
-            // Create exercise entry for the assessment
-            let exercise = Exercise(
-                type: .activeRecall,
-                difficulty: 3,
-                score: Double(result.brainScore) / 1000.0,
-                durationSeconds: 120
-            )
-            modelContext.insert(exercise)
-
-            // Create today's session
-            let session = DailySession()
-            modelContext.insert(session)
-            session.addExercise(exercise)
-
-            // Update user stats
-            user.updateStreak()
+        // Save brain score result — assessment does NOT count toward daily session/limit
+        if assessmentResult != nil {
             user.totalXP += 50  // Bonus XP for completing onboarding assessment
         }
 

@@ -7,14 +7,15 @@ struct SettingsView: View {
     @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
+    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
+    @Query private var achievements: [Achievement]
 
     @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
-    #if DEBUG
     @State private var showingScreenshotDataConfirmation = false
     @State private var screenshotDataLoaded = false
-    #endif
+    @State private var debugTapCount = 0
     @State private var editingName = false
     @State private var editedName = ""
 
@@ -26,7 +27,6 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     profileHeader
-                    quickStatsRow
                     proCard
                     notificationsCard
                     preferencesCard
@@ -34,9 +34,7 @@ struct SettingsView: View {
                     privacyCard
                     aboutCard
 
-                    #if DEBUG
                     debugCard
-                    #endif
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -53,84 +51,251 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure? This will delete all your progress, scores, and settings.")
             }
-            #if DEBUG
             .alert("Load Screenshot Data", isPresented: $showingScreenshotDataConfirmation) {
                 Button("Load Demo Data", role: .destructive) { loadScreenshotData() }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This replaces ALL your data with demo data for App Store screenshots. Your real progress will be lost.")
             }
-            #endif
         }
     }
 
     // MARK: - Profile Header
 
+    private var latestBrainScore: BrainScoreResult? { brainScores.first }
+    private var unlockedAchievements: [Achievement] { achievements }
+
+    private var totalTrainingMinutes: Int {
+        let totalSeconds = sessions.reduce(0) { $0 + $1.durationSeconds }
+        return totalSeconds / 60
+    }
+
+    private var trainingTimeString: String {
+        let mins = totalTrainingMinutes
+        if mins > 60 {
+            return "\(mins / 60)h \(mins % 60)m"
+        }
+        return "\(mins)m"
+    }
+
     private var profileHeader: some View {
-        VStack(spacing: 14) {
-            // Level ring with XP progress
+        VStack(spacing: 16) {
+            // Dark gradient player card
+            profilePlayerCard
+
+            // Stats row — glowing cards like exercise results
+            profileGlowingStats
+        }
+    }
+
+    private var profilePlayerCard: some View {
+        VStack(spacing: 0) {
+            // Dark hero section
             ZStack {
-                // Background track
-                Circle()
-                    .stroke(AppColors.accent.opacity(0.15), lineWidth: 5)
-                    .frame(width: 88, height: 88)
+                // Cream card bg
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(AppColors.cardSurface)
+                    .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
 
-                // XP progress arc
-                Circle()
-                    .trim(from: 0, to: user?.xpProgress ?? 0)
-                    .stroke(
-                        AppColors.accentGradient,
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                    )
-                    .frame(width: 88, height: 88)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.8, dampingFraction: 0.7), value: user?.xpProgress)
-
-                // Level number
-                Text("Lv\(user?.level ?? 1)")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.accent)
-            }
-
-            VStack(spacing: 4) {
-                HStack(spacing: 6) {
-                    if let user, !user.username.isEmpty {
-                        Text(user.username)
-                            .font(.title3.weight(.semibold))
-                    } else {
-                        Text("Memori")
-                            .font(.title3.weight(.semibold))
-                    }
-                    if isProUser {
-                        Text("PRO")
-                            .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.accentGradient)
-                            )
-                            .foregroundStyle(.white)
-                    }
+                // Subtle accent glow behind brain score
+                if latestBrainScore != nil {
+                    Circle()
+                        .fill(AppColors.accent.opacity(0.06))
+                        .frame(width: 200, height: 200)
+                        .blur(radius: 40)
+                        .offset(y: -10)
                 }
 
-                if let user {
-                    Text(user.levelName)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(AppColors.accent)
+                VStack(spacing: 16) {
+                    // Name + level badge row
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                let name = (user?.username.isEmpty == false) ? user!.username : "Player"
+                                Text(name)
+                                    .font(.title2.weight(.bold))
+                                    .foregroundStyle(AppColors.textPrimary)
+                                if isProUser {
+                                    Text("PRO")
+                                        .font(.system(size: 9, weight: .black))
+                                        .foregroundStyle(AppColors.textPrimary)
+                                        .padding(.horizontal, 7)
+                                        .padding(.vertical, 3)
+                                        .background(
+                                            LinearGradient(colors: [AppColors.amber, AppColors.coral], startPoint: .leading, endPoint: .trailing),
+                                            in: Capsule()
+                                        )
+                                }
+                            }
+                            let levelName = user?.levelName ?? "Beginner"
+                            Text(levelName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppColors.textTertiary)
+                        }
 
-                    Text("\(user.totalXP) / \(user.xpForNextLevel) XP")
-                        .font(.caption2)
+                        Spacer()
+
+                        // Level badge
+                        VStack(spacing: 2) {
+                            Text("LV")
+                                .font(.system(size: 9, weight: .black, design: .rounded))
+                                .foregroundStyle(AppColors.accent.opacity(0.7))
+                            Text("\(user?.level ?? 1)")
+                                .font(.system(size: 24, weight: .black, design: .rounded))
+                                .foregroundStyle(AppColors.accent)
+                        }
+                        .frame(width: 52, height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(AppColors.accent.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                    }
+
+                    // Brain Score hero
+                    profileBrainScoreHero
+
+                    // XP bar
+                    profileXPBar
+                }
+                .padding(20)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+
+            // Brain type + badges row below card
+            if latestBrainScore != nil {
+                profileBadgeRow
+                    .padding(.top, 10)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var profileBrainScoreHero: some View {
+        if let score = latestBrainScore {
+            BrainScoreCard(score: score, compact: true)
+        } else {
+            // No brain score yet
+            VStack(spacing: 8) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 32))
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("Take your first Brain Assessment")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+    }
+
+    @ViewBuilder
+    private var profileXPBar: some View {
+        if let user {
+            VStack(spacing: 4) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(AppColors.accent.opacity(0.08))
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(AppColors.accentGradient)
+                            .frame(width: max(4, geo.size.width * user.xpProgress))
+                    }
+                }
+                .frame(height: 4)
+
+                HStack {
+                    Text("\(user.totalXP) XP")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(user.xpForNextLevel) XP")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColors.textTertiary)
                 }
             }
         }
-        .padding(.vertical, 20)
+    }
+
+    private var profileBadgeRow: some View {
+        HStack(spacing: 8) {
+            if let score = latestBrainScore {
+                let btColor = brainTypeProfileColor(score.brainType)
+                HStack(spacing: 4) {
+                    Image(systemName: score.brainType.icon)
+                        .font(.system(size: 10, weight: .bold))
+                    Text(score.brainType.displayName)
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(btColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(btColor.opacity(0.10), in: Capsule())
+            }
+
+            if !achievements.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("\(achievements.count) achievements")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(AppColors.amber)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(AppColors.amber.opacity(0.10), in: Capsule())
+            }
+        }
+    }
+
+    private var profileGlowingStats: some View {
+        HStack(spacing: 10) {
+            profileGlowStat(
+                value: "\(user?.currentStreak ?? 0)",
+                label: "Day Streak",
+                icon: "flame.fill",
+                color: AppColors.coral
+            )
+            profileGlowStat(
+                value: "\(sessions.count)",
+                label: "Sessions",
+                icon: "brain.head.profile",
+                color: AppColors.violet
+            )
+            profileGlowStat(
+                value: trainingTimeString,
+                label: "Trained",
+                icon: "clock.fill",
+                color: AppColors.teal
+            )
+        }
+    }
+
+    private func profileGlowStat(value: String, label: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(color)
+            Text(value)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(AppColors.textTertiary)
+        }
         .frame(maxWidth: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppColors.cardSurface)
-                .shadow(color: AppColors.accent.opacity(0.08), radius: 16, y: 6)
+        .padding(.vertical, 14)
+        .glowingCard(color: color, intensity: 0.15)
+    }
+
+    private func brainTypeProfileColor(_ type: BrainType) -> Color {
+        switch type {
+        case .lightningReflex: return AppColors.coral
+        case .numberCruncher: return AppColors.sky
+        case .patternMaster: return AppColors.violet
+        case .balancedBrain: return AppColors.accent
         }
     }
 
@@ -563,6 +728,7 @@ struct SettingsView: View {
     private var aboutCard: some View {
         VStack(spacing: 0) {
             aboutRow(icon: "info.circle.fill", color: .gray, title: "Version", trailing: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                .onTapGesture { debugTapCount += 1 }
             Divider().padding(.leading, 52)
             if isProUser {
                 aboutRow(icon: "creditcard.fill", color: .blue, title: "Manage Subscription", isLink: true) {
@@ -716,10 +882,16 @@ struct SettingsView: View {
             .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 7))
     }
 
-    // MARK: - Debug (Screenshot Data)
+    // MARK: - Debug (hidden behind 7-tap on version)
 
-    #if DEBUG
+    @ViewBuilder
     private var debugCard: some View {
+        if debugTapCount >= 7 {
+            debugCardContent
+        }
+    }
+
+    private var debugCardContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: "Debug")
 
@@ -818,11 +990,12 @@ struct SettingsView: View {
     }
 
     private func loadScreenshotData() {
+        #if DEBUG
         guard let user else { return }
         ScreenshotDataGenerator.generate(modelContext: modelContext, user: user, gameCenterService: gameCenterService)
         screenshotDataLoaded = true
+        #endif
     }
-    #endif
 
     // MARK: - Reset
 

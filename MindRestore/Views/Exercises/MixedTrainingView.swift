@@ -507,8 +507,6 @@ struct MixedTrainingView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Spacer()
-
             Button {
                 vm.startSession()
             } label: {
@@ -517,7 +515,7 @@ struct MixedTrainingView: View {
             }
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
-            .padding(.bottom, 16)
+            .padding(.top, 8)
         }
         .padding(.top, 24)
     }

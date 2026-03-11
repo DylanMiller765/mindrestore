@@ -367,14 +367,15 @@ struct ScoreRevealView: View {
                             .animation(.easeOut(duration: 0.5), value: ageProgress)
 
                         // The big number
-                        VStack(spacing: 0) {
+                        VStack(spacing: 2) {
                             Text("\(displayedBrainAge)")
-                                .font(.system(size: 80, weight: .black, design: .rounded))
+                                .font(.system(size: 88, weight: .black, design: .rounded))
                                 .foregroundStyle(ageColor)
+                                .shadow(color: ageColor.opacity(0.3), radius: 8, y: 2)
                                 .contentTransition(.numericText(value: Double(displayedBrainAge)))
 
-                            Text("years")
-                                .font(.subheadline.weight(.semibold))
+                            Text("years old")
+                                .font(.caption.weight(.bold))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -405,10 +406,19 @@ struct ScoreRevealView: View {
 
                 // Percentile
                 if showBrainAgePercentile {
-                    Text("Better than \(viewModel.percentile)% of players")
+                    Text(percentileRoast)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .accessibilityLabel("Better than \(viewModel.percentile) percent of players")
+                        .transition(.opacity)
+                }
+
+                // Training nudge
+                if showBrainAgePercentile {
+                    Text("Train daily to lower your Brain Age")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 4)
                         .transition(.opacity)
                 }
 
@@ -456,6 +466,15 @@ struct ScoreRevealView: View {
         }
     }
 
+    private var percentileRoast: String {
+        let p = viewModel.percentile
+        if p >= 90 { return "Top \(100 - p)% — you're built different" }
+        if p >= 70 { return "Better than \(p)% of players" }
+        if p >= 50 { return "Better than \(p)%... barely above average" }
+        if p >= 30 { return "Only \(p)% scored worse than you" }
+        return "Bottom \(100 - p)% — there's nowhere to go but up"
+    }
+
     private func brainAgeEmoji(_ age: Int) -> String {
         switch age {
         case ...20: return "🤯"
@@ -463,8 +482,8 @@ struct ScoreRevealView: View {
         case 26...30: return "🧠"
         case 31...35: return "😐"
         case 36...45: return "😬"
-        case 46...55: return "💀"
-        default: return "🪦"
+        case 46...55: return "😭"
+        default: return "💀"
         }
     }
 
@@ -478,7 +497,7 @@ struct ScoreRevealView: View {
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(brainAgeColor(for: viewModel.brainAge))
+        .background(AppColors.accent)
         .clipShape(Capsule())
         .accessibilityHint("Share your brain age on social media")
     }
