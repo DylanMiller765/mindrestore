@@ -477,6 +477,7 @@ struct BrainAssessmentView: View {
 
         let result = viewModel.createResult()
         modelContext.insert(result)
+        Analytics.brainScoreCompleted(score: result.brainScore, brainAge: result.brainAge)
 
         // Brain assessment does NOT count toward daily exercise limit
         // It's a diagnostic tool, not a training session

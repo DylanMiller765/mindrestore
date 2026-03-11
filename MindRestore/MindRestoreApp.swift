@@ -1,9 +1,14 @@
 import SwiftUI
 import SwiftData
+import TelemetryDeck
 
 @main
 struct MindRestoreApp: App {
     @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
+
+    init() {
+        Analytics.configure()
+    }
 
     private var colorScheme: ColorScheme? {
         AppTheme(rawValue: appTheme)?.colorScheme

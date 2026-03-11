@@ -64,6 +64,7 @@ struct PaywallView: View {
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) { appeared = true }
+            Analytics.paywallShown()
         }
     }
 
@@ -333,6 +334,7 @@ struct PaywallView: View {
         if let product = storeService.products.first(where: { $0.id == productID }) {
             await storeService.purchase(product)
             if storeService.isProUser {
+                Analytics.paywallConverted(plan: productID)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 SoundService.shared.playComplete()
                 dismiss()
@@ -342,6 +344,7 @@ struct PaywallView: View {
             if let product = storeService.products.first(where: { $0.id == productID }) {
                 await storeService.purchase(product)
                 if storeService.isProUser {
+                    Analytics.paywallConverted(plan: productID)
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     SoundService.shared.playComplete()
                     dismiss()

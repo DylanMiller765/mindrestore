@@ -165,6 +165,12 @@ struct ContentView: View {
                 withAnimation { showingStreakCelebration = true }
             }
         }
+        .onChange(of: selectedTab) { _, newTab in
+            let tabNames = ["Home", "Train", "Compete", "Insights", "Profile"]
+            if newTab < tabNames.count {
+                Analytics.tabViewed(tab: tabNames[newTab])
+            }
+        }
         .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
             guard let destination else { return }
             switch destination {
@@ -313,6 +319,11 @@ extension ContentView {
             for achievementType in achievementService.newlyUnlocked {
                 gc.reportAchievement(for: achievementType)
             }
+        }
+
+        // Track exercise completion
+        if let exerciseType {
+            Analytics.exerciseCompleted(game: exerciseType.rawValue, score: score, difficulty: difficulty)
         }
 
         // Prompt for App Store review at natural moment

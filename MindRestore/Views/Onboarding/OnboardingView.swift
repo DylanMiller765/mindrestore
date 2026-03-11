@@ -359,6 +359,8 @@ struct OnboardingView: View {
             user.totalXP += 50  // Bonus XP for completing onboarding assessment
         }
 
+        Analytics.onboardingCompleted(goals: Array(selectedGoals).map(\.rawValue))
+
         try? modelContext.save()
         onComplete()
     }

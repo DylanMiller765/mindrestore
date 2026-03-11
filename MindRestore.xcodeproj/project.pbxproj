@@ -7,15 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
-		5E6F9CE7047B08D03664CD1F /* VisualMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */; };
-		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
-		B10B3396842B4C6C456D4A98 /* ColorMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50EFACDD30017932D713E7A /* ColorMatchView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
+		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
 		0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */; };
 		0E55511D927C33E1FF5B4B4A /* DailyChallengeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */; };
 		0F933B5273CE53AED927AB16 /* ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69BA16CD97233B209118C979 /* ConfettiView.swift */; };
-		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
 		15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EF9610B969A47D9CF45857 /* ProgressRing.swift */; };
 		1836CEF9329F3657D53366E4 /* SpacedRepetitionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */; };
 		19739734781F9B63810F13CB /* SpacedRepetitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */; };
@@ -28,9 +24,14 @@
 		4C4E83054CA821CADE43D878 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC8E99CC02B442CECAD45D0 /* HomeView.swift */; };
 		4DCBF2D8C5CFA9FC4654591B /* SpacedRepetitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30FAE50B0807DFC68D712E0E /* SpacedRepetitionView.swift */; };
 		5D898BDABF6807EA6EDFF2F4 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55274562ADD2916F382380DF /* User.swift */; };
+		5E6F9CE7047B08D03664CD1F /* VisualMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */; };
 		5EC983D4404D8F5DCD55947A /* EducationContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7175665C273F5FCE80DE0F /* EducationContent.swift */; };
+		625BD36C9F8047AD94213355 /* MathSpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9CCD2719774F76896FF46F /* MathSpeedView.swift */; };
 		6F33F73B24342351802ACB19 /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABD9792A0473A14E54F8F87 /* StoreService.swift */; };
 		6FA7676BFD4BDC702165B01C /* BrainAssessmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */; };
+		711F76182F620A2B005ABF8A /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76172F620A2B005ABF8A /* TelemetryClient */; };
+		711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76192F620A2B005ABF8A /* TelemetryDeck */; };
+		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
@@ -52,12 +53,14 @@
 		AA000001000000000000AA07 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA07 /* AchievementsView.swift */; };
 		AA000001000000000000AA08 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA08 /* LeaderboardView.swift */; };
 		AB56E7A56DA1EDD43280D7D9 /* SpacedRepetitionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC7BA108188B8B4C09EFCAE /* SpacedRepetitionContent.swift */; };
+		B10B3396842B4C6C456D4A98 /* ColorMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50EFACDD30017932D713E7A /* ColorMatchView.swift */; };
+		B298934865BA40DB86711EFF /* ReactionTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85498D53922848A7B7E5000B /* ReactionTimeView.swift */; };
 		B2B156597E1FCA3F78F1370F /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C3D9CA0F1A5DBB16A4EFBA /* Extensions.swift */; };
 		B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1091C68DA4412E2434189 /* EducationFeedView.swift */; };
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
 		BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB01 /* PaywallTriggerService.swift */; };
-		DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEP0001000000000000DD01 /* DeepLinkRouter.swift */; };
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
+		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
 		C93B5314318FD0ED427CDDE3 /* BrainScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05276B66D71D60017E61FBAC /* BrainScore.swift */; };
 		CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */; };
@@ -67,6 +70,7 @@
 		CC000001000000000000CC03 /* DuelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC03 /* DuelView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
+		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
 		D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */; };
 		DD000001000000000000DD01 /* AdaptiveDifficultyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */; };
 		DD000001000000000000DD02 /* StrategyTipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD02 /* StrategyTipService.swift */; };
@@ -77,16 +81,12 @@
 		DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD07 /* ChunkingTrainingView.swift */; };
 		DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD08 /* ProspectiveMemoryView.swift */; };
 		DD000001000000000000DD09 /* SoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD09 /* SoundService.swift */; };
-		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
-		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
-		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
 		DD000001000000000000DD10 /* AchievementDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD10 /* AchievementDetailView.swift */; };
-		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
-		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
-		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
+		DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEP0001000000000000DD01 /* DeepLinkRouter.swift */; };
 		E19FD204B981EA7E98758597 /* BrainAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */; };
 		E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */; };
 		E97ADA93A06FD52948075DD9 /* ActiveRecallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C98AA0B97EDAAFE2D1ED6C /* ActiveRecallView.swift */; };
+		EBB5D0609E5B40D6AD8CF96B /* SequentialMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */; };
 		EE000001000000000000EE01 /* MemoriWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002000000000000EE01 /* MemoriWidgetBundle.swift */; };
 		EE000001000000000000EE02 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002000000000000EE02 /* WidgetDataService.swift */; };
 		EE000001000000000000EE03 /* GameCenterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002000000000000EE03 /* GameCenterService.swift */; };
@@ -99,9 +99,13 @@
 		FF00000100000000000000A4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A5 /* WidgetKit.framework */; };
 		FF00000100000000000000A6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A7 /* SwiftUI.framework */; };
 		FF00000100000000000000A8 /* MemoriWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A9 /* MemoriWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		B298934865BA40DB86711EFF /* ReactionTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85498D53922848A7B7E5000B /* ReactionTimeView.swift */; };
-		EBB5D0609E5B40D6AD8CF96B /* SequentialMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */; };
-		625BD36C9F8047AD94213355 /* MathSpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9CCD2719774F76896FF46F /* MathSpeedView.swift */; };
+		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
+		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
+		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
+		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
+		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
+		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
+		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,9 +133,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualMemoryView.swift; sourceTree = "<group>"; };
-		7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedMatchView.swift; sourceTree = "<group>"; };
-		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
 		05276B66D71D60017E61FBAC /* BrainScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScore.swift; sourceTree = "<group>"; };
 		0C755FB45F2C7F2138DB6779 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallEngine.swift; sourceTree = "<group>"; };
@@ -147,7 +148,6 @@
 		3EDD34095382917612B530DD /* MindRestore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindRestore.entitlements; sourceTree = "<group>"; };
 		3FD9448D12FB29A1CB1FEDA6 /* ShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardView.swift; sourceTree = "<group>"; };
 		41D1091C68DA4412E2434189 /* EducationFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationFeedView.swift; sourceTree = "<group>"; };
-		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
 		43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapCalendar.swift; sourceTree = "<group>"; };
 		49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionEngine.swift; sourceTree = "<group>"; };
 		4ABD9792A0473A14E54F8F87 /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
@@ -155,10 +155,13 @@
 		4B93885923C4848ACCA6ADDA /* StreakBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakBadge.swift; sourceTree = "<group>"; };
 		55274562ADD2916F382380DF /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		69BA16CD97233B209118C979 /* ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
-		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
 		6D13AA055A0D3D3C6E5BD475 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		6E9CCD2719774F76896FF46F /* MathSpeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathSpeedView.swift; sourceTree = "<group>"; };
+		711F761B2F620B8B005ABF8A /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MemoriWidgetExtension.entitlements; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedMatchView.swift; sourceTree = "<group>"; };
+		85498D53922848A7B7E5000B /* ReactionTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionTimeView.swift; sourceTree = "<group>"; };
 		88C98AA0B97EDAAFE2D1ED6C /* ActiveRecallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallView.swift; sourceTree = "<group>"; };
 		8EB3B88316FAD4493693973A /* DualNBackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackView.swift; sourceTree = "<group>"; };
 		940190D18EAB3567FB46D745 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
@@ -180,16 +183,19 @@
 		ACBF181734EEB2DE916FE0ED /* EducationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationDetailView.swift; sourceTree = "<group>"; };
 		B0EF9610B969A47D9CF45857 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		DEEP0001000000000000DD01 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
+		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
+		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
 		C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionCard.swift; sourceTree = "<group>"; };
 		C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentView.swift; sourceTree = "<group>"; };
+		C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualMemoryView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC01 /* TikTokShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TikTokShareCard.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC02 /* ChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC03 /* DuelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuelView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
+		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveDifficultyEngine.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD02 /* StrategyTipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyTipService.swift; sourceTree = "<group>"; };
@@ -200,15 +206,10 @@
 		DD000002000000000000DD07 /* ChunkingTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkingTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD08 /* ProspectiveMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectiveMemoryView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD09 /* SoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundService.swift; sourceTree = "<group>"; };
-		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
-		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
-		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD10 /* AchievementDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementDetailView.swift; sourceTree = "<group>"; };
-		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
-		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
-		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
 		DDC7BA108188B8B4C09EFCAE /* SpacedRepetitionContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacedRepetitionContent.swift; sourceTree = "<group>"; };
 		DEA102E53FDC05BEB37936DB /* ExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCard.swift; sourceTree = "<group>"; };
+		DEEP0001000000000000DD01 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		E02E7BAD4ADED91F69A38C14 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		EA2803E4C219B6D38BE3A296 /* MindRestoreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MindRestoreApp.swift; sourceTree = "<group>"; };
 		ED7175665C273F5FCE80DE0F /* EducationContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationContent.swift; sourceTree = "<group>"; };
@@ -225,14 +226,14 @@
 		FF00000200000000000000A7 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		FF00000200000000000000A9 /* MemoriWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF00000200000000000000AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		85498D53922848A7B7E5000B /* ReactionTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionTimeView.swift; sourceTree = "<group>"; };
-		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
-		6E9CCD2719774F76896FF46F /* MathSpeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathSpeedView.swift; sourceTree = "<group>"; };
+		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
+		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
+		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
+		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
+		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
+		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXBuildFile section (SPM) */
-		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
-/* End PBXBuildFile section (SPM) */
 
 /* Begin PBXFrameworksBuildPhase section */
 		CONFETTI00000006 /* Frameworks */ = {
@@ -240,6 +241,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
+				711F76182F620A2B005ABF8A /* TelemetryClient in Frameworks */,
+				711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -358,6 +361,7 @@
 		3FB21F1A039F009995EF6AC7 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				711F761B2F620B8B005ABF8A /* AnalyticsService.swift */,
 				AA000002000000000000AA03 /* AchievementService.swift */,
 				1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */,
 				A648264315FD88A128F688AA /* DualNBackEngine.swift */,
@@ -572,6 +576,8 @@
 			name = MindRestore;
 			packageProductDependencies = (
 				CONFETTI00000003 /* ConfettiSwiftUI */,
+				711F76172F620A2B005ABF8A /* TelemetryClient */,
+				711F76192F620A2B005ABF8A /* TelemetryDeck */,
 			);
 			productName = MindRestore;
 			productReference = A2AA6B711819E89512C58132 /* MindRestore.app */;
@@ -612,10 +618,11 @@
 			);
 			mainGroup = 1881667C61D769D739783D9F;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			packageReferences = (
 				CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
+				711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 18FB5A40D6375556F647905B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -668,6 +675,7 @@
 				0F933B5273CE53AED927AB16 /* ConfettiView.swift in Sources */,
 				CBAD16576947D46F18E8C64F /* Constants.swift in Sources */,
 				7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */,
+				711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */,
 				90F6C841495047F91C0A60C2 /* DailyChallengeView.swift in Sources */,
 				0E55511D927C33E1FF5B4B4A /* DailyChallengeViewModel.swift in Sources */,
 				2BCE4DCBC49958359A20156C /* DailySession.swift in Sources */,
@@ -773,7 +781,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -833,7 +841,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -859,7 +867,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -925,7 +933,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -1027,6 +1035,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.11.0;
+			};
+		};
 		CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI.git";
@@ -1038,6 +1054,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		711F76172F620A2B005ABF8A /* TelemetryClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryClient;
+		};
+		711F76192F620A2B005ABF8A /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
+		};
 		CONFETTI00000003 /* ConfettiSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
