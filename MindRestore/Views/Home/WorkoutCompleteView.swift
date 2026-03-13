@@ -14,6 +14,7 @@ struct WorkoutCompleteView: View {
     @State private var showDetails: Bool = false
     @State private var showConfetti: Bool = false
     @State private var shareImage: UIImage?
+    @AppStorage("celebratedBrainAgeBelow") private var celebratedBrainAgeBelow = false
 
     private var scoreDelta: Int { newBrainScore - oldBrainScore }
     private var ageDelta: Int { newBrainAge - oldBrainAge }
@@ -43,6 +44,34 @@ struct WorkoutCompleteView: View {
                 if showDetails {
                     detailsSection
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                // First-time brain age below real age celebration
+                if showDetails && userAge > 0 && newBrainAge < userAge && !celebratedBrainAgeBelow {
+                    VStack(spacing: 8) {
+                        Text("Your brain is younger than you!")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(AppColors.teal)
+
+                        ShareLink(
+                            item: "My Brain Age is \(newBrainAge) — that's \(userAge - newBrainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                        ) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.caption.weight(.semibold))
+                                Text("Share This")
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(AppColors.teal, in: Capsule())
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .onAppear {
+                        celebratedBrainAgeBelow = true
+                    }
                 }
 
                 Spacer()

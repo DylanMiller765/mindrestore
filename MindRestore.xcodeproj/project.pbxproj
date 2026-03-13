@@ -107,6 +107,7 @@
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
 		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
 		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
+		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
 		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
 		WK000001000000000000WK02 /* WorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK02 /* WorkoutCard.swift */; };
@@ -240,6 +241,7 @@
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
+		BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreMilestoneView.swift; sourceTree = "<group>"; };
 		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
@@ -484,6 +486,7 @@
 				43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */,
 				HH000002000000000000HH01 /* LeaderboardRankCard.swift */,
 				B0EF9610B969A47D9CF45857 /* ProgressRing.swift */,
+				BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */,
 				AA000002000000000000AA06 /* ShareableCard.swift */,
 				4B93885923C4848ACCA6ADDA /* StreakBadge.swift */,
 				II000002000000000000II03 /* StreakCelebrationView.swift */,
@@ -724,6 +727,7 @@
 				HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */,
 				HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */,
 				II000001000000000000II03 /* StreakCelebrationView.swift in Sources */,
+				BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */,
 				DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */,
 				DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */,
 				DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */,

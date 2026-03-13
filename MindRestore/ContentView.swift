@@ -3,6 +3,7 @@ import SwiftData
 
 extension Notification.Name {
     static let streakMilestoneCelebration = Notification.Name("streakMilestoneCelebration")
+    static let brainScoreMilestoneCelebration = Notification.Name("brainScoreMilestoneCelebration")
     static let workoutGameCompleted = Notification.Name("workoutGameCompleted")
 }
 
@@ -34,6 +35,10 @@ struct ContentView: View {
     // Streak milestone celebration
     @State private var showingStreakCelebration = false
     @State private var celebrationStreak = 0
+
+    // Brain Score milestone celebration
+    @State private var showingBrainScoreMilestone = false
+    @State private var milestoneBrainScore = 0
 
     private var user: User? { users.first }
 
@@ -162,10 +167,25 @@ struct ContentView: View {
                 showingStreakCelebration = false
             }
         }
+        .fullScreenCover(isPresented: $showingBrainScoreMilestone) {
+            BrainScoreMilestoneView(milestone: milestoneBrainScore) {
+                showingBrainScoreMilestone = false
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .streakMilestoneCelebration)) { notification in
             if let streak = notification.userInfo?["streak"] as? Int {
                 celebrationStreak = streak
                 withAnimation { showingStreakCelebration = true }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .brainScoreMilestoneCelebration)) { notification in
+            if let milestone = notification.userInfo?["milestone"] as? Int {
+                milestoneBrainScore = milestone
+                // Delay slightly if streak celebration is showing
+                let delay: Double = showingStreakCelebration ? 2.0 : 0.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation { showingBrainScoreMilestone = true }
+                }
             }
         }
         .onChange(of: selectedTab) { _, newTab in
@@ -350,6 +370,22 @@ extension ContentView {
                     object: nil,
                     userInfo: ["streak": user.currentStreak]
                 )
+            }
+        }
+
+        // Brain Score milestone celebration
+        let brainScoreMilestones = [500, 600, 700, 800, 900, 1000]
+        let latestBrainScoreValue = latestBrainScore
+        let highestCelebrated = UserDefaults.standard.integer(forKey: "highestBrainScoreMilestone")
+        for milestone in brainScoreMilestones.sorted(by: >) {
+            if latestBrainScoreValue >= milestone && highestCelebrated < milestone {
+                UserDefaults.standard.set(milestone, forKey: "highestBrainScoreMilestone")
+                NotificationCenter.default.post(
+                    name: .brainScoreMilestoneCelebration,
+                    object: nil,
+                    userInfo: ["milestone": milestone]
+                )
+                break  // Only celebrate highest new milestone
             }
         }
 
