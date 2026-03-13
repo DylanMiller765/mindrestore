@@ -4,6 +4,7 @@ import SwiftData
 struct ScoreRevealView: View {
     let viewModel: BrainAssessmentViewModel
     let previousScore: BrainScoreResult?
+    var userAge: Int = 0
     let onDone: () -> Void
 
     @Query private var users: [User]
@@ -36,6 +37,22 @@ struct ScoreRevealView: View {
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+
+    private var ageComparisonText: String? {
+        guard userAge > 0 else { return nil }
+        let diff = userAge - viewModel.brainAge
+        if diff > 0 { return "\(diff) years younger than you!" }
+        if diff < 0 { return "\(abs(diff)) years older than your real age" }
+        return "Same as your real age!"
+    }
+
+    private var ageComparisonColor: Color {
+        guard userAge > 0 else { return .secondary }
+        let diff = userAge - viewModel.brainAge
+        if diff > 0 { return AppColors.teal }
+        if diff < 0 { return AppColors.coral }
+        return .secondary
+    }
 
     var body: some View {
         ZStack {
@@ -77,6 +94,12 @@ struct ScoreRevealView: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Your brain age is \(viewModel.brainAge)")
                         .transition(.move(edge: .bottom).combined(with: .opacity))
+
+                        if let comparison = ageComparisonText {
+                            Text(comparison)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(ageComparisonColor)
+                        }
                     }
 
                     // Brain Type
@@ -299,7 +322,7 @@ struct ScoreRevealView: View {
             )
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 
@@ -402,6 +425,12 @@ struct ScoreRevealView: View {
                         Text("You have the brain of a \(viewModel.brainAge)-year-old")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
+
+                        if let comparison = ageComparisonText {
+                            Text(comparison)
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(ageComparisonColor)
+                        }
                     }
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
@@ -647,7 +676,8 @@ struct ScoreRevealView: View {
             percentile: viewModel.percentile,
             digitScore: viewModel.digitScore,
             reactionScore: viewModel.reactionScore,
-            visualScore: viewModel.visualScore
+            visualScore: viewModel.visualScore,
+            userAge: userAge
         )
         shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
 

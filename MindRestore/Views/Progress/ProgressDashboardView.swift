@@ -136,7 +136,7 @@ struct ProgressDashboardView: View {
     // MARK: - Brain Score Progress Card
 
     private func brainScoreProgressCard(_ score: BrainScoreResult) -> some View {
-        BrainScoreCard(score: score, compact: false)
+        BrainScoreCard(score: score, compact: false, userAge: user?.userAge ?? 0)
             .heroCard(color: AppColors.accent)
     }
 

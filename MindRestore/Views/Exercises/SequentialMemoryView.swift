@@ -166,7 +166,7 @@ struct SequentialMemoryView: View {
                 resultsView
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Number Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in

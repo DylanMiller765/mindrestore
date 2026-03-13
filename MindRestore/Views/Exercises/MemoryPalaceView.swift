@@ -580,7 +580,7 @@ struct MemoryPalaceView: View {
         .navigationTitle("Memory Palace")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 

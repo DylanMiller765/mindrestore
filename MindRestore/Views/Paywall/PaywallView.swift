@@ -2,6 +2,9 @@ import SwiftUI
 import StoreKit
 
 struct PaywallView: View {
+    /// Only show the exit offer on high-intent triggers (daily limit, post-assessment)
+    var isHighIntent: Bool = false
+
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
 
@@ -9,6 +12,8 @@ struct PaywallView: View {
     @State private var showExitOffer = false
     @State private var hasSeenExitOffer = false
     @State private var appeared = false
+    @AppStorage("exitOfferShownCount") private var exitOfferShownCount: Int = 0
+    private let maxExitOffers = 3
 
     var body: some View {
         NavigationStack {
@@ -35,11 +40,12 @@ struct PaywallView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        if hasSeenExitOffer {
+                        if hasSeenExitOffer || !isHighIntent || exitOfferShownCount >= maxExitOffers {
                             dismiss()
                         } else {
                             showExitOffer = true
                             hasSeenExitOffer = true
+                            exitOfferShownCount += 1
                         }
                     } label: {
                         Image(systemName: "xmark.circle.fill")

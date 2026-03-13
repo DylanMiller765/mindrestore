@@ -36,7 +36,7 @@ struct DualNBackView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Dual N-Back")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {

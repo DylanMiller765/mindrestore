@@ -192,7 +192,7 @@ struct ColorMatchView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Color Match")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in

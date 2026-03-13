@@ -57,7 +57,7 @@ struct BrainAssessmentView: View {
             case .calculating:
                 calculatingView
             case .results:
-                ScoreRevealView(viewModel: viewModel, previousScore: previousScore) {
+                ScoreRevealView(viewModel: viewModel, previousScore: previousScore, userAge: users.first?.userAge ?? 0) {
                     // Trigger paywall AFTER the reveal is done, not before
                     let isProUser = storeService.isProUser || (users.first?.isProUser ?? false)
                     paywallTrigger.triggerAfterAssessment(isProUser: isProUser)

@@ -535,7 +535,7 @@ struct ProspectiveMemoryView: View {
         .navigationTitle("Prospective Memory")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 

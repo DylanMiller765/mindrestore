@@ -133,6 +133,7 @@ struct TikTokBrainScoreCard: View {
     let digitScore: Double
     let reactionScore: Double
     let visualScore: Double
+    var userAge: Int = 0
 
     var body: some View {
         ZStack {
@@ -159,6 +160,19 @@ struct TikTokBrainScoreCard: View {
                         Text("Brain Age: \(brainAge)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
+
+                        if userAge > 0 {
+                            let diff = userAge - brainAge
+                            if diff > 0 {
+                                Text("(\(diff) yrs younger than actual age!)")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.34, green: 0.85, blue: 0.74))
+                            } else if diff < 0 {
+                                Text("(\(abs(diff)) yrs older than actual age)")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(Color(red: 1, green: 0.45, blue: 0.45))
+                            }
+                        }
 
                         // Brain type badge
                         HStack(spacing: 6) {

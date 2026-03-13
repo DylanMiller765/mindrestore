@@ -46,7 +46,7 @@ struct ActiveRecallView: View {
             viewModel.cancelTimer()
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {

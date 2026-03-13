@@ -12,12 +12,24 @@ struct HomeView: View {
     @Query private var achievements: [Achievement]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
+    @Environment(WorkoutEngine.self) private var workoutEngine
+
     @Binding var selectedTab: Int
     @State private var viewModel = HomeViewModel()
     @State private var showingPaywall = false
     @State private var showingAssessment = false
     @State private var brainScoreShareImage: UIImage?
     @State private var showingFreezeInfo = false
+    @State private var showingWorkoutComplete = false
+    @State private var workoutOldBrainScore: Int = 0
+    @State private var workoutOldBrainAge: Int = 50
+    @State private var workoutNewBrainScore: Int = 0
+    @State private var workoutNewBrainAge: Int = 50
+    @State private var workoutNewResult: WorkoutEngine.RollingScoreResult?
+    @State private var workoutScoreSaved = false
+    @State private var workoutGameToPlay: ExerciseType?
+    @State private var isInWorkoutMode = false
+    @State private var workoutGameJustCompleted = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
 
     private var hasDoneDailyChallenge: Bool {
@@ -88,19 +100,44 @@ struct HomeView: View {
                     }
                     .staggeredEntrance(index: 0)
 
+                    // Smart Daily Workout — primary daily action, top of page
+                    if let workout = workoutEngine.todaysWorkout {
+                        WorkoutCard(
+                            workout: workout,
+                            onStartGame: { exerciseType in
+                                isInWorkoutMode = true
+                                workoutGameToPlay = exerciseType
+                            },
+                            onSeeResults: {
+                                if workoutScoreSaved {
+                                    // Already saved — show saved values without recomputing
+                                    showingWorkoutComplete = true
+                                    return
+                                }
+                                // Use workoutEngine.todaysWorkout directly (not captured struct)
+                                let games = workoutEngine.todaysWorkout?.games ?? []
+                                let result = workoutEngine.computeRollingBrainScore(
+                                    oldScore: latestBrainScore,
+                                    workoutGames: games
+                                )
+                                workoutOldBrainScore = latestBrainScore?.brainScore ?? 0
+                                workoutOldBrainAge = latestBrainScore?.brainAge ?? 50
+                                workoutNewBrainScore = result.brainScore
+                                workoutNewBrainAge = result.brainAge
+                                workoutNewResult = result
+                                showingWorkoutComplete = true
+                            }
+                        )
+                        .staggeredEntrance(index: 1)
+                    }
+
                     // Brain Score Ring + Stats
                     brainScoreCard
-                        .staggeredEntrance(index: 1)
+                        .staggeredEntrance(index: 2)
 
                     // Streak Week Calendar
                     streakWeekCard
-                        .staggeredEntrance(index: 2)
-
-                    // Today's Session (curated workout) — hide once goal met
-                    if viewModel.todaySessionCount < viewModel.dailyGoal {
-                        todaysSessionCard
-                            .staggeredEntrance(index: 3)
-                    }
+                        .staggeredEntrance(index: 3)
 
                     // Daily Challenge — high priority, brings users back
                     dailyChallengeCard
@@ -129,6 +166,9 @@ struct HomeView: View {
             }
             .pageBackground()
             .navigationTitle("Memori")
+            .navigationDestination(item: $workoutGameToPlay) { type in
+                exerciseView(for: type)
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -148,9 +188,86 @@ struct HomeView: View {
                         }
                 }
             }
+            .fullScreenCover(isPresented: $showingWorkoutComplete) {
+                WorkoutCompleteView(
+                    oldBrainScore: workoutOldBrainScore,
+                    newBrainScore: workoutNewBrainScore,
+                    oldBrainAge: workoutOldBrainAge,
+                    newBrainAge: workoutNewBrainAge,
+                    streak: user?.currentStreak ?? 0,
+                    userAge: user?.userAge ?? 0,
+                    onDone: {
+                        // Save the new brain score only once
+                        if !workoutScoreSaved, let result = workoutNewResult {
+                            let score = BrainScoreResult()
+                            score.brainScore = result.brainScore
+                            score.brainAge = result.brainAge
+                            score.percentile = result.percentile
+                            score.brainType = result.brainType
+                            score.digitSpanScore = result.digitSpanScore
+                            score.reactionTimeScore = result.reactionTimeScore
+                            score.visualMemoryScore = result.visualMemoryScore
+                            score.sourceRaw = BrainScoreSource.workout.rawValue
+                            modelContext.insert(score)
+                            workoutScoreSaved = true
+                        }
+                        showingWorkoutComplete = false
+                    }
+                )
+            }
             .onAppear {
                 viewModel.refresh(user: user, sessions: sessions)
                 renderBrainScoreShareImage()
+                // Generate today's workout
+                workoutEngine.generateWorkout(
+                    exercises: exercises,
+                    userGoals: user?.focusGoals ?? []
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
+                guard let typeRaw = notification.userInfo?["exerciseType"] as? String,
+                      let type = ExerciseType(rawValue: typeRaw),
+                      let score = notification.userInfo?["score"] as? Double else { return }
+                workoutGameJustCompleted = true
+                let allDone = workoutEngine.recordGameCompletion(exerciseType: type, score: score)
+
+                // If all 3 games done and we're in workout mode, show celebration
+                if allDone && isInWorkoutMode {
+                    isInWorkoutMode = false
+                    let games = workoutEngine.todaysWorkout?.games ?? []
+                    let result = workoutEngine.computeRollingBrainScore(
+                        oldScore: latestBrainScore,
+                        workoutGames: games
+                    )
+                    workoutOldBrainScore = latestBrainScore?.brainScore ?? 0
+                    workoutOldBrainAge = latestBrainScore?.brainAge ?? 50
+                    workoutNewBrainScore = result.brainScore
+                    workoutNewBrainAge = result.brainAge
+                    workoutNewResult = result
+                    workoutScoreSaved = false
+                    // Small delay to let game view dismiss first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showingWorkoutComplete = true
+                    }
+                }
+            }
+            .onChange(of: workoutGameToPlay) { oldValue, newValue in
+                // User came back from a game — chain to next if game was completed
+                guard oldValue != nil, newValue == nil, isInWorkoutMode else { return }
+
+                // If user hit back manually (no game completed), stop the workout
+                guard workoutGameJustCompleted else {
+                    isInWorkoutMode = false
+                    return
+                }
+                workoutGameJustCompleted = false
+
+                guard let workout = workoutEngine.todaysWorkout,
+                      !workout.isComplete,
+                      let next = workout.nextGame else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    workoutGameToPlay = next.exerciseType
+                }
             }
         }
     }
@@ -254,7 +371,7 @@ struct HomeView: View {
         Group {
             if let score = latestBrainScore {
                 VStack(spacing: 0) {
-                    BrainScoreCard(score: score, compact: false)
+                    BrainScoreCard(score: score, compact: false, userAge: user?.userAge ?? 0)
 
                     // Divider
                     Rectangle()
@@ -264,10 +381,14 @@ struct HomeView: View {
                     // Actions row
                     HStack {
                         Button {
-                            showingAssessment = true
+                            if storeService.isProUser {
+                                showingAssessment = true
+                            } else {
+                                showingPaywall = true
+                            }
                         } label: {
                             HStack(spacing: 5) {
-                                Image(systemName: "arrow.counterclockwise")
+                                Image(systemName: storeService.isProUser ? "arrow.counterclockwise" : "lock.fill")
                                     .font(.system(size: 11, weight: .bold))
                                 Text("Retake")
                                     .font(.system(size: 13, weight: .semibold))

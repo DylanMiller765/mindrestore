@@ -455,7 +455,7 @@ struct MixedTrainingView: View {
             timer?.invalidate()
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 

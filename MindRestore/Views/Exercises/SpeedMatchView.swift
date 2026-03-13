@@ -221,7 +221,7 @@ struct SpeedMatchView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Speed Match")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in

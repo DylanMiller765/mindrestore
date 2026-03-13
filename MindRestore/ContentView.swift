@@ -3,6 +3,7 @@ import SwiftData
 
 extension Notification.Name {
     static let streakMilestoneCelebration = Notification.Name("streakMilestoneCelebration")
+    static let workoutGameCompleted = Notification.Name("workoutGameCompleted")
 }
 
 struct ContentView: View {
@@ -18,8 +19,7 @@ struct ContentView: View {
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
-    // TODO: Re-add WorkoutEngine after adding file to Xcode project
-    // @State private var workoutEngine = WorkoutEngine()
+    @State private var workoutEngine = WorkoutEngine()
 
     // Toast state
     @State private var showingXPToast = false
@@ -55,7 +55,7 @@ struct ContentView: View {
         .environment(trainingManager)
         .environment(gameCenterService)
         .environment(deepLinkRouter)
-        // TODO: .environment(workoutEngine)
+        .environment(workoutEngine)
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
@@ -329,6 +329,16 @@ extension ContentView {
             Analytics.exerciseCompleted(game: exerciseType.rawValue, score: score, difficulty: difficulty)
         }
 
+        // Record workout game completion if applicable
+        if let exerciseType {
+            // Post notification so HomeView can check workout completion
+            NotificationCenter.default.post(
+                name: .workoutGameCompleted,
+                object: nil,
+                userInfo: ["exerciseType": exerciseType.rawValue, "score": score]
+            )
+        }
+
         // Prompt for App Store review at natural moment
         ReviewPromptService.requestIfAppropriate(totalExercises: user.totalExercises, streak: user.currentStreak)
 
@@ -362,7 +372,6 @@ struct TrainingView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
-    @State private var navigateToMixedTraining = false
     @State private var navigateToDailyChallenge = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
 
@@ -409,20 +418,6 @@ struct TrainingView: View {
                     if !isProUser {
                         dailyLimitBanner
                     }
-
-                    // Featured: Daily Session
-                    Button {
-                        if hasReachedLimit {
-                            showingPaywall = true
-                        } else {
-                            navigateToMixedTraining = true
-                        }
-                    } label: {
-                        sessionCardContent
-                            .opacity(hasReachedLimit ? 0.5 : 1)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal)
 
                     // Daily Challenge — always accessible, once per day
                     Button {
@@ -494,9 +489,6 @@ struct TrainingView: View {
                     .navigationDestination(item: $selectedExercise) { type in
                         exerciseDestination(for: type)
                     }
-                    .navigationDestination(isPresented: $navigateToMixedTraining) {
-                        MixedTrainingView()
-                    }
                     .navigationDestination(isPresented: $navigateToDailyChallenge) {
                         DailyChallengeView()
                     }
@@ -510,37 +502,6 @@ struct TrainingView: View {
             .navigationTitle("Train")
             .sheet(isPresented: $showingPaywall) { PaywallView() }
         }
-    }
-
-    private var sessionCardContent: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("DAILY SESSION")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .tracking(1.5)
-                Text("Mixed Training")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
-                Text("5 games, ~10 minutes")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-
-            Spacer()
-
-            Image(systemName: "play.fill")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-                .background(.white.opacity(0.2), in: Circle())
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            AppColors.accentGradient,
-            in: RoundedRectangle(cornerRadius: 12)
-        )
     }
 
     private var hasReachedLimit: Bool {

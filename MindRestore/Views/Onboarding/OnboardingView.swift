@@ -11,30 +11,32 @@ struct OnboardingView: View {
     @State private var assessmentBgColor: Color = AppColors.pageBg
     @State private var notificationsEnabled = false
     @State private var enteredName: String = ""
+    @State private var selectedAge: Int = 25
     @FocusState private var nameFieldFocused: Bool
 
     var onComplete: () -> Void
 
-    private let totalPages = 6
+    private let totalPages = 7
 
     var body: some View {
         ZStack {
-            (currentPage == 3 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            (currentPage == 4 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
                     welcomePage.tag(0)
                     namePage.tag(1)
                     goalsPage.tag(2)
-                    assessmentPage.tag(3)
-                    notificationsPage.tag(4)
-                    privacyPage.tag(5)
+                    agePage.tag(3)
+                    assessmentPage.tag(4)
+                    notificationsPage.tag(5)
+                    privacyPage.tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
                 .animation(.easeInOut, value: currentPage)
 
-                if currentPage != 3 {
+                if currentPage != 4 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
                             Capsule()
@@ -227,6 +229,64 @@ struct OnboardingView: View {
         .onAppear { nameFieldFocused = false }
     }
 
+    // MARK: - Age Page
+
+    private var agePage: some View {
+        VStack(spacing: 32) {
+            Spacer()
+
+            VStack(spacing: 8) {
+                Text("🎂")
+                    .font(.system(size: 64))
+
+                Text("How old are you?")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+
+                Text("We'll compare your Brain Age to your real age")
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Picker("Age", selection: $selectedAge) {
+                ForEach(18...99, id: \.self) { age in
+                    Text("\(age)").tag(age)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(height: 150)
+
+            // Privacy note
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                Text("Stored on your device only. Never shared.")
+                    .font(.caption)
+            }
+            .foregroundStyle(AppColors.textTertiary)
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                continueButton { currentPage = 4 }
+
+                Button {
+                    selectedAge = 0
+                    withAnimation { currentPage = 4 }
+                } label: {
+                    Text("Skip")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
+            }
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Brain Assessment Page
 
     private var assessmentPage: some View {
@@ -238,7 +298,7 @@ struct OnboardingView: View {
                 try? modelContext.save()
             }
             withAnimation {
-                currentPage = 4
+                currentPage = 5
             }
         }
     }
@@ -277,7 +337,7 @@ struct OnboardingView: View {
                     Task {
                         let granted = await NotificationService.shared.requestPermission()
                         notificationsEnabled = granted
-                        withAnimation { currentPage = 5 }
+                        withAnimation { currentPage = 6 }
                     }
                 } label: {
                     Text("Enable Notifications")
@@ -285,7 +345,7 @@ struct OnboardingView: View {
                 }
 
                 Button {
-                    withAnimation { currentPage = 5 }
+                    withAnimation { currentPage = 6 }
                 } label: {
                     Text("Maybe Later")
                         .font(.subheadline.weight(.medium))
@@ -363,6 +423,7 @@ struct OnboardingView: View {
         user.username = enteredName.trimmingCharacters(in: .whitespacesAndNewlines)
         user.focusGoals = Array(selectedGoals)
         user.notificationsEnabled = notificationsEnabled
+        user.userAge = selectedAge
 
         // Save brain score result — assessment does NOT count toward daily session/limit
         if assessmentResult != nil {
