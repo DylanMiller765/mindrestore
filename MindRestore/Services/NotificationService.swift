@@ -176,7 +176,7 @@ final class NotificationService: Sendable {
 
     // MARK: - Weekly Brain Report
 
-    func scheduleWeeklyReport(trainedDays: Int, avgScore: Double, streakLength: Int) {
+    func scheduleWeeklyReport(brainScore: Int, previousBrainScore: Int) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ["weeklyReport"])
 
@@ -184,16 +184,17 @@ final class NotificationService: Sendable {
         content.title = "Your Weekly Brain Report"
         content.sound = .default
 
-        if trainedDays == 0 {
-            content.body = "You didn't train this week. Even 5 minutes helps!"
+        if brainScore == 0 {
+            content.body = "Your weekly Brain Report is ready. Train this week to see your score!"
         } else {
-            let scorePercent = Int(avgScore * 100)
-            content.body = "This week: trained \(trainedDays) day\(trainedDays == 1 ? "" : "s"), avg score \(scorePercent)%, streak: \(streakLength) day\(streakLength == 1 ? "" : "s"). Keep it up!"
+            let delta = brainScore - previousBrainScore
+            let deltaText = delta >= 0 ? "+\(delta)" : "\(delta)"
+            content.body = "Your weekly Brain Report is ready. Brain Score: \(brainScore) (\(deltaText))"
         }
 
         var dateComponents = DateComponents()
-        dateComponents.weekday = 1  // Sunday
-        dateComponents.hour = 19    // 7 PM
+        dateComponents.weekday = 2  // Monday
+        dateComponents.hour = 9     // 9 AM
         dateComponents.minute = 0
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)

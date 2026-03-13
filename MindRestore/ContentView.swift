@@ -233,18 +233,15 @@ struct ContentView: View {
     private func scheduleWeeklyReportIfNeeded() {
         guard let user, user.notificationsEnabled else { return }
 
-        let calendar = Calendar.current
-        let now = Date.now
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        let currentScore = brainScoreResults.first?.brainScore ?? 0
 
-        let thisWeekSessions = sessions.filter { $0.date >= weekAgo }
-        let trainedDays = Set(thisWeekSessions.map { calendar.startOfDay(for: $0.date) }).count
-        let avgScore = thisWeekSessions.isEmpty ? 0.0 : thisWeekSessions.map(\.totalScore).reduce(0, +) / Double(thisWeekSessions.count)
+        // Find a brain score from 7+ days ago for comparison
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
+        let previousScore = brainScoreResults.first(where: { $0.date <= weekAgo })?.brainScore ?? currentScore
 
         NotificationService.shared.scheduleWeeklyReport(
-            trainedDays: trainedDays,
-            avgScore: avgScore,
-            streakLength: user.currentStreak
+            brainScore: currentScore,
+            previousBrainScore: previousScore
         )
     }
 }

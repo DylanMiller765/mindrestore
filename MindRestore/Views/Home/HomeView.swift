@@ -31,6 +31,8 @@ struct HomeView: View {
     @State private var isInWorkoutMode = false
     @State private var workoutGameJustCompleted = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
+    @AppStorage("lastWeeklyReportDismissed") private var lastWeeklyReportDismissed: String = ""
+    @State private var weeklyReportShareImage: UIImage?
 
     private var hasDoneDailyChallenge: Bool {
         let formatter = DateFormatter()
@@ -59,6 +61,56 @@ struct HomeView: View {
         case .exercise(let type): return lastPlayedText(for: type)
         case .mixedTraining, .dailyChallenge, .brainAssessment: return nil
         }
+    }
+
+    // MARK: - Weekly Report Helpers
+
+    private var thisMondayString: String {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let weekday = cal.component(.weekday, from: today)
+        // weekday: 1=Sun, 2=Mon, ...
+        let daysFromMonday = (weekday + 5) % 7 // Mon=0, Tue=1, ..., Sun=6
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today) ?? today
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: monday)
+    }
+
+    private var shouldShowWeeklyReport: Bool {
+        let cal = Calendar.current
+        let weekday = cal.component(.weekday, from: .now)
+        let isMonday = weekday == 2
+        // Show on Monday OR if user hasn't dismissed this week's report yet
+        // But only show if we have data
+        guard !brainScores.isEmpty || !exercises.isEmpty else { return false }
+        if isMonday && lastWeeklyReportDismissed != thisMondayString {
+            return true
+        }
+        return false
+    }
+
+    private var weeklyReportData: (weekStart: Date, weekEnd: Date, currentScore: Int, previousScore: Int, currentAge: Int, previousAge: Int, streak: Int, bestGame: String, gamesPlayed: Int) {
+        let cal = Calendar.current
+        let now = Date.now
+        let weekAgo = cal.date(byAdding: .day, value: -7, to: now) ?? now
+
+        let currentScore = brainScores.first?.brainScore ?? 0
+        let currentAge = brainScores.first?.brainAge ?? 0
+        let previousResult = brainScores.first(where: { $0.date <= weekAgo })
+        let previousScore = previousResult?.brainScore ?? currentScore
+        let previousAge = previousResult?.brainAge ?? currentAge
+
+        let weekExercises = exercises.filter { $0.completedAt >= weekAgo }
+        let gamesPlayed = weekExercises.count
+
+        // Best game = exercise with highest score this week
+        let bestExercise = weekExercises.max(by: { $0.score < $1.score })
+        let bestGame = bestExercise?.type.displayName ?? ""
+
+        let streak = user?.currentStreak ?? 0
+
+        return (weekAgo, now, currentScore, previousScore, currentAge, previousAge, streak, bestGame, gamesPlayed)
     }
 
     private var greeting: String {
@@ -99,6 +151,12 @@ struct HomeView: View {
                         }
                     }
                     .staggeredEntrance(index: 0)
+
+                    // Weekly Brain Report card (shows on Mondays until dismissed)
+                    if shouldShowWeeklyReport {
+                        weeklyReportCard
+                            .staggeredEntrance(index: 1)
+                    }
 
                     // Smart Daily Workout — primary daily action, top of page
                     if let workout = workoutEngine.todaysWorkout {
@@ -363,6 +421,216 @@ struct HomeView: View {
             }
         }
         .glowingCard(color: AppColors.accent, intensity: 0.15)
+    }
+
+    // MARK: - Weekly Report Card
+
+    private var weeklyReportCard: some View {
+        let data = weeklyReportData
+        let scoreDelta = data.currentScore - data.previousScore
+
+        return VStack(spacing: 0) {
+            // Header with dismiss
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.accent)
+                    Text("Weekly Brain Report")
+                        .font(.system(size: 15, weight: .bold))
+                }
+                Spacer()
+                Button {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        lastWeeklyReportDismissed = thisMondayString
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 28)
+                        .background(AppColors.cardSurface, in: Circle())
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            // Content
+            VStack(spacing: 14) {
+                // Brain Score change
+                if data.currentScore > 0 {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Brain Score")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 6) {
+                                if data.previousScore > 0 && data.previousScore != data.currentScore {
+                                    Text("\(data.previousScore)")
+                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.secondary)
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text("\(data.currentScore)")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
+                        Spacer()
+                        if data.previousScore > 0 && scoreDelta != 0 {
+                            HStack(spacing: 3) {
+                                Image(systemName: scoreDelta > 0 ? "arrow.up.right" : "arrow.down.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text(scoreDelta > 0 ? "+\(scoreDelta)" : "\(scoreDelta)")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                            }
+                            .foregroundStyle(scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                (scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral).opacity(0.12),
+                                in: Capsule()
+                            )
+                        }
+                    }
+                }
+
+                // Brain Age trend
+                if data.currentAge > 0 {
+                    let ageDelta = data.currentAge - data.previousAge
+                    HStack {
+                        HStack(spacing: 6) {
+                            Image(systemName: "brain.head.profile")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(AppColors.violet)
+                            Text("Brain Age")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if ageDelta != 0 && data.previousAge > 0 {
+                            Text("Brain Age \(ageDelta < 0 ? "dropped" : "rose") \(abs(ageDelta)) year\(abs(ageDelta) == 1 ? "" : "s")")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(ageDelta < 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                        } else {
+                            Text("Age \(data.currentAge)")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                    }
+                }
+
+                // Stats row
+                HStack(spacing: 0) {
+                    // Streak
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppColors.coral)
+                            Text("\(data.streak)")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        Text("Streak")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // Games Played
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "gamecontroller.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppColors.teal)
+                            Text("\(data.gamesPlayed)")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        Text("Games")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // Best Game
+                    if !data.bestGame.isEmpty {
+                        VStack(spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(AppColors.amber)
+                                Text(data.bestGame)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
+                            Text("Best Game")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+
+                // Share button
+                if let shareImg = weeklyReportShareImage {
+                    ShareLink(
+                        item: Image(uiImage: shareImg),
+                        preview: SharePreview(
+                            "Weekly Brain Report",
+                            image: Image(uiImage: shareImg)
+                        )
+                    ) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Share Report")
+                                .font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundStyle(AppColors.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(AppColors.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppColors.cardSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
+                )
+        )
+        .onAppear {
+            renderWeeklyReportShareImage()
+        }
+    }
+
+    private func renderWeeklyReportShareImage() {
+        let data = weeklyReportData
+        let card = WeeklyReportShareCard(
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            brainScore: data.currentScore,
+            previousBrainScore: data.previousScore,
+            brainAge: data.currentAge,
+            previousBrainAge: data.previousAge,
+            streakLength: data.streak,
+            bestGameName: data.bestGame,
+            gamesPlayed: data.gamesPlayed
+        )
+        weeklyReportShareImage = card.renderAsImage(
+            size: CGSize(width: 360, height: 640),
+            scale: 3
+        )
     }
 
     // MARK: - Brain Score Card

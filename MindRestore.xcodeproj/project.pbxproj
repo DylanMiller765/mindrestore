@@ -67,6 +67,7 @@
 		CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */; };
 		CBAD16576947D46F18E8C64F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A09FC1A19873D8978A18CF2 /* Constants.swift */; };
 		CC000001000000000000CC01 /* TikTokShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC01 /* TikTokShareCard.swift */; };
+		WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WR01000200000000000000A1 /* WeeklyReportShareCard.swift */; };
 		CC000001000000000000CC02 /* ChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC02 /* ChallengeView.swift */; };
 		CC000001000000000000CC03 /* DuelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC03 /* DuelView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
@@ -198,6 +199,7 @@
 		C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentView.swift; sourceTree = "<group>"; };
 		C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualMemoryView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC01 /* TikTokShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TikTokShareCard.swift; sourceTree = "<group>"; };
+		WR01000200000000000000A1 /* WeeklyReportShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportShareCard.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC02 /* ChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC03 /* DuelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuelView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
@@ -486,6 +488,7 @@
 				4B93885923C4848ACCA6ADDA /* StreakBadge.swift */,
 				II000002000000000000II03 /* StreakCelebrationView.swift */,
 				CC000002000000000000CC01 /* TikTokShareCard.swift */,
+				WR01000200000000000000A1 /* WeeklyReportShareCard.swift */,
 				WK000002000000000000WK04 /* WorkoutShareCard.swift */,
 				DD000002000000000000DD05 /* TrainingLimitBanner.swift */,
 			);
@@ -754,6 +757,7 @@
 				WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */,
 				A33BC116471F3B0282CF3629 /* StreakBadge.swift in Sources */,
 				CC000001000000000000CC01 /* TikTokShareCard.swift in Sources */,
+				WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */,
 				CC000001000000000000CC02 /* ChallengeView.swift in Sources */,
 				CC000001000000000000CC03 /* DuelView.swift in Sources */,
 				5D898BDABF6807EA6EDFF2F4 /* User.swift in Sources */,
