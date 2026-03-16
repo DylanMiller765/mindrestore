@@ -5,35 +5,26 @@ import SwiftData
 
 @MainActor @Observable
 final class VisualMemoryViewModel {
-    enum Phase { case setup, showing, input, correct, wrong, finished }
+    enum Phase { case setup, showing, input, correct, finished }
 
     var phase: Phase = .setup
     var startTime: Date?
     var level = 1
-    var lives = 3
     var highlightedCells: Set<Int> = []
     var selectedCells: Set<Int> = []
     var gridSize: Int = 3
     var highlightCount: Int = 3
     private var showTimer: Timer?
-    private var correctLevels = 0
-    private var totalAttempts = 0
-    private var correctAttempts = 0
+    var levelsCompleted = 0
 
     let maxLevel = 10
 
     var score: Double {
-        // Normalized: level reached / max level
-        Double(maxLevelReached) / Double(maxLevel)
+        Double(levelsCompleted) / Double(maxLevel)
     }
 
     var maxLevelReached: Int {
-        correctLevels
-    }
-
-    var accuracy: Double {
-        guard totalAttempts > 0 else { return 0 }
-        return Double(correctAttempts) / Double(totalAttempts)
+        levelsCompleted
     }
 
     var durationSeconds: Int {
@@ -66,10 +57,7 @@ final class VisualMemoryViewModel {
 
     func startGame() {
         level = max(1, AdaptiveDifficultyEngine.shared.currentLevel(for: .visualMemory))
-        lives = 3
-        correctLevels = 0
-        totalAttempts = 0
-        correctAttempts = 0
+        levelsCompleted = 0
         startTime = Date.now
         startLevel()
     }
@@ -109,12 +97,10 @@ final class VisualMemoryViewModel {
 
     func submit() {
         guard phase == .input else { return }
-        totalAttempts += 1
 
         if selectedCells == highlightedCells {
-            // Correct
-            correctAttempts += 1
-            correctLevels = level
+            // Correct — advance
+            levelsCompleted = level
             SoundService.shared.playCorrect()
             HapticService.correct()
 
@@ -124,7 +110,6 @@ final class VisualMemoryViewModel {
                 SoundService.shared.playComplete()
             } else {
                 phase = .correct
-                // Auto-advance after brief delay
                 showTimer?.invalidate()
                 showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
                     Task { @MainActor in
@@ -135,23 +120,11 @@ final class VisualMemoryViewModel {
                 }
             }
         } else {
-            // Wrong
-            lives -= 1
+            // Wrong — game over
             SoundService.shared.playWrong()
             HapticService.wrong()
-
-            if lives <= 0 {
-                HapticService.complete()
-                phase = .finished
-                SoundService.shared.playComplete()
-            } else {
-                phase = .wrong
-            }
+            phase = .finished
         }
-    }
-
-    func retryAfterWrong() {
-        startLevel()
     }
 
     func reset() {
@@ -201,15 +174,12 @@ struct VisualMemoryView: View {
                 gameView(interactable: true)
             case .correct:
                 correctView
-            case .wrong:
-                wrongView
             case .finished:
                 resultsView
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrong)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
@@ -225,9 +195,9 @@ struct VisualMemoryView: View {
                     mainLabel: "Max Level",
                     ratingText: viewModel.ratingText,
                     stats: [
-                        ("Accuracy", viewModel.accuracy.percentString),
-                        ("Lives Left", "\(viewModel.lives) / 3"),
-                        ("Score", viewModel.score.percentString)
+                        ("Levels Cleared", "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)"),
+                        ("Score", viewModel.score.percentString),
+                        ("Time", viewModel.durationSeconds.durationString)
                     ],
                     ctaText: "How far can you get?"
                 )
@@ -264,7 +234,7 @@ struct VisualMemoryView: View {
             VStack(alignment: .leading, spacing: 12) {
                 infoRow(icon: "eye.fill", text: "Memorize which squares light up")
                 infoRow(icon: "hand.tap.fill", text: "Tap to recreate the pattern")
-                infoRow(icon: "heart.fill", text: "3 lives — don't lose them all")
+                infoRow(icon: "exclamationmark.triangle.fill", text: "One mistake and it's over!")
             }
             .appCard()
             .padding(.horizontal)
@@ -299,14 +269,10 @@ struct VisualMemoryView: View {
     private func gameView(interactable: Bool) -> some View {
         VStack(spacing: 20) {
             // Header
-            HStack {
-                Text("Level \(viewModel.level)")
-                    .font(.headline)
-                    .foregroundStyle(AppColors.accent)
-                Spacer()
-                livesDisplay
-            }
-            .padding(.horizontal)
+            Text("Level \(viewModel.level)")
+                .font(.headline)
+                .foregroundStyle(AppColors.accent)
+                .padding(.horizontal)
 
             // Grid size indicator
             Text("\(viewModel.gridSize)x\(viewModel.gridSize) Grid")
@@ -414,18 +380,6 @@ struct VisualMemoryView: View {
         return AppColors.cardBorder
     }
 
-    // MARK: - Lives Display
-
-    private var livesDisplay: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<3, id: \.self) { index in
-                Image(systemName: index < viewModel.lives ? "heart.fill" : "heart")
-                    .font(.system(size: 14))
-                    .foregroundStyle(index < viewModel.lives ? AppColors.coral : AppColors.coral.opacity(0.3))
-            }
-        }
-    }
-
     // MARK: - Correct
 
     private var correctView: some View {
@@ -444,79 +398,9 @@ struct VisualMemoryView: View {
             Text("Level \(viewModel.level) Complete!")
                 .font(.title2.weight(.bold))
 
-            livesDisplay
-
             Spacer()
         }
         .padding(.vertical, 24)
-    }
-
-    // MARK: - Wrong
-
-    private var wrongView: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            // Show the correct pattern
-            Text("Wrong!")
-                .font(.title.weight(.bold))
-                .foregroundStyle(AppColors.coral)
-
-            Text("The correct pattern was:")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            // Show grid with correct answers highlighted
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
-            LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(0..<viewModel.totalCells, id: \.self) { index in
-                    let isCorrect = viewModel.highlightedCells.contains(index)
-                    let wasSelected = viewModel.selectedCells.contains(index)
-
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(wrongCellFill(isCorrect: isCorrect, wasSelected: wasSelected))
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(AppColors.cardBorder, lineWidth: 0.5)
-                        )
-                        .overlay {
-                            if wasSelected && !isCorrect {
-                                // Wrong selection — show X
-                                Image(systemName: "xmark")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(.white.opacity(0.8))
-                            }
-                        }
-                }
-            }
-            .padding(.horizontal, gridPadding)
-
-            livesDisplay
-
-            Spacer()
-
-            Button {
-                viewModel.retryAfterWrong()
-            } label: {
-                Text("Try Again")
-                    .accentButton()
-            }
-            .padding(.horizontal, 32)
-        }
-        .padding(.vertical, 24)
-    }
-
-    private func wrongCellFill(isCorrect: Bool, wasSelected: Bool) -> some ShapeStyle {
-        if isCorrect {
-            // Correct cell — show in green
-            return AnyShapeStyle(AppColors.mint.opacity(0.7))
-        } else if wasSelected {
-            // Incorrectly selected — show in red
-            return AnyShapeStyle(AppColors.coral.opacity(0.7))
-        } else {
-            return AnyShapeStyle(AppColors.cardSurface)
-        }
     }
 
     // MARK: - Results
@@ -546,11 +430,7 @@ struct VisualMemoryView: View {
                 }
 
                 VStack(spacing: 12) {
-                    resultRow(label: "Max Level", value: "\(viewModel.maxLevelReached) / \(viewModel.maxLevel)")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Lives Remaining", value: "\(viewModel.lives) / 3")
+                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)")
                         .accessibilityElement(children: .combine)
                     Divider()
                     resultRow(label: "Score", value: viewModel.score.percentString)
