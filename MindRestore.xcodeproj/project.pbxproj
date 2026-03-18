@@ -117,6 +117,9 @@
 		WK000001000000000000WK02 /* WorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK02 /* WorkoutCard.swift */; };
 		WK000001000000000000WK03 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK03 /* WorkoutCompleteView.swift */; };
 		WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK04 /* WorkoutShareCard.swift */; };
+		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
+		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
+		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,6 +129,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = FF00000300000000000000C1;
 			remoteInfo = MemoriWidgetExtension;
+		};
+		TEST0008000000000000TS01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CBA069A4B0E4D5A961D22D8A;
+			remoteInfo = MindRestore;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -255,6 +265,10 @@
 		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK03 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK04 /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS00 /* ChallengeLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS01 /* SeededGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGeneratorTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -274,6 +288,13 @@
 			files = (
 				FF00000100000000000000A4 /* WidgetKit.framework in Frameworks */,
 				FF00000100000000000000A6 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		TEST0004000000000000TS02 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,10 +354,21 @@
 			children = (
 				717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */,
 				0285AB95C99394B065850C8E /* MindRestore */,
+				TEST0003000000000000TS01 /* MindRestoreTests */,
 				FF00000300000000000000D1 /* MemoriWidget */,
 				18FB5A40D6375556F647905B /* Products */,
 				FF00000300000000000000D2 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		TEST0003000000000000TS01 /* MindRestoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				TEST0001000000000000TS00 /* ChallengeLinkTests.swift */,
+				TEST0001000000000000TS01 /* SeededGeneratorTests.swift */,
+				TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */,
+			);
+			path = MindRestoreTests;
 			sourceTree = "<group>";
 		};
 		18FB5A40D6375556F647905B /* Products */ = {
@@ -344,6 +376,7 @@
 			children = (
 				A2AA6B711819E89512C58132 /* MindRestore.app */,
 				FF00000200000000000000A9 /* MemoriWidgetExtension.appex */,
+				TEST0001000000000000TS03 /* MindRestoreTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -633,6 +666,23 @@
 			productReference = FF00000200000000000000A9 /* MemoriWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		TEST0005000000000000TS01 /* MindRestoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = TEST0007000000000000TS01 /* Build configuration list for PBXNativeTarget "MindRestoreTests" */;
+			buildPhases = (
+				TEST0004000000000000TS01 /* Sources */,
+				TEST0004000000000000TS02 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				TEST0008000000000000TS02 /* PBXTargetDependency */,
+			);
+			name = MindRestoreTests;
+			productName = MindRestoreTests;
+			productReference = TEST0001000000000000TS03 /* MindRestoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -662,6 +712,7 @@
 			targets = (
 				CBA069A4B0E4D5A961D22D8A /* MindRestore */,
 				FF00000300000000000000C1 /* MemoriWidgetExtension */,
+				TEST0005000000000000TS01 /* MindRestoreTests */,
 			);
 		};
 /* End PBXProject section */
@@ -802,6 +853,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		TEST0004000000000000TS01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */,
+				TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */,
+				TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -809,6 +870,11 @@
 			isa = PBXTargetDependency;
 			target = FF00000300000000000000C1 /* MemoriWidgetExtension */;
 			targetProxy = FF00000300000000000000B1 /* PBXContainerItemProxy */;
+		};
+		TEST0008000000000000TS02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CBA069A4B0E4D5A961D22D8A /* MindRestore */;
+			targetProxy = TEST0008000000000000TS01 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1046,6 +1112,40 @@
 			};
 			name = Release;
 		};
+		TEST0006000000000000TS01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 73668242TN;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MindRestore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MindRestore";
+			};
+			name = Debug;
+		};
+		TEST0006000000000000TS02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 73668242TN;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MindRestore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MindRestore";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1072,6 +1172,15 @@
 			buildConfigurations = (
 				FF00000300000000000000F2 /* Debug */,
 				FF00000300000000000000F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		TEST0007000000000000TS01 /* Build configuration list for PBXNativeTarget "MindRestoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				TEST0006000000000000TS01 /* Debug */,
+				TEST0006000000000000TS02 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
