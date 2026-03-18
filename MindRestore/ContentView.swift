@@ -22,6 +22,9 @@ struct ContentView: View {
     @State private var deepLinkRouter = DeepLinkRouter()
     @State private var workoutEngine = WorkoutEngine()
 
+    // Challenge accept flow
+    @State private var showingChallengeAccept = false
+
     // Toast state
     @State private var showingXPToast = false
     @State private var lastXPGained = 0
@@ -199,18 +202,44 @@ struct ContentView: View {
             switch destination {
             case .home:
                 selectedTab = 0
-            case .train, .game(_), .dailyChallenge:
+                deepLinkRouter.pendingDestination = nil
+            case .train, .dailyChallenge:
                 selectedTab = 1
+                deepLinkRouter.pendingDestination = nil
+            case .game(_):
+                selectedTab = 1
+                // Leave pendingDestination so TrainingView can handle it
             case .challenge:
-                selectedTab = 1  // Train tab
+                selectedTab = 1
+                showingChallengeAccept = true
+                deepLinkRouter.pendingDestination = nil
             case .compete:
                 selectedTab = 2
+                deepLinkRouter.pendingDestination = nil
             case .insights:
                 selectedTab = 3
+                deepLinkRouter.pendingDestination = nil
             case .profile:
                 selectedTab = 4
+                deepLinkRouter.pendingDestination = nil
             }
-            deepLinkRouter.pendingDestination = nil
+        }
+        .fullScreenCover(isPresented: $showingChallengeAccept) {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                ChallengeAcceptView(
+                    challenge: challenge,
+                    onAccept: {
+                        showingChallengeAccept = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            deepLinkRouter.pendingDestination = .game(challenge.game)
+                        }
+                    },
+                    onDismiss: {
+                        showingChallengeAccept = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
         }
     }
 
@@ -403,6 +432,7 @@ struct TrainingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreService.self) private var storeService
     @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
@@ -540,6 +570,12 @@ struct TrainingView: View {
             .pageBackground()
             .navigationTitle("Train")
             .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
+                if case .game(let type) = destination {
+                    selectedExercise = type
+                    deepLinkRouter.pendingDestination = nil
+                }
+            }
         }
     }
 

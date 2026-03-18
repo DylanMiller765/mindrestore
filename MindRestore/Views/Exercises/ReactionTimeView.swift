@@ -130,12 +130,15 @@ struct ReactionTimeView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ReactionTimeViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -158,10 +161,30 @@ struct ReactionTimeView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.averageMs,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
         .navigationTitle("Reaction Time")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .tabBar)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .navigationBar)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
@@ -439,6 +462,18 @@ struct ReactionTimeView: View {
                                 Text("Challenge a Friend")
                             }
                             .gradientButton()
+                        }
+                    }
+
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
                         }
                     }
 

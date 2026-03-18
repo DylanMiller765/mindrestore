@@ -193,11 +193,14 @@ struct ColorMatchView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ColorMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -218,8 +221,28 @@ struct ColorMatchView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.leaderboardScore,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
         .navigationTitle("Color Match")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 let card = ExerciseShareCard(
@@ -489,6 +512,18 @@ struct ColorMatchView: View {
                                 Text("Challenge a Friend")
                             }
                             .gradientButton()
+                        }
+                    }
+
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
                         }
                     }
 
