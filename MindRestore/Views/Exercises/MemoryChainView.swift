@@ -55,6 +55,9 @@ final class MemoryChainViewModel {
     var roundNumber: Int = 0
     // Is interaction disabled (during playback or feedback)
     var isPlaybackActive: Bool = false
+    var showingChainComplete: Bool = false
+    var chainCompleteText: String = ""
+    var celebrationCellScales: [CGFloat] = Array(repeating: 1.0, count: 16)
 
     private var playbackTask: Task<Void, Never>?
 
@@ -167,12 +170,17 @@ final class MemoryChainViewModel {
             if playerPosition >= sequence.count {
                 // Completed this chain
                 longestChain = sequence.count
-                // Brief "Nice!" moment then next round
+                showingChainComplete = true
+                chainCompleteText = "Chain \(longestChain)!"
+                SoundService.shared.playComplete()
+                triggerCelebrationRipple(fromCell: sequence.last ?? 0)
+
                 isPlaybackActive = true
                 playbackTask?.cancel()
                 playbackTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(600))
+                    try? await Task.sleep(for: .milliseconds(900))
                     guard !Task.isCancelled else { return }
+                    showingChainComplete = false
                     isPlaybackActive = false
                     lastTappedCell = nil
                     lastTapCorrect = nil
@@ -203,11 +211,37 @@ final class MemoryChainViewModel {
         }
     }
 
+    func triggerCelebrationRipple(fromCell: Int) {
+        let fromRow = fromCell / 4
+        let fromCol = fromCell % 4
+
+        for i in 0..<16 {
+            let row = i / 4
+            let col = i % 4
+            let distance = abs(row - fromRow) + abs(col - fromCol)
+            let delay = Double(distance) * 0.03
+            let intensity: CGFloat = longestChain >= 10 ? 1.12 : (longestChain >= 7 ? 1.1 : 1.06)
+
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+                    celebrationCellScales[i] = intensity
+                }
+                try? await Task.sleep(for: .milliseconds(150))
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    celebrationCellScales[i] = 1.0
+                }
+            }
+        }
+    }
+
     func reset() {
         playbackTask?.cancel()
         phase = .intro
         highlightedIndex = -1
         isPlaybackActive = false
+        showingChainComplete = false
+        celebrationCellScales = Array(repeating: 1.0, count: 16)
     }
 }
 
@@ -261,8 +295,7 @@ struct MemoryChainView: View {
                     ratingText: viewModel.ratingText,
                     stats: [
                         ("Rounds Survived", "\(viewModel.roundNumber)"),
-                        ("Starting Length", "3"),
-                        ("Score", "\(Int(viewModel.normalizedScore * 100))%")
+                        ("Starting Length", "3")
                     ],
                     ctaText: "Beat my memory"
                 )
@@ -363,6 +396,15 @@ struct MemoryChainView: View {
             .padding(.horizontal, 20)
             .allowsHitTesting(viewModel.phase == .recalling && !viewModel.isPlaybackActive)
 
+            // Chain complete celebration text
+            if viewModel.showingChainComplete {
+                Text(viewModel.chainCompleteText)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.mint)
+                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    .padding(.top, 8)
+            }
+
             Spacer()
 
             // Sequence progress dots during recall
@@ -385,6 +427,7 @@ struct MemoryChainView: View {
             }
         }
         .padding(.vertical, 16)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.showingChainComplete)
     }
 
     @ViewBuilder
@@ -410,7 +453,7 @@ struct MemoryChainView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(cellBorderColor(isTapped: isTapped, tapCorrect: tapCorrect, isHighlighted: isHighlighted, itemColor: item.color), lineWidth: isTapped || isHighlighted ? 3 : 1)
                 }
-                .scaleEffect(isHighlighted ? 1.15 : 1.0)
+                .scaleEffect(isHighlighted ? 1.15 : viewModel.celebrationCellScales[index])
                 .shadow(color: isHighlighted ? item.color.opacity(0.4) : .clear, radius: isHighlighted ? 8 : 0)
                 .animation(.easeInOut(duration: 0.2), value: isHighlighted)
                 .animation(.easeInOut(duration: 0.15), value: isTapped)
@@ -461,8 +504,6 @@ struct MemoryChainView: View {
                     resultRow(label: "Rounds Survived", value: "\(viewModel.roundNumber)")
                         .accessibilityElement(children: .combine)
                     Divider()
-                    resultRow(label: "Score", value: "\(Int(viewModel.normalizedScore * 100))%")
-                        .accessibilityElement(children: .combine)
                     resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
                         .accessibilityElement(children: .combine)
                 }

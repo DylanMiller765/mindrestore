@@ -459,67 +459,46 @@ struct HomeView: View {
 
             // Content
             VStack(spacing: 14) {
-                // Brain Score change
-                if data.currentScore > 0 {
-                    HStack(spacing: 12) {
+                // Brain Score + Brain Age side by side
+                HStack(spacing: 0) {
+                    // Brain Score
+                    if data.currentScore > 0 {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Brain Score")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            HStack(spacing: 6) {
-                                if data.previousScore > 0 && data.previousScore != data.currentScore {
-                                    Text("\(data.previousScore)")
-                                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                                        .foregroundStyle(.secondary)
-                                    Image(systemName: "arrow.right")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(.secondary)
-                                }
+                            HStack(spacing: 4) {
                                 Text("\(data.currentScore)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
                                     .foregroundStyle(AppColors.accent)
+                                if data.previousScore > 0 && scoreDelta != 0 {
+                                    Text(scoreDelta > 0 ? "+\(scoreDelta)" : "\(scoreDelta)")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                                }
                             }
                         }
-                        Spacer()
-                        if data.previousScore > 0 && scoreDelta != 0 {
-                            HStack(spacing: 3) {
-                                Image(systemName: scoreDelta > 0 ? "arrow.up.right" : "arrow.down.right")
-                                    .font(.system(size: 12, weight: .bold))
-                                Text(scoreDelta > 0 ? "+\(scoreDelta)" : "\(scoreDelta)")
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                            }
-                            .foregroundStyle(scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                (scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral).opacity(0.12),
-                                in: Capsule()
-                            )
-                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                }
 
-                // Brain Age trend
-                if data.currentAge > 0 {
-                    let ageDelta = data.currentAge - data.previousAge
-                    HStack {
-                        HStack(spacing: 6) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(AppColors.violet)
+                    // Brain Age
+                    if data.currentAge > 0 {
+                        let ageDelta = data.currentAge - data.previousAge
+                        VStack(alignment: .trailing, spacing: 2) {
                             Text("Brain Age")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text("Age \(data.currentAge)")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                if ageDelta != 0 && data.previousAge > 0 {
+                                    Text(ageDelta < 0 ? "\(ageDelta)yr" : "+\(ageDelta)yr")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(ageDelta < 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                                }
+                            }
                         }
-                        Spacer()
-                        if ageDelta != 0 && data.previousAge > 0 {
-                            Text("Brain Age \(ageDelta < 0 ? "dropped" : "rose") \(abs(ageDelta)) year\(abs(ageDelta) == 1 ? "" : "s")")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(ageDelta < 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
-                        } else {
-                            Text("Age \(data.currentAge)")
-                                .font(.system(size: 13, weight: .semibold))
-                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
 

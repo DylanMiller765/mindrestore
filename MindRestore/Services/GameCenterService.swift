@@ -24,6 +24,8 @@ final class GameCenterService {
     static let numberMemoryLeaderboard = "com.dylanmiller.mindrestore.leaderboard.numberMemory"
     static let mathSpeedLeaderboard = "com.dylanmiller.mindrestore.leaderboard.mathSpeed"
     static let dualNBackLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dualNBack"
+    static let wordScrambleLeaderboard = "com.dylanmiller.mindrestore.leaderboard.wordScramble"
+    static let memoryChainLeaderboard = "com.dylanmiller.mindrestore.leaderboard.memoryChain"
 
     // MARK: - Achievement ID Mapping
 
@@ -45,6 +47,8 @@ final class GameCenterService {
         case .numberMemory: return numberMemoryLeaderboard
         case .mathSpeed: return mathSpeedLeaderboard
         case .dualNBack: return dualNBackLeaderboard
+        case .wordScramble: return wordScrambleLeaderboard
+        case .memoryChain: return memoryChainLeaderboard
         }
     }
 
@@ -283,6 +287,11 @@ final class GameCenterService {
             return ([2400, 2100, 1850, 1700, 1550, 1420, 1300, 1180, 1050, 950, 850, 750, 650, 550, 450], false)
         case .streak:
             return ([180, 120, 95, 78, 65, 52, 45, 38, 30, 25, 21, 18, 14, 10, 7], false)
+        case .wordScramble:
+            // Composite: wordsCorrect × 1000 + timeBonus
+            return ([10980, 10950, 9940, 9920, 9900, 8890, 8870, 8850, 7840, 7820, 7800, 6780, 6760, 5740, 4720], false)
+        case .memoryChain:
+            return ([15, 14, 13, 12, 11, 10, 10, 9, 9, 8, 8, 7, 7, 6, 5], false)
         }
     }
 

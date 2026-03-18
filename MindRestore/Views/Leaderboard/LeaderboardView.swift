@@ -585,6 +585,12 @@ struct LeaderboardView: View {
             // Composite score: correctCount × 1000 + timeBonus
             let primary = score / 1000
             return "\(primary)"
+        case .wordScramble:
+            // Composite score: wordsCorrect × 1000 + timeBonus
+            let primary = score / 1000
+            return "\(primary)/10"
+        case .memoryChain:
+            return "\(score)"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)
@@ -732,6 +738,10 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .mathSpeed)
         case .dualNBack:
             return PersonalBestTracker.shared.best(for: .dualNBack)
+        case .wordScramble:
+            return PersonalBestTracker.shared.best(for: .wordScramble)
+        case .memoryChain:
+            return PersonalBestTracker.shared.best(for: .memoryChain)
         }
     }
 }

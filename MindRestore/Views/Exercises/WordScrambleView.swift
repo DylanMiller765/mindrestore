@@ -79,6 +79,11 @@ final class WordScrambleViewModel {
         return "Keep Practicing!"
     }
 
+    /// Composite leaderboard score: primary score × 1000 + time bonus (faster = higher)
+    var leaderboardScore: Int {
+        wordsCorrect * 1000 + max(0, 999 - durationSeconds)
+    }
+
     var difficulty: Int {
         if score >= 0.8 { return 5 }
         if score >= 0.6 { return 4 }
@@ -179,9 +184,9 @@ final class WordScrambleViewModel {
             let timeBonus = max(0, timeRemaining / totalTimeForRound)
             roundScores.append(0.5 + 0.5 * timeBonus)
             HapticService.correct()
-            SoundService.shared.playTap()
+            SoundService.shared.playComplete()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 self?.advanceRound()
             }
         } else {
@@ -201,7 +206,7 @@ final class WordScrambleViewModel {
         roundScores.append(0.0)
         HapticService.wrong()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             self?.advanceRound()
         }
     }
@@ -290,6 +295,7 @@ struct WordScrambleView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
+    @Namespace private var tileNamespace
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -308,13 +314,13 @@ struct WordScrambleView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .animation(.easeInOut(duration: 0.15), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Word Scramble")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
-                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.wordsCorrect, for: .wordScramble)
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .wordScramble)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .wordScramble, correct: viewModel.wordsCorrect, total: viewModel.totalRounds)
 
                 let avgTimeFormatted = String(format: "%.1f", viewModel.averageTime)
@@ -507,7 +513,7 @@ struct WordScrambleView: View {
             // Clear button
             if viewModel.roundResult == nil && !viewModel.answerSlots.isEmpty {
                 Button {
-                    withAnimation(.spring(response: 0.3)) {
+                    withAnimation(.spring(response: 0.08, dampingFraction: 0.85)) {
                         viewModel.clearAnswer()
                     }
                 } label: {
@@ -550,14 +556,20 @@ struct WordScrambleView: View {
         return AppColors.coral
     }
 
+    @State private var tappedTileID: UUID?
+
     private func letterTile(_ tile: WordScrambleViewModel.LetterTile, isAnswer: Bool) -> some View {
         Button {
-            withAnimation(.spring(response: 0.3)) {
+            tappedTileID = tile.id
+            withAnimation(.spring(response: 0.08, dampingFraction: 0.85)) {
                 if isAnswer {
                     viewModel.tapAnswerLetter(tile)
                 } else {
                     viewModel.tapAvailableLetter(tile)
                 }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                tappedTileID = nil
             }
         } label: {
             Text(tile.letter)
@@ -572,7 +584,10 @@ struct WordScrambleView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(AppColors.accent.opacity(isAnswer ? 0.0 : 0.25), lineWidth: 1.5)
                 )
+                .scaleEffect(tappedTileID == tile.id ? 0.88 : 1.0)
+                .animation(.spring(response: 0.06, dampingFraction: 0.6), value: tappedTileID)
         }
+        .matchedGeometryEffect(id: tile.id, in: tileNamespace)
         .buttonStyle(.plain)
     }
 
@@ -719,7 +734,7 @@ struct WordScrambleView: View {
                 modelContext: modelContext,
                 gameCenterService: gameCenterService,
                 exerciseType: .wordScramble,
-                gameScore: viewModel.wordsCorrect
+                gameScore: viewModel.leaderboardScore
             )
         }
     }

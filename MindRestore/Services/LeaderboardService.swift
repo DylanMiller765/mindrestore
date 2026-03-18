@@ -14,6 +14,8 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
     case numberMemory = "Number Memory"
     case mathSpeed = "Math Speed"
     case dualNBack = "Dual N-Back"
+    case wordScramble = "Word Scramble"
+    case memoryChain = "Memory Chain"
 
     var id: String { rawValue }
 
@@ -29,6 +31,8 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .numberMemory: return "number.circle.fill"
         case .mathSpeed: return "multiply.circle.fill"
         case .dualNBack: return "square.grid.3x3"
+        case .wordScramble: return "textformat.abc.dottedunderline"
+        case .memoryChain: return "link.circle.fill"
         }
     }
 
@@ -44,6 +48,8 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .numberMemory: return "Longest digit sequence recalled"
         case .mathSpeed: return "Most math problems solved in time"
         case .dualNBack: return "Highest N-back level reached"
+        case .wordScramble: return "Most words unscrambled out of 10"
+        case .memoryChain: return "Longest sequence chain recalled"
         }
     }
 }

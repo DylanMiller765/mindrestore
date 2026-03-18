@@ -328,6 +328,8 @@ extension ContentView {
                 case .sequentialMemory: GameCenterService.numberMemoryLeaderboard
                 case .mathSpeed: GameCenterService.mathSpeedLeaderboard
                 case .dualNBack: GameCenterService.dualNBackLeaderboard
+                case .wordScramble: GameCenterService.wordScrambleLeaderboard
+                case .memoryChain: GameCenterService.memoryChainLeaderboard
                 default: nil
                 }
                 if let leaderboardID {
@@ -866,14 +868,24 @@ struct TrainingTile: View {
                 }
 
             case .memoryChain:
-                // 4x4 mini grid with some cells highlighted
+                // Mini 4x4 grid with shapes — one cell glowing to show sequence
                 ZStack {
                     color.opacity(0.06)
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(16), spacing: 3), count: 4), spacing: 3) {
+                    let icons = ["circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                                 "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill",
+                                 "circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                                 "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill"]
+                    let glowing = [2, 5, 10] // cells that are "highlighted" in sequence
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
                         ForEach(0..<16, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill([1, 5, 9, 13].contains(i) ? color : color.opacity(0.12))
-                                .frame(height: 16)
+                            Image(systemName: icons[i])
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(glowing.contains(i) ? .white : color.opacity(0.5))
+                                .frame(width: 14, height: 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(glowing.contains(i) ? color : color.opacity(0.1))
+                                )
                         }
                     }
                 }
