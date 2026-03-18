@@ -18,6 +18,7 @@
 		1836CEF9329F3657D53366E4 /* SpacedRepetitionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */; };
 		19739734781F9B63810F13CB /* SpacedRepetitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */; };
 		1A4B6B9F04F88F338CA588E5 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5587C281892FC851EF36036 /* Enums.swift */; };
+		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		2A12EA7DE45D1531ECFC0EB1 /* PsychoEducationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDDEEF4FB05119281748996 /* PsychoEducationCard.swift */; };
 		2BCE4DCBC49958359A20156C /* DailySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F2956C980BEE531AF763D7 /* DailySession.swift */; };
 		2DAFF90C022C4973C51BF82E /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2163242F05F27F1F0A59324 /* Exercise.swift */; };
@@ -180,6 +181,7 @@
 		A2163242F05F27F1F0A59324 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		A2AA6B711819E89512C58132 /* MindRestore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindRestore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5587C281892FC851EF36036 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		CL00000001CL00000001CL00 /* ChallengeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLink.swift; sourceTree = "<group>"; };
 		A648264315FD88A128F688AA /* DualNBackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackEngine.swift; sourceTree = "<group>"; };
 		A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackViewModel.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA01 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 			children = (
 				AA000002000000000000AA01 /* Achievement.swift */,
 				05276B66D71D60017E61FBAC /* BrainScore.swift */,
+				CL00000001CL00000001CL00 /* ChallengeLink.swift */,
 				28F2956C980BEE531AF763D7 /* DailySession.swift */,
 				A5587C281892FC851EF36036 /* Enums.swift */,
 				A2163242F05F27F1F0A59324 /* Exercise.swift */,
@@ -714,6 +717,7 @@
 				A15B03DE954A1622830984B7 /* EducationDetailView.swift in Sources */,
 				711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */,
 				B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */,
+				CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */,
 				1A4B6B9F04F88F338CA588E5 /* Enums.swift in Sources */,
 				AA000001000000000000AA02 /* LeaderboardEntry.swift in Sources */,
 				AA000001000000000000AA04 /* LeaderboardService.swift in Sources */,
