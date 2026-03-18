@@ -671,7 +671,7 @@ struct ScoreRevealView: View {
     // MARK: - Real Percentile from Leaderboard
 
     private func fetchRealPercentile() async {
-        guard gameCenterService.isAuthenticated || gameCenterService.useMockData else { return }
+        guard gameCenterService.isAuthenticated else { return }
         let result = await gameCenterService.loadLeaderboardEntries(
             category: .brainScore,
             timeFilter: .allTime
