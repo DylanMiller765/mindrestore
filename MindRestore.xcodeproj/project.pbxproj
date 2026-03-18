@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEED0001000000000000SE00 /* SeededGenerator.swift */; };
 		WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WSCR0002000000000000WS01 /* WordScrambleView.swift */; };
 		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
@@ -250,6 +251,7 @@
 		BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreMilestoneView.swift; sourceTree = "<group>"; };
 		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
+		SEED0001000000000000SE00 /* SeededGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGenerator.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK03 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK04 /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
@@ -403,6 +405,7 @@
 				DD000002000000000000DD02 /* StrategyTipService.swift */,
 				DD000002000000000000DD04 /* TrainingSessionManager.swift */,
 				WK000002000000000000WK01 /* WorkoutEngine.swift */,
+				SEED0001000000000000SE00 /* SeededGenerator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -766,6 +769,7 @@
 				9D6CE991CC7E9F424AAB8463 /* SpacedRepetitionViewModel.swift in Sources */,
 				6F33F73B24342351802ACB19 /* StoreService.swift in Sources */,
 				WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */,
+				SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */,
 				WK000001000000000000WK02 /* WorkoutCard.swift in Sources */,
 				WK000001000000000000WK03 /* WorkoutCompleteView.swift in Sources */,
 				WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */,
