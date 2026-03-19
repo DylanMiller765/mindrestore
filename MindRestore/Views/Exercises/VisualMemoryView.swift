@@ -311,17 +311,16 @@ struct VisualMemoryView: View {
 
             Spacer()
 
-            if interactable {
-                Button {
-                    viewModel.submit()
-                } label: {
-                    Text("Submit")
-                        .accentButton()
-                }
-                .disabled(viewModel.selectedCells.count != viewModel.highlightCount)
-                .opacity(viewModel.selectedCells.count == viewModel.highlightCount ? 1.0 : 0.5)
-                .padding(.horizontal, 32)
+            // Always reserve space for button so grid doesn't shift between phases
+            Button {
+                viewModel.submit()
+            } label: {
+                Text("Submit")
+                    .accentButton()
             }
+            .disabled(!interactable || viewModel.selectedCells.count != viewModel.highlightCount)
+            .opacity(interactable && viewModel.selectedCells.count == viewModel.highlightCount ? 1.0 : interactable ? 0.5 : 0)
+            .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
     }
