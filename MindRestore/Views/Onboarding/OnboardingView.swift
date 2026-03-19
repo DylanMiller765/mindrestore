@@ -319,7 +319,7 @@ struct OnboardingView: View {
                 Text("Your data stays on\nyour device. Always.")
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
-                Text("No accounts. No cloud. No tracking.\nEverything runs locally.")
+                Text("No accounts. Privacy-first.\nYour training data stays on your device.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

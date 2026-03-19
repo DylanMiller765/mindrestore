@@ -823,7 +823,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             Divider().padding(.leading, 52)
-            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
+            Link(destination: URL(string: "mailto:support@memori.app")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
                         .font(.caption)
