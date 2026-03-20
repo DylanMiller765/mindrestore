@@ -823,7 +823,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             Divider().padding(.leading, 52)
-            Link(destination: URL(string: "mailto:support@memori.app")!) {
+            Link(destination: URL(string: "mailto:dylanjaws@icloud.com")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
                         .font(.caption)
