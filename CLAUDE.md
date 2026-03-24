@@ -1,5 +1,13 @@
 # Memori — Brain Training App
 
+## Project Context
+
+This is an iOS app project using Swift/SwiftUI. Claude cannot modify `.xcodeproj` files or add SPM packages directly. Flag these manual steps clearly for the user with step-by-step Xcode UI instructions. Don't attempt CLI workarounds for Xcode-specific tasks.
+
+## Verify Changes (REQUIRED)
+
+After **every** code change, run the `/verify-changes` skill: build via Xcode MCP, render a preview screenshot if available, show it to the user, and explain what changed. Never skip this step.
+
 ## Commands
 
 ```bash
@@ -61,6 +69,17 @@ xcodebuild -exportArchive -archivePath build/MindRestore.xcarchive -exportPath b
 - P8 key: `/Users/dylanmiller/Downloads/AuthKey_9GRLL5VKUX.p8`
 - App ID: `6760178716`
 - Use PyJWT + ES256 for JWT generation (see memory/reference_asc_api.md)
+
+## Design & UI
+
+- When designing color schemes or visual systems, always ask clarifying questions about the semantic meaning of colors BEFORE implementing. E.g., do colors represent categories, progress levels, or states?
+- Front-load design intent: confirm understanding of visual/UX intent before writing code
+
+## Debugging
+
+- For bug fixes, verify the root cause before implementing a fix. Read the relevant code thoroughly and check for type/overflow issues (e.g., UInt64 vs Int). Don't assume the first hypothesis is correct.
+- Explain the root cause to the user BEFORE writing any fix
+- Search for similar patterns elsewhere in the codebase after fixing
 
 ## Code Style
 

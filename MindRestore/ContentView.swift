@@ -112,6 +112,7 @@ struct ContentView: View {
                     .accessibilityLabel("Profile tab")
             }
             .tint(AppColors.accent)
+            .symbolRenderingMode(.hierarchical)
 
             // Achievement toast overlay
             if let firstUnlocked = achievementService.newlyUnlocked.first {
@@ -293,6 +294,11 @@ extension ContentView {
             trainedToday: true
         )
 
+        // Prompt Game Center sign-in after first exercise if not authenticated
+        if let gc = gameCenterService, !gc.isAuthenticated, user.totalExercises == 1 {
+            gc.authenticate()
+        }
+
         // Report to Game Center
         if let gc = gameCenterService, gc.isAuthenticated {
             // Report longest streak
@@ -372,7 +378,7 @@ struct TrainingView: View {
     }
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     private func lastPlayedText(for type: ExerciseType) -> String? {
         guard let lastExercise = exercises.first(where: { $0.type == type }) else { return nil }

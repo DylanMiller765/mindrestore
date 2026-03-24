@@ -89,7 +89,14 @@ struct OnboardingAssessmentView: View {
                 .background(phaseBgColor)
             }
         }
+        .overlay {
+            if viewModel.showingRetryMessage {
+                retryOverlay
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            }
+        }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.showingRetryMessage)
         .onChange(of: viewModel.phase) { _, newPhase in
             backgroundColor = phaseBackgroundColor(for: newPhase)
         }
@@ -97,9 +104,9 @@ struct OnboardingAssessmentView: View {
 
     private func phaseBackgroundColor(for phase: AssessmentPhase) -> Color {
         switch phase {
-        case .reactionWait: return Color(red: 0.8, green: 0.15, blue: 0.15)
-        case .reactionGo: return Color(red: 0.15, green: 0.75, blue: 0.15)
-        case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
+        case .reactionWait: return AppColors.reactionWait
+        case .reactionGo: return AppColors.reactionGo
+        case .reactionTooEarly: return AppColors.reactionTooEarly
         default: return AppColors.pageBg
         }
     }
@@ -112,9 +119,9 @@ struct OnboardingAssessmentView: View {
 
     private var phaseBgColor: Color {
         switch viewModel.phase {
-        case .reactionWait: return Color(red: 0.8, green: 0.15, blue: 0.15)
-        case .reactionGo: return Color(red: 0.15, green: 0.75, blue: 0.15)
-        case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
+        case .reactionWait: return AppColors.reactionWait
+        case .reactionGo: return AppColors.reactionGo
+        case .reactionTooEarly: return AppColors.reactionTooEarly
         default: return AppColors.pageBg
         }
     }
@@ -299,7 +306,7 @@ struct OnboardingAssessmentView: View {
     // MARK: - Reaction Time
 
     private var reactionWaitView: some View {
-        Color(red: 0.8, green: 0.15, blue: 0.15)
+        AppColors.reactionWait
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 24) {
@@ -315,7 +322,7 @@ struct OnboardingAssessmentView: View {
     }
 
     private var reactionGoView: some View {
-        Color(red: 0.15, green: 0.75, blue: 0.15)
+        AppColors.reactionGo
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 16) {
@@ -331,7 +338,7 @@ struct OnboardingAssessmentView: View {
     }
 
     private var reactionTooEarlyView: some View {
-        Color(red: 0.9, green: 0.5, blue: 0.1)
+        AppColors.reactionTooEarly
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 16) {
@@ -449,6 +456,27 @@ struct OnboardingAssessmentView: View {
             return AppColors.accent
         }
         return Color.gray.opacity(0.12)
+    }
+
+    // MARK: - Retry Overlay
+
+    private var retryOverlay: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.counterclockwise.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(AppColors.amber)
+            Text("One more try!")
+                .font(.title2.weight(.bold))
+            Text("New pattern, same difficulty")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 20, y: 8)
+        )
     }
 
     // MARK: - Calculating

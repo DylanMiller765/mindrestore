@@ -76,6 +76,7 @@ final class GameCenterService {
         let entries: [LeaderboardEntryData]
         let localPlayerEntry: LeaderboardEntryData?
         let totalPlayerCount: Int
+        var error: Error? = nil
     }
 
     func loadLeaderboardEntries(
@@ -150,7 +151,7 @@ final class GameCenterService {
             )
         } catch {
             print("[GameCenterService] Failed to load leaderboard: \(error.localizedDescription)")
-            return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
+            return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0, error: error)
         }
     }
 

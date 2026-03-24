@@ -14,7 +14,7 @@ struct ProgressDashboardView: View {
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     /// The 8 games available on the Train tab
     private static let availableGames: [ExerciseType] = [
@@ -448,6 +448,9 @@ struct ProgressDashboardView: View {
         case .dualNBack: return "N=\(value)"
         case .sequentialMemory: return "\(value) digits"
         case .visualMemory: return "Level \(value)"
+        case .mathSpeed: return "\(value) solved"
+        case .colorMatch, .speedMatch: return "\(value)%"
+        case .chunkingTraining: return "\(value)"
         default: return "\(value)"
         }
     }

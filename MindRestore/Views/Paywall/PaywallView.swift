@@ -12,26 +12,150 @@ struct PaywallView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        heroSection
-                        benefitsStrip
-                            .padding(.top, 24)
-                        plansSection
-                            .padding(.top, 28)
-                        guaranteeRow
-                            .padding(.top, 20)
-                        footerSection
-                            .padding(.top, 16)
-                    }
-                    .padding(.bottom, 120)
-                }
-                .pageBackground()
+            VStack(spacing: 0) {
+                Spacer()
 
-                // Sticky CTA at bottom
-                stickyPurchaseButton
+                // Hero
+                VStack(spacing: 6) {
+                    Text("Unlock Your\nFull Brain Power")
+                        .font(.system(size: 26, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 10)
+
+                    Text("Unlimited training. Real cognitive gains.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .opacity(appeared ? 1 : 0)
+                }
+                .padding(.bottom, 18)
+
+                // Benefits
+                VStack(alignment: .leading, spacing: 8) {
+                    benefitRow(icon: "infinity", text: "Unlimited daily games")
+                    benefitRow(icon: "chart.line.uptrend.xyaxis", text: "Score trends & analytics")
+                    benefitRow(icon: "trophy.fill", text: "Global leaderboards")
+                }
+                .padding(.horizontal, 32)
+                .padding(.bottom, 18)
+
+                // Plans
+                VStack(spacing: 8) {
+                    PlanCard(
+                        title: "Annual",
+                        price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
+                        detail: annualPerMonthDetail,
+                        trialText: trialLabel(for: storeService.annualProduct),
+                        badge: "Best Value",
+                        isSelected: selectedPlan == StoreService.annualProductID,
+                        accentColor: AppColors.violet
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedPlan = StoreService.annualProductID
+                        }
+                    }
+
+                    PlanCard(
+                        title: "Monthly",
+                        price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
+                        detail: "Billed monthly",
+                        trialText: trialLabel(for: storeService.monthlyProduct),
+                        badge: nil,
+                        isSelected: selectedPlan == StoreService.monthlyProductID,
+                        accentColor: AppColors.violet
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedPlan = StoreService.monthlyProductID
+                        }
+                    }
+
+                    PlanCard(
+                        title: "Weekly",
+                        price: storeService.weeklyProduct?.displayPrice ?? "$1.99/wk",
+                        detail: "Billed weekly",
+                        trialText: trialLabel(for: storeService.weeklyProduct),
+                        badge: nil,
+                        isSelected: selectedPlan == StoreService.weeklyProductID,
+                        accentColor: AppColors.violet
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedPlan = StoreService.weeklyProductID
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+
+                // CTA + footer
+                VStack(spacing: 8) {
+                    Button {
+                        Task { await purchase() }
+                    } label: {
+                        Group {
+                            if storeService.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "lock.open.fill")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text(ctaButtonLabel)
+                                        .font(.headline.weight(.bold))
+                                }
+                            }
+                        }
+                        .gradientButton(AppColors.premiumGradient)
+                    }
+                    .disabled(storeService.isLoading)
+                    .padding(.horizontal, 20)
+
+                    if let error = storeService.purchaseError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(AppColors.error)
+                    }
+
+                    Text(ctaDisclaimerLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+
+                    HStack(spacing: 12) {
+                        Button("Restore") {
+                            Task { await storeService.restorePurchases() }
+                        }
+                        Text("·").foregroundStyle(.quaternary)
+                        Button("Terms") {
+                            if let url = URL(string: "https://memori-website-sooty.vercel.app/terms") {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        Text("·").foregroundStyle(.quaternary)
+                        Button("Privacy") {
+                            if let url = URL(string: "https://memori-website-sooty.vercel.app/privacy") {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                    }
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.tertiary)
+                }
+                .padding(.bottom, 12)
+
+                Spacer()
             }
+            .background(
+                LinearGradient(
+                    colors: [
+                        AppColors.pageBgLight,
+                        AppColors.accent.opacity(0.07),
+                        AppColors.accent.opacity(0.22)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -68,155 +192,20 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Hero
+    // MARK: - Benefit Row
 
-    private var heroSection: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.cardBorder)
-                        .frame(width: 100, height: 100)
-                        .scaleEffect(appeared ? 1 : 0.6)
-
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 44, weight: .medium))
-                        .foregroundStyle(AppColors.accent)
-                        .symbolEffect(.pulse, isActive: true)
-                }
-
-                VStack(spacing: 6) {
-                    Text("Unlock Your\nFull Brain Power")
-                        .font(.system(size: 28, weight: .bold))
-                        .multilineTextAlignment(.center)
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 10)
-
-                    Text("Unlimited training. Real cognitive gains.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .opacity(appeared ? 1 : 0)
-                }
-            }
-            .padding(.top, 16)
+    private func benefitRow(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 20)
+            Text(text)
+                .font(.subheadline.weight(.medium))
         }
     }
 
-    // MARK: - Benefits Strip
-
-    private var benefitsStrip: some View {
-        VStack(spacing: 16) {
-            // Free vs Pro comparison
-            VStack(spacing: 0) {
-                // Header row
-                HStack(spacing: 0) {
-                    Text("")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Free")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 56)
-                    Text("Pro")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(AppColors.accent)
-                        .frame(width: 56)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-
-                Divider()
-
-                comparisonRow("Daily games", free: "3/day", pro: true)
-                Divider().padding(.leading, 16)
-                comparisonRow("All 8 exercises", free: nil, pro: true)
-                Divider().padding(.leading, 16)
-                comparisonRow("Personal records", free: nil, pro: true)
-                Divider().padding(.leading, 16)
-                comparisonRow("Score trends & analytics", free: nil, pro: true, freeHas: false)
-                Divider().padding(.leading, 16)
-                comparisonRow("Performance sparklines", free: nil, pro: true, freeHas: false)
-                Divider().padding(.leading, 16)
-                comparisonRow("Leaderboards", free: nil, pro: true)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(AppColors.cardSurface)
-                    .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
-            )
-        }
-        .padding(.horizontal, 20)
-    }
-
-    private func comparisonRow(_ feature: String, free: String? = nil, pro: Bool, freeHas: Bool = true) -> some View {
-        HStack(spacing: 0) {
-            Text(feature)
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Group {
-                if let free {
-                    Text(free)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                } else if freeHas {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                } else {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary.opacity(0.3))
-                }
-            }
-            .frame(width: 56)
-
-            Group {
-                if pro {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(AppColors.accent)
-                }
-            }
-            .frame(width: 56)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 11)
-    }
-
-    // MARK: - Plans
-
-    private var plansSection: some View {
-        VStack(spacing: 10) {
-            PlanCard(
-                title: "Annual",
-                price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
-                detail: annualPerMonthDetail,
-                trialText: trialLabel(for: storeService.annualProduct),
-                badge: "Best Value",
-                isSelected: selectedPlan == StoreService.annualProductID,
-                accentColor: AppColors.violet
-            ) {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    selectedPlan = StoreService.annualProductID
-                }
-            }
-
-            PlanCard(
-                title: "Monthly",
-                price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
-                detail: "Billed monthly",
-                trialText: trialLabel(for: storeService.monthlyProduct),
-                badge: nil,
-                isSelected: selectedPlan == StoreService.monthlyProductID,
-                accentColor: AppColors.violet
-            ) {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    selectedPlan = StoreService.monthlyProductID
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-    }
+    // MARK: - Helpers
 
     private var annualPerMonthDetail: String {
         if let annualProduct = storeService.annualProduct,
@@ -230,104 +219,6 @@ struct PaywallView: View {
         }
         return "Just $1.67/month — Save 58%"
     }
-
-    // MARK: - Sticky Purchase Button
-
-    private var stickyPurchaseButton: some View {
-        VStack(spacing: 8) {
-            Button {
-                Task { await purchase() }
-            } label: {
-                Group {
-                    if storeService.isLoading {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        HStack(spacing: 8) {
-                            Image(systemName: "lock.open.fill")
-                                .font(.subheadline.weight(.semibold))
-                            Text(ctaButtonLabel)
-                                .font(.headline.weight(.bold))
-                        }
-                    }
-                }
-                .gradientButton(AppColors.premiumGradient)
-            }
-            .disabled(storeService.isLoading)
-            .accessibilityHint("Subscribe to the selected plan")
-            .padding(.horizontal, 20)
-
-            Text(ctaDisclaimerLabel)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-
-            if let error = storeService.purchaseError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(AppColors.error)
-            }
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 16)
-        .background(
-            Rectangle()
-                .fill(AppColors.cardSurface)
-                .ignoresSafeArea(edges: .bottom)
-        )
-    }
-
-    // MARK: - Guarantee
-
-    private var guaranteeRow: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "shield.checkered")
-                .font(.body)
-                .foregroundStyle(AppColors.accent)
-
-            Text("Cancel anytime.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 24)
-    }
-
-    // MARK: - Footer
-
-    private var footerSection: some View {
-        VStack(spacing: 8) {
-            Button("Restore Purchases") {
-                Task { await storeService.restorePurchases() }
-            }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-
-            HStack(spacing: 16) {
-                Button("Terms of Use") {
-                    if let url = URL(string: "https://memori-website-sooty.vercel.app/terms") {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-
-                Text("|")
-                    .font(.caption2)
-                    .foregroundStyle(.quaternary)
-
-                Button("Privacy Policy") {
-                    if let url = URL(string: "https://memori-website-sooty.vercel.app/privacy") {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.horizontal, 24)
-    }
-
-    // MARK: - Actions
 
     private func purchase() async {
         let productID = selectedPlan
@@ -369,13 +260,20 @@ struct PaywallView: View {
             }
             return "\(value)-\(unit) free trial"
         }
-        return "Start Pro"
+        return ""
+    }
+
+    private var selectedProduct: Product? {
+        switch selectedPlan {
+        case StoreService.annualProductID: return storeService.annualProduct
+        case StoreService.monthlyProductID: return storeService.monthlyProduct
+        case StoreService.weeklyProductID: return storeService.weeklyProduct
+        default: return storeService.annualProduct
+        }
     }
 
     private var ctaButtonLabel: String {
-        let selectedProduct = selectedPlan == StoreService.annualProductID
-            ? storeService.annualProduct
-            : storeService.monthlyProduct
+        let selectedProduct = self.selectedProduct
         if let product = selectedProduct,
            let sub = product.subscription,
            let intro = sub.introductoryOffer,
@@ -395,9 +293,7 @@ struct PaywallView: View {
     }
 
     private var ctaDisclaimerLabel: String {
-        let selectedProduct = selectedPlan == StoreService.annualProductID
-            ? storeService.annualProduct
-            : storeService.monthlyProduct
+        let selectedProduct = self.selectedProduct
         if let product = selectedProduct,
            let sub = product.subscription,
            let intro = sub.introductoryOffer,
@@ -413,7 +309,7 @@ struct PaywallView: View {
             }
             return "No charge for \(value) \(unit). Cancel anytime."
         }
-        return "Cancel anytime. Manage subscription in Settings."
+        return "Cancel anytime."
     }
 }
 
@@ -435,26 +331,26 @@ struct PlanCard: View {
                 ZStack {
                     Circle()
                         .stroke(isSelected ? accentColor : Color.gray.opacity(0.3), lineWidth: 2)
-                        .frame(width: 24, height: 24)
+                        .frame(width: 22, height: 22)
 
                     if isSelected {
                         Circle()
                             .fill(accentColor)
-                            .frame(width: 16, height: 16)
+                            .frame(width: 14, height: 14)
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 8) {
                         Text(title)
-                            .font(.headline.weight(.bold))
+                            .font(.subheadline.weight(.bold))
 
                         if let badge {
                             Text(badge)
-                                .font(.caption2.weight(.bold))
+                                .font(.system(size: 9, weight: .bold))
                                 .textCase(.uppercase)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
                                 .background(
                                     LinearGradient(
                                         colors: [AppColors.violet, AppColors.indigo],
@@ -468,7 +364,7 @@ struct PlanCard: View {
                     }
 
                     Text(detail)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
 
                     if !trialText.isEmpty {
@@ -481,10 +377,11 @@ struct PlanCard: View {
                 Spacer()
 
                 Text(price)
-                    .font(.headline.weight(.bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(isSelected ? accentColor : .primary)
             }
-            .padding(16)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(AppColors.cardElevated)
@@ -540,7 +437,7 @@ struct ExitOfferSheet: View {
 
             VStack(spacing: 12) {
                 Button(action: onSubscribe) {
-                    Text("Start Free Trial")
+                    Text("Unlock Pro")
                         .gradientButton()
                 }
 
@@ -562,4 +459,11 @@ struct ExitOfferSheet: View {
             }
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview("Paywall") {
+    PaywallView()
+        .environment(StoreService())
 }

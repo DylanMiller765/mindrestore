@@ -16,6 +16,7 @@ struct LeaderboardView: View {
     @State private var totalPlayerCount: Int = 0
     @State private var isLoading = false
     @State private var hasLoaded = false
+    @State private var loadError: Error?
 
     private var user: User? { users.first }
 
@@ -87,6 +88,8 @@ struct LeaderboardView: View {
                     skeletonLoadingView
                         .padding(.horizontal)
                         .padding(.top, 8)
+                } else if !isLoading && entries.isEmpty && loadError != nil {
+                    errorLeaderboardView
                 } else if !isLoading && entries.isEmpty {
                     emptyLeaderboardView
                 } else {
@@ -180,6 +183,43 @@ struct LeaderboardView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Error State
+
+    private var errorLeaderboardView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 48))
+                .foregroundStyle(AppColors.textTertiary)
+
+            Text("Couldn't Load Rankings")
+                .font(.title3.weight(.semibold))
+
+            Text("Check your connection and try again.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button {
+                loadLeaderboard()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Retry")
+                }
+                .font(.headline.weight(.semibold))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(AppColors.accent, in: Capsule())
+                .foregroundStyle(.white)
+            }
 
             Spacer()
         }
@@ -643,6 +683,7 @@ struct LeaderboardView: View {
 
         isLoading = true
         hasLoaded = true
+        loadError = nil
 
         let category = selectedCategory
         let filter = selectedFilter
@@ -652,6 +693,7 @@ struct LeaderboardView: View {
                 category: category,
                 timeFilter: filter
             )
+            loadError = result.error
             var loadedEntries = result.entries
 
             // Update local player's score if our local best is higher (GC can be stale)

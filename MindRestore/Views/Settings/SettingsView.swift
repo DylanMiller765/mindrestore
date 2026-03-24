@@ -20,7 +20,7 @@ struct SettingsView: View {
     @State private var editedName = ""
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         NavigationStack {

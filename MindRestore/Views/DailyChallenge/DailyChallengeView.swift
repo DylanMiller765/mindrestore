@@ -647,7 +647,7 @@ struct DailyChallengeView: View {
         }
 
         // Smart paywall trigger after daily challenge
-        let isProUser = storeService.isProUser || (user?.isProUser ?? false)
+        let isProUser = storeService.isProUser
         paywallTrigger.triggerAfterDailyChallenge(isProUser: isProUser)
     }
 }

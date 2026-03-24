@@ -69,6 +69,11 @@ enum AppColors {
     static let rose = Color(red: 0.78, green: 0.35, blue: 0.48)             // dusty rose
     static let amber = Color(red: 0.85, green: 0.65, blue: 0.25)            // warm amber
 
+    // Reaction time phase colors
+    static let reactionWait = Color(red: 0.8, green: 0.15, blue: 0.15)
+    static let reactionGo = Color(red: 0.15, green: 0.75, blue: 0.3)
+    static let reactionTooEarly = Color(red: 0.85, green: 0.55, blue: 0.1)
+
     // Gradients — subtle warm gradient for premium feel
     static let accentGradient = LinearGradient(
         colors: [accent, Color(red: 0.35, green: 0.55, blue: 0.95)],

@@ -22,6 +22,7 @@ final class ColorMatchViewModel {
     var feedbackColor: Color? = nil
     var showFeedback = false
     var lastWrongCorrectAnswer: String? = nil
+    private var roundTimer: Timer?
 
     let colorOptions: [(name: String, color: Color)] = [
         ("Red", Color(red: 0.98, green: 0.42, blue: 0.35)),
@@ -115,10 +116,45 @@ final class ColorMatchViewModel {
         showFeedback = false
         feedbackColor = nil
         roundStartTime = Date.now
+        startRoundTimer()
+    }
+
+    private func startRoundTimer() {
+        roundTimer?.invalidate()
+        let limit = timeLimit
+        roundTimer = Timer.scheduledTimer(withTimeInterval: limit, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, !self.showFeedback else { return }
+                self.timeExpired()
+            }
+        }
+    }
+
+    private func timeExpired() {
+        guard !showFeedback else { return }
+        // Count as wrong — no response time recorded for timeout
+        responseTimes.append(timeLimit)
+        feedbackColor = Color(red: 0.98, green: 0.42, blue: 0.35)
+        HapticService.wrong()
+        lastWrongCorrectAnswer = correctAnswer
+        showFeedback = true
+        currentRound += 1
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            guard let self else { return }
+            if self.currentRound >= self.totalRounds {
+                self.phase = .finished
+                SoundService.shared.playComplete()
+                HapticService.complete()
+            } else {
+                self.generateRound()
+            }
+        }
     }
 
     func submitAnswer(_ answer: String) {
         guard !showFeedback else { return }
+        roundTimer?.invalidate()
 
         let responseTime = Date.now.timeIntervalSince(roundStartTime ?? Date.now)
         responseTimes.append(responseTime)
@@ -153,6 +189,7 @@ final class ColorMatchViewModel {
     }
 
     func reset() {
+        roundTimer?.invalidate()
         phase = .setup
         currentRound = 0
         correctCount = 0
@@ -180,7 +217,7 @@ struct ColorMatchView: View {
     @State private var shareImage: UIImage?
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -437,7 +474,7 @@ struct ColorMatchView: View {
 
                 LeaderboardRankCard(
                     exerciseType: .colorMatch,
-                    userScore: Int(viewModel.accuracy * 100),
+                    userScore: viewModel.leaderboardScore,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -499,7 +536,7 @@ struct ColorMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .colorMatch)
+        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch)
 
         let exercise = Exercise(
             type: .colorMatch,

@@ -38,7 +38,7 @@ struct SpacedRepetitionView: View {
     }
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
     private var categoryCards: [SpacedRepetitionCard] {
         allCards.filter { $0.category == category }
     }

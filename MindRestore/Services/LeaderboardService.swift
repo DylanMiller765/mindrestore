@@ -4,7 +4,7 @@ import Foundation
 
 enum LeaderboardCategory: String, CaseIterable, Identifiable {
     case brainScore = "Brain Score"
-    case weeklyXP = "Weekly XP"
+    case weeklyXP = "XP"
     case streak = "Streak"
     // Per-game leaderboards
     case reactionTime = "Reaction Time"
