@@ -25,11 +25,23 @@ enum Analytics {
 
     // MARK: - Exercises
 
+    static func exerciseStarted(game: String) {
+        TelemetryDeck.signal("exercise.started", parameters: [
+            "game": game
+        ])
+    }
+
     static func exerciseCompleted(game: String, score: Double, difficulty: Int) {
         TelemetryDeck.signal("exercise.completed", parameters: [
             "game": game,
             "score": String(format: "%.2f", score),
             "difficulty": "\(difficulty)"
+        ])
+    }
+
+    static func exerciseAbandoned(game: String) {
+        TelemetryDeck.signal("exercise.abandoned", parameters: [
+            "game": game
         ])
     }
 
