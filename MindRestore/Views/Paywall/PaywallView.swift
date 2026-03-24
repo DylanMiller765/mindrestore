@@ -39,7 +39,7 @@ struct PaywallView: View {
                 Image("mascot-locked-sad")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 80)
+                    .frame(height: 120)
                     .padding(.bottom, 10)
 
                 // Benefits
@@ -179,10 +179,12 @@ struct PaywallView: View {
                             exitOfferShownCount += 1
                         }
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.secondary)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.tertiary)
+                            .padding(8)
+                            .background(Circle().fill(.ultraThinMaterial))
+
                     }
                     .accessibilityLabel("Close")
                 }
@@ -427,7 +429,7 @@ struct ExitOfferSheet: View {
             Image("mascot-locked-sad")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 100)
+                .frame(height: 140)
                 .scaleEffect(appeared ? 1 : 0.5)
                 .opacity(appeared ? 1 : 0)
 

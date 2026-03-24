@@ -688,7 +688,7 @@ struct HomeView: View {
                         Image("mascot-no-score")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 100)
+                            .frame(height: 150)
 
                         VStack(spacing: 6) {
                             Text("Discover Your\nBrain Score")

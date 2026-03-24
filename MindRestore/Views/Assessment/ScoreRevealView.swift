@@ -385,10 +385,12 @@ struct ScoreRevealView: View {
             VStack(spacing: 16) {
                 Spacer()
 
-                // Emoji reaction
+                // Mascot reaction
                 if countUpFinished {
-                    Text(emoji)
-                        .font(.system(size: 56))
+                    Image(viewModel.brainAge <= 30 ? "mascot-crown" : viewModel.brainAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 120)
                         .transition(.scale.combined(with: .opacity))
                 }
 

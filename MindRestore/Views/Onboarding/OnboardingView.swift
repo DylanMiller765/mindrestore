@@ -64,7 +64,7 @@ struct OnboardingView: View {
                 Image("mascot-wave")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 120)
+                    .frame(height: 160)
 
                 Text("Memori")
                     .font(.largeTitle.bold())
@@ -189,6 +189,11 @@ struct OnboardingView: View {
     private var goalsPage: some View {
         VStack(spacing: 32) {
             Spacer()
+
+            Image("mascot-goal")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 150)
 
             VStack(spacing: 8) {
                 Text("Pick your focus")

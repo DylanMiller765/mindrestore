@@ -142,7 +142,14 @@ struct TikTokBrainScoreCard: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
                 BrandingHeader()
-                Spacer().frame(height: 28)
+                Spacer().frame(height: 16)
+
+                Image("mascot-cool")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 100)
+
+                Spacer().frame(height: 12)
 
                 ShareCardSurface {
                     VStack(spacing: 16) {

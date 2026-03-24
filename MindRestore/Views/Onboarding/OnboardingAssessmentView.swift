@@ -135,7 +135,7 @@ struct OnboardingAssessmentView: View {
             Image("mascot-lab-coat")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 140)
+                .frame(height: 180)
 
             VStack(spacing: 12) {
                 Text("Brain Assessment")
@@ -225,8 +225,11 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
 
-            ProgressView()
-                .tint(color)
+            Image("mascot-thinking")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 90)
+                .opacity(0.8)
                 .padding(.bottom, 40)
         }
         .transition(.opacity)
@@ -483,7 +486,7 @@ struct OnboardingAssessmentView: View {
             Image("mascot-working-out")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 120)
+                .frame(height: 160)
 
             Text("Analyzing your results...")
                 .font(.title3.weight(.semibold))

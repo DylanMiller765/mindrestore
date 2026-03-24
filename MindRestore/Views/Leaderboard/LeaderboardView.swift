@@ -171,9 +171,10 @@ struct LeaderboardView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "trophy")
-                .font(.system(size: 48))
-                .foregroundStyle(AppColors.textTertiary)
+            Image("mascot-podium")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
 
             Text("No Rankings Yet")
                 .font(.title3.weight(.semibold))

@@ -104,16 +104,10 @@ struct ProgressDashboardView: View {
             Spacer()
                 .frame(height: 40)
 
-            // Mini illustration: faded placeholder chart bars
-            HStack(alignment: .bottom, spacing: 6) {
-                ForEach([0.3, 0.5, 0.25, 0.65, 0.4, 0.55, 0.35], id: \.self) { height in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(AppColors.cardBorder.opacity(0.5))
-                        .frame(width: 18, height: 60 * height)
-                }
-            }
-            .frame(height: 60)
-            .padding(.bottom, 4)
+            Image("mascot-bored")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
 
             Text("No Progress Yet")
                 .font(.title3.weight(.semibold))

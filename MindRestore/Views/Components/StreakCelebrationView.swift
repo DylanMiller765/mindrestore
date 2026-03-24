@@ -66,9 +66,10 @@ struct StreakCelebrationView: View {
                             )
                     }
 
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 64, weight: .bold))
-                        .foregroundStyle(milestoneColor)
+                    Image("mascot-streak-fire")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 140)
                         .scaleEffect(appeared ? 1 : 0)
                         .animation(.spring(response: 0.5, dampingFraction: 0.5).delay(0.2), value: appeared)
                 }
