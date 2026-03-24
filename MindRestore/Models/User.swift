@@ -40,6 +40,8 @@ final class User {
         avatarEmoji = emojis.randomElement() ?? "🧠"
     }
 
+    // NOTE: subscriptionStatus and isProUser are unused — StoreService.isProUser is the source of truth.
+    // Kept for SwiftData schema compatibility.
     var subscriptionStatus: SubscriptionStatus {
         get { SubscriptionStatus(rawValue: subscriptionStatusRaw) ?? .free }
         set { subscriptionStatusRaw = newValue.rawValue }
@@ -50,6 +52,7 @@ final class User {
         set { focusGoalsRaw = newValue.map(\.rawValue) }
     }
 
+    // NOTE: Unused — StoreService.isProUser is the source of truth.
     var isProUser: Bool {
         subscriptionStatus == .subscribed || subscriptionStatus == .trial
     }

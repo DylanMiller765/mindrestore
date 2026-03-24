@@ -23,7 +23,7 @@ struct DualNBackView: View {
     @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -144,9 +144,7 @@ struct DualNBackView: View {
                 HStack(spacing: 10) {
                     ForEach(1...5, id: \.self) { n in
                         Button {
-                            if n == 1 || isProUser {
-                                selectedN = n
-                            }
+                            selectedN = n
                         } label: {
                             Text("\(n)")
                                 .font(.headline.weight(.bold))
@@ -162,15 +160,7 @@ struct DualNBackView: View {
                                         }
                                     }
                                 )
-                                .foregroundStyle(selectedN == n ? .white : (n > 1 && !isProUser ? .secondary : .primary))
-                                .overlay {
-                                    if n > 1 && !isProUser {
-                                        Image(systemName: "lock.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .offset(x: 16, y: -16)
-                                    }
-                                }
+                                .foregroundStyle(selectedN == n ? .white : .primary)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(
@@ -181,20 +171,13 @@ struct DualNBackView: View {
                         }
                     }
                 }
-
-                if !isProUser {
-                    Text("Free: N=1 position only. Pro unlocks dual mode (position + letter).")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
             }
             .appCard()
             .padding(.horizontal)
 
             Button {
                 gameStarted = true
-                viewModel.startGame(n: selectedN, dual: isProUser)
+                viewModel.startGame(n: selectedN, dual: true)
             } label: {
                 Text("Start")
                     .accentButton()
@@ -462,9 +445,10 @@ struct DualNBackView: View {
                     }
 
                     Button {
+                        saveExercise()
                         selectedN = viewModel.nextN
                         gameStarted = true
-                        viewModel.startGame(n: selectedN, dual: isProUser)
+                        viewModel.startGame(n: selectedN, dual: true)
                     } label: {
                         Text("Play Again (N=\(viewModel.nextN))")
                             .gradientButton()

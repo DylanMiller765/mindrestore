@@ -220,7 +220,7 @@ struct MathSpeedView: View {
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -259,7 +259,7 @@ struct MathSpeedView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
-                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .mathSpeed)
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
                 let card = ExerciseShareCard(
                     exerciseName: "Math Speed",
@@ -536,7 +536,7 @@ struct MathSpeedView: View {
 
                 LeaderboardRankCard(
                     exerciseType: .mathSpeed,
-                    userScore: viewModel.correctCount,
+                    userScore: viewModel.leaderboardScore,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -584,6 +584,7 @@ struct MathSpeedView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")

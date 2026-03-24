@@ -97,7 +97,8 @@ struct BrainScoreCard: View {
                 size: 80,
                 lineWidth: 12
             )
-            .padding(.vertical, 10)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
 
             // Brain type badge
             HStack(spacing: 6) {
@@ -357,4 +358,96 @@ struct BrainScoreCard: View {
         default: return AppColors.coral
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("Full Card — High Score") {
+    let score = BrainScoreResult()
+    score.brainScore = 742
+    score.brainAge = 22
+    score.percentile = 5
+    score.brainTypeRaw = BrainType.lightningReflex.rawValue
+    score.digitSpanScore = 78
+    score.reactionTimeScore = 92
+    score.visualMemoryScore = 65
+    return BrainScoreCard(score: score, compact: false)
+        .padding()
+        .appCard()
+        .padding()
+        .background(AppColors.pageBg)
+}
+
+#Preview("Full Card — Low Score") {
+    let score = BrainScoreResult()
+    score.brainScore = 8
+    score.brainAge = 73
+    score.percentile = 95
+    score.brainTypeRaw = BrainType.balancedBrain.rawValue
+    score.digitSpanScore = 0
+    score.reactionTimeScore = 0
+    score.visualMemoryScore = 1
+    return BrainScoreCard(score: score, compact: false)
+        .padding()
+        .appCard()
+        .padding()
+        .background(AppColors.pageBg)
+}
+
+#Preview("Full Card — Balanced") {
+    let score = BrainScoreResult()
+    score.brainScore = 480
+    score.brainAge = 35
+    score.percentile = 48
+    score.brainTypeRaw = BrainType.balancedBrain.rawValue
+    score.digitSpanScore = 50
+    score.reactionTimeScore = 45
+    score.visualMemoryScore = 52
+    return BrainScoreCard(score: score, compact: false)
+        .padding()
+        .appCard()
+        .padding()
+        .background(AppColors.pageBg)
+}
+
+#Preview("Compact Card — Profile") {
+    let score = BrainScoreResult()
+    score.brainScore = 742
+    score.brainAge = 22
+    score.percentile = 5
+    score.brainTypeRaw = BrainType.lightningReflex.rawValue
+    score.digitSpanScore = 78
+    score.reactionTimeScore = 92
+    score.visualMemoryScore = 65
+    return BrainScoreCard(score: score, compact: true)
+        .padding()
+        .appCard()
+        .padding()
+        .background(AppColors.pageBg)
+}
+
+#Preview("Compact Card — Low Score") {
+    let score = BrainScoreResult()
+    score.brainScore = 8
+    score.brainAge = 73
+    score.percentile = 95
+    score.brainTypeRaw = BrainType.balancedBrain.rawValue
+    score.digitSpanScore = 0
+    score.reactionTimeScore = 0
+    score.visualMemoryScore = 1
+    return BrainScoreCard(score: score, compact: true)
+        .padding()
+        .appCard()
+        .padding()
+        .background(AppColors.pageBg)
+}
+
+#Preview("Ring Only") {
+    VStack(spacing: 20) {
+        SegmentedScoreRing(score: 742, color: AppColors.coral, size: 120, lineWidth: 14)
+        SegmentedScoreRing(score: 480, color: AppColors.accent, size: 80, lineWidth: 12)
+        SegmentedScoreRing(score: 8, color: AppColors.accent, size: 58, lineWidth: 8)
+    }
+    .padding()
+    .background(AppColors.pageBg)
 }

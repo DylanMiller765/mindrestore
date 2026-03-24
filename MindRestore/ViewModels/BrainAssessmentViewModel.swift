@@ -30,6 +30,7 @@ final class BrainAssessmentViewModel {
     var digitRound: Int = 0
     var digitStartLength: Int = 4
     var digitMaxCorrect: Int = 3
+    var digitUsedRetry: Bool = false
     private var digitTimer: Timer?
 
     // Reaction Time
@@ -46,7 +47,11 @@ final class BrainAssessmentViewModel {
     var visualRound: Int = 0
     var visualStartCount: Int = 3
     var visualMaxCorrect: Int = 2
+    var visualUsedRetry: Bool = false
     private var visualTimer: Timer?
+
+    // Retry feedback
+    var showingRetryMessage: Bool = false
 
     // Results
     var digitScore: Double = 0
@@ -74,6 +79,7 @@ final class BrainAssessmentViewModel {
         digitRound = 0
         digitMaxCorrect = 0
         digitStartLength = 4
+        digitUsedRetry = false
         nextDigitRound()
     }
 
@@ -121,6 +127,15 @@ final class BrainAssessmentViewModel {
                 nextDigitRound()
             } else {
                 finishDigitSpan()
+            }
+        } else if !digitUsedRetry {
+            // Second chance — retry same difficulty with new numbers
+            digitUsedRetry = true
+            showingRetryMessage = true
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            scheduleTransition(after: 1.2) { [weak self] in
+                self?.showingRetryMessage = false
+                self?.nextDigitRound() // Same digitRound = same length
             }
         } else {
             // If they got none right, at least credit the previous round
@@ -206,6 +221,7 @@ final class BrainAssessmentViewModel {
     private func startVisualMemory() {
         visualRound = 0
         visualMaxCorrect = 0
+        visualUsedRetry = false
         nextVisualRound()
     }
 
@@ -240,6 +256,15 @@ final class BrainAssessmentViewModel {
                 nextVisualRound()
             } else {
                 finishVisualMemory()
+            }
+        } else if !visualUsedRetry {
+            // Second chance — retry same difficulty with new pattern
+            visualUsedRetry = true
+            showingRetryMessage = true
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            scheduleTransition(after: 1.2) { [weak self] in
+                self?.showingRetryMessage = false
+                self?.nextVisualRound() // Same visualRound = same cell count
             }
         } else {
             // Partial credit: if they got none right, credit previous round

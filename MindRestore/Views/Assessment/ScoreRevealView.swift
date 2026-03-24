@@ -37,7 +37,7 @@ struct ScoreRevealView: View {
     @State private var brainAgeOverlayDismissed = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     private var ageComparisonText: String? {
         guard userAge > 0 else { return nil }

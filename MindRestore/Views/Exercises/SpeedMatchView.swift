@@ -238,7 +238,7 @@ struct SpeedMatchView: View {
     @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -628,7 +628,7 @@ struct SpeedMatchView: View {
 
                 LeaderboardRankCard(
                     exerciseType: .speedMatch,
-                    userScore: Int(viewModel.accuracy * 100),
+                    userScore: viewModel.leaderboardScore,
                     isPro: isProUser,
                     onUpgradeTap: { showingPaywall = true }
                 )
@@ -676,6 +676,7 @@ struct SpeedMatchView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -716,11 +717,11 @@ struct SpeedMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .speedMatch)
+        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch)
 
         let exercise = Exercise(
             type: .speedMatch,
-            difficulty: 1,
+            difficulty: viewModel.difficulty,
             score: viewModel.score,
             durationSeconds: viewModel.durationSeconds
         )
@@ -748,7 +749,7 @@ struct SpeedMatchView: View {
             _ = ContentView.awardXP(
                 user: user,
                 score: viewModel.score,
-                difficulty: 1,
+                difficulty: viewModel.difficulty,
                 achievementService: achievementService,
                 modelContext: modelContext,
                 gameCenterService: gameCenterService,

@@ -434,7 +434,26 @@ final class PersonalBestTracker {
     private let defaults = UserDefaults.standard
     private let prefix = "personalBest_"
 
-    private init() {}
+    private init() {
+        migrateCompositeScores()
+    }
+
+    /// One-time migration: composite leaderboard scores → primary scores for PB display.
+    private func migrateCompositeScores() {
+        let migrationKey = "personalBest_migrated_v2"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+
+        // Math Speed, Color Match, Speed Match stored composite (primary * 1000 + timeBonus)
+        // Convert back to primary score
+        for type in [ExerciseType.mathSpeed, .colorMatch, .speedMatch] {
+            let stored = best(for: type)
+            if stored > 999 {
+                let primary = stored / 1000
+                defaults.set(primary, forKey: prefix + type.rawValue)
+            }
+        }
+        defaults.set(true, forKey: migrationKey)
+    }
 
     /// Get the personal best score for an exercise type.
     func best(for type: ExerciseType) -> Int {

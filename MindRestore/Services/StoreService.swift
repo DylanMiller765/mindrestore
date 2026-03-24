@@ -9,9 +9,9 @@ final class StoreService {
     var purchaseError: String?
     var isLoading = false
 
+    static let weeklyProductID = "com.memori.pro.weekly"
     static let monthlyProductID = "com.memori.pro.monthly"
     static let annualProductID = "com.memori.pro.annual"
-    // Lifetime removed
 
     private var updateListenerTask: Task<Void, Error>?
 
@@ -29,6 +29,7 @@ final class StoreService {
         isLoading = true
         do {
             products = try await Product.products(for: [
+                Self.weeklyProductID,
                 Self.monthlyProductID,
                 Self.annualProductID
             ])
@@ -75,7 +76,8 @@ final class StoreService {
 
         for await result in Transaction.currentEntitlements {
             if let transaction = try? checkVerified(result) {
-                if transaction.productID == Self.monthlyProductID ||
+                if transaction.productID == Self.weeklyProductID ||
+                   transaction.productID == Self.monthlyProductID ||
                    transaction.productID == Self.annualProductID {
                     hasActiveEntitlement = true
                 }
@@ -104,6 +106,10 @@ final class StoreService {
         case .verified(let item):
             return item
         }
+    }
+
+    var weeklyProduct: Product? {
+        products.first { $0.id == Self.weeklyProductID }
     }
 
     var monthlyProduct: Product? {

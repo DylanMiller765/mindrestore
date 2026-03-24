@@ -21,7 +21,7 @@ struct SettingsView: View {
     @State private var showingAgePicker = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         NavigationStack {
@@ -855,7 +855,7 @@ struct SettingsView: View {
             }
             Divider().padding(.leading, 52)
             Button {
-                if let url = URL(string: "itms-apps://itunes.apple.com/app/id") {
+                if let url = URL(string: "itms-apps://itunes.apple.com/app/id6760178716") {
                     UIApplication.shared.open(url)
                 }
             } label: {
@@ -881,7 +881,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             Divider().padding(.leading, 52)
-            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
+            Link(destination: URL(string: "mailto:dylanjaws@icloud.com")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
                         .font(.caption)
@@ -1081,6 +1081,10 @@ struct SettingsView: View {
                 user.streakFreezes = 1
                 user.streakFreezeUsedDate = nil
                 user.streakFreezeLastAwardDate = nil
+                user.totalXP = 0
+                user.level = 1
+                user.totalExercises = 0
+                user.totalPerfectScores = 0
             }
             NotificationService.shared.cancelAll()
         } catch {

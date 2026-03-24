@@ -76,6 +76,30 @@
           "codeOffers" : [
 
           ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "weekly_001",
+          "localizations" : [
+            {
+              "description" : "Full access to all exercises and analytics",
+              "displayName" : "Weekly Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memori.pro.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly Pro",
+          "subscriptionGroupID" : "memori_pro",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
           "displayPrice" : "3.99",
           "familyShareable" : false,
           "groupNumber" : 2,

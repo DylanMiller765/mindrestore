@@ -183,7 +183,7 @@ struct VisualMemoryView: View {
     @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -347,6 +347,7 @@ struct VisualMemoryView: View {
 
             Spacer()
 
+            // Always reserve space for button so grid doesn't shift between phases
             Button {
                 viewModel.submit()
             } label: {
@@ -585,6 +586,7 @@ struct VisualMemoryView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")

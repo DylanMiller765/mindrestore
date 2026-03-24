@@ -141,7 +141,7 @@ struct ReactionTimeView: View {
     @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -263,7 +263,7 @@ struct ReactionTimeView: View {
     // MARK: - Waiting (Red/Dark)
 
     private var waitingView: some View {
-        Color(red: 0.8, green: 0.15, blue: 0.15)
+        AppColors.reactionWait
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 24) {
@@ -276,6 +276,7 @@ struct ReactionTimeView: View {
                         .foregroundStyle(.white)
                 }
             )
+            .contentShape(Rectangle())
             .onTapGesture {
                 viewModel.tappedDuringWait()
             }
@@ -284,7 +285,7 @@ struct ReactionTimeView: View {
     // MARK: - Go (Green)
 
     private var goView: some View {
-        Color(red: 0.15, green: 0.75, blue: 0.3)
+        AppColors.reactionGo
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 24) {
@@ -296,7 +297,9 @@ struct ReactionTimeView: View {
                         .font(.system(size: 48, weight: .bold))
                         .foregroundStyle(.white)
                 }
+                .allowsHitTesting(false)
             )
+            .contentShape(Rectangle())
             .onTapGesture {
                 viewModel.tappedOnGreen()
             }
@@ -305,7 +308,7 @@ struct ReactionTimeView: View {
     // MARK: - Too Early
 
     private var tooEarlyView: some View {
-        Color(red: 0.85, green: 0.55, blue: 0.1)
+        AppColors.reactionTooEarly
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 20) {
@@ -478,6 +481,7 @@ struct ReactionTimeView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")

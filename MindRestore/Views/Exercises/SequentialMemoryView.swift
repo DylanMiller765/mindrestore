@@ -165,7 +165,7 @@ struct SequentialMemoryView: View {
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
+    private var isProUser: Bool { storeService.isProUser }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -535,6 +535,7 @@ struct SequentialMemoryView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")

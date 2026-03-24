@@ -59,7 +59,7 @@ struct BrainAssessmentView: View {
             case .results:
                 ScoreRevealView(viewModel: viewModel, previousScore: previousScore, userAge: users.first?.userAge ?? 0) {
                     // Trigger paywall AFTER the reveal is done, not before
-                    let isProUser = storeService.isProUser || (users.first?.isProUser ?? false)
+                    let isProUser = storeService.isProUser
                     paywallTrigger.triggerAfterAssessment(isProUser: isProUser)
                     dismiss()
                 }
@@ -86,7 +86,14 @@ struct BrainAssessmentView: View {
                 .background(backgroundColor)
             }
         }
+        .overlay {
+            if viewModel.showingRetryMessage {
+                retryOverlay
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            }
+        }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.showingRetryMessage)
     }
 
     private func assessmentStepLabel(_ text: String, active: Bool) -> some View {
@@ -105,9 +112,9 @@ struct BrainAssessmentView: View {
 
     private var backgroundColor: Color {
         switch viewModel.phase {
-        case .reactionWait: return Color(red: 0.8, green: 0.2, blue: 0.2)
-        case .reactionGo: return Color(red: 0.2, green: 0.8, blue: 0.2)
-        case .reactionTooEarly: return Color(red: 0.9, green: 0.5, blue: 0.1)
+        case .reactionWait: return AppColors.reactionWait
+        case .reactionGo: return AppColors.reactionGo
+        case .reactionTooEarly: return AppColors.reactionTooEarly
         default: return AppColors.pageBg
         }
     }
@@ -287,7 +294,7 @@ struct BrainAssessmentView: View {
     // MARK: - Reaction Time
 
     private var reactionWaitView: some View {
-        Color(red: 0.8, green: 0.15, blue: 0.15)
+        AppColors.reactionWait
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 24) {
@@ -306,7 +313,7 @@ struct BrainAssessmentView: View {
     }
 
     private var reactionGoView: some View {
-        Color(red: 0.15, green: 0.75, blue: 0.3)
+        AppColors.reactionGo
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 24) {
@@ -325,7 +332,7 @@ struct BrainAssessmentView: View {
     }
 
     private var reactionTooEarlyView: some View {
-        Color(red: 0.85, green: 0.55, blue: 0.1)
+        AppColors.reactionTooEarly
             .ignoresSafeArea()
             .overlay(
                 VStack(spacing: 20) {
@@ -446,6 +453,27 @@ struct BrainAssessmentView: View {
             return AppColors.accent
         }
         return Color.gray.opacity(0.12)
+    }
+
+    // MARK: - Retry Overlay
+
+    private var retryOverlay: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.counterclockwise.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(AppColors.amber)
+            Text("One more try!")
+                .font(.title2.weight(.bold))
+            Text("New pattern, same difficulty")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 20, y: 8)
+        )
     }
 
     // MARK: - Calculating
