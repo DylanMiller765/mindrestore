@@ -35,6 +35,13 @@ struct PaywallView: View {
                 }
                 .padding(.bottom, 18)
 
+                // Mascot
+                Image("mascot-locked-sad")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 80)
+                    .padding(.bottom, 10)
+
                 // Benefits
                 VStack(alignment: .leading, spacing: 8) {
                     benefitRow(icon: "infinity", text: "Unlimited daily games")
@@ -417,16 +424,12 @@ struct ExitOfferSheet: View {
         VStack(spacing: 24) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 100, height: 100)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 44))
-                    .foregroundStyle(AppColors.accent)
-            }
-            .scaleEffect(appeared ? 1 : 0.5)
-            .opacity(appeared ? 1 : 0)
+            Image("mascot-locked-sad")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 100)
+                .scaleEffect(appeared ? 1 : 0.5)
+                .opacity(appeared ? 1 : 0)
 
             VStack(spacing: 8) {
                 Text("Don't lose your\nmomentum!")

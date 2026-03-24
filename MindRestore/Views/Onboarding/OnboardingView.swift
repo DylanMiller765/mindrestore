@@ -61,14 +61,10 @@ struct OnboardingView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.cardBorder)
-                        .frame(width: 120, height: 120)
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 56))
-                        .foregroundStyle(AppColors.accent)
-                }
+                Image("mascot-wave")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
 
                 Text("Memori")
                     .font(.largeTitle.bold())

@@ -685,9 +685,10 @@ struct HomeView: View {
                     showingAssessment = true
                 } label: {
                     VStack(spacing: 20) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 48, weight: .medium))
-                            .foregroundStyle(AppColors.accent)
+                        Image("mascot-no-score")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 100)
 
                         VStack(spacing: 6) {
                             Text("Discover Your\nBrain Score")

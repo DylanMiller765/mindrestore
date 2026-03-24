@@ -132,15 +132,10 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 140, height: 140)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-                    .symbolEffect(.pulse)
-            }
+            Image("mascot-lab-coat")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 140)
 
             VStack(spacing: 12) {
                 Text("Brain Assessment")
@@ -485,10 +480,10 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 64))
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.pulse)
+            Image("mascot-working-out")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 120)
 
             Text("Analyzing your results...")
                 .font(.title3.weight(.semibold))

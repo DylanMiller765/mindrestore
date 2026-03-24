@@ -125,18 +125,10 @@ struct BrainAssessmentView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.accent.opacity(0.15))
-                    .frame(width: 140, height: 140)
-                Circle()
-                    .fill(AppColors.accent.opacity(0.04))
-                    .frame(width: 180, height: 180)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-                    .symbolEffect(.pulse)
-            }
+            Image("mascot-lab-coat")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 140)
 
             VStack(spacing: 12) {
                 Text("Brain Assessment")
@@ -482,10 +474,10 @@ struct BrainAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 64))
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.pulse)
+            Image("mascot-working-out")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 120)
 
             Text("Analyzing your results...")
                 .font(.title3.weight(.semibold))
