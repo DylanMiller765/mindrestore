@@ -16,10 +16,11 @@ struct ProgressDashboardView: View {
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
 
-    /// The 8 games available on the Train tab
+    /// The 10 games available on the Train tab
     private static let availableGames: [ExerciseType] = [
         .reactionTime, .colorMatch, .speedMatch, .visualMemory,
-        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining
+        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
+        .wordScramble, .memoryChain
     ]
 
     private var triedExerciseTypes: Set<ExerciseType> {
@@ -451,6 +452,8 @@ struct ProgressDashboardView: View {
         case .mathSpeed: return "\(value) solved"
         case .colorMatch, .speedMatch: return "\(value)%"
         case .chunkingTraining: return "\(value)"
+        case .wordScramble: return "\(value)/10 words"
+        case .memoryChain: return "Chain \(value)"
         default: return "\(value)"
         }
     }
@@ -465,6 +468,8 @@ struct ProgressDashboardView: View {
         case .mathSpeed: return AppColors.amber
         case .dualNBack: return AppColors.sky
         case .chunkingTraining: return AppColors.teal
+        case .wordScramble: return AppColors.rose
+        case .memoryChain: return AppColors.mint
         default: return AppColors.accent
         }
     }

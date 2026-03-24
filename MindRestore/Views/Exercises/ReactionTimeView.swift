@@ -238,6 +238,7 @@ struct ReactionTimeView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

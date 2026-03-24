@@ -338,6 +338,7 @@ struct ColorMatchView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.colorMatch.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

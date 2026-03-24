@@ -188,9 +188,9 @@ final class WordScrambleViewModel {
         stopTimer()
 
         let elapsed = totalTimeForRound - timeRemaining
-        roundTimes.append(elapsed)
 
         if answer == targetWord {
+            roundTimes.append(elapsed)
             // Correct
             roundResult = .correct
             wordsCorrect += 1
@@ -217,6 +217,7 @@ final class WordScrambleViewModel {
     private func timeExpired() {
         roundResult = .timeout
         roundActive = false
+        roundTimes.append(totalTimeForRound)
         roundScores.append(0.0)
         HapticService.wrong()
 
@@ -422,6 +423,7 @@ struct WordScrambleView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.wordScramble.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

@@ -65,7 +65,7 @@ struct DailyChallengeView: View {
                 let card = ExerciseShareCard(
                     exerciseName: "Daily Challenge",
                     exerciseIcon: "trophy.fill",
-                    accentColor: .orange,
+                    accentColor: AppColors.amber,
                     mainValue: "\(viewModel.score)",
                     mainLabel: "out of 1000",
                     ratingText: ratingText,
@@ -148,7 +148,7 @@ struct DailyChallengeView: View {
                 VStack(spacing: 4) {
                     Image(systemName: "timer")
                         .font(.body)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AppColors.amber)
                     Text("10s + 30s")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -230,17 +230,17 @@ struct DailyChallengeView: View {
             HStack {
                 Text("RECALL")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppColors.amber)
                 Spacer()
                 Text(String(format: "%.0fs", max(0, viewModel.recallTimeRemaining)))
                     .font(.headline.monospacedDigit())
-                    .foregroundStyle(viewModel.recallTimeRemaining <= 5 ? AppColors.error : .orange)
+                    .foregroundStyle(viewModel.recallTimeRemaining <= 5 ? AppColors.error : AppColors.amber)
                     .accessibilityLabel("\(Int(max(0, viewModel.recallTimeRemaining))) seconds remaining")
             }
             .padding(.horizontal)
 
             ProgressView(value: max(0, viewModel.recallTimeRemaining), total: 30)
-                .tint(.orange)
+                .tint(AppColors.amber)
                 .padding(.horizontal)
 
             if viewModel.challengeType == .speedPattern {
@@ -654,8 +654,16 @@ struct DailyChallengeView: View {
     private func saveExercise() {
         trainingManager.addTrainingTime(40)
 
+        let exerciseType: ExerciseType = {
+            switch viewModel.challengeType {
+            case .speedNumbers: return .sequentialMemory
+            case .speedWords: return .activeRecall
+            case .speedPattern: return .visualMemory
+            case .faceNamePairs: return .activeRecall
+            }
+        }()
         let exercise = Exercise(
-            type: .activeRecall,
+            type: exerciseType,
             difficulty: 2,
             score: Double(viewModel.score) / 1000.0,
             durationSeconds: 40

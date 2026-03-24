@@ -28,6 +28,8 @@ struct LeaderboardRankCard: View {
         case .sequentialMemory: return .numberMemory
         case .mathSpeed: return .mathSpeed
         case .dualNBack: return .dualNBack
+        case .wordScramble: return .wordScramble
+        case .memoryChain: return .memoryChain
         default: return nil  // exercises without leaderboards
         }
     }

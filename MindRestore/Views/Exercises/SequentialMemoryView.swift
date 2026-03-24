@@ -263,6 +263,7 @@ struct SequentialMemoryView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

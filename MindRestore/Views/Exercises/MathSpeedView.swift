@@ -359,6 +359,7 @@ struct MathSpeedView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

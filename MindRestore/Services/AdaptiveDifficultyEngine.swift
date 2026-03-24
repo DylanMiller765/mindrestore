@@ -114,7 +114,9 @@ final class AdaptiveDifficultyEngine {
         .mathSpeed:      1...5,
         .colorMatch:     1...8,
         .speedMatch:     1...8,
-        .sequentialMemory: 1...10
+        .sequentialMemory: 1...10,
+        .wordScramble:   1...10,
+        .memoryChain:    1...10
     ]
 
     /// Starting difficulty for each domain (maps to level 1 in the range)

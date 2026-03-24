@@ -389,6 +389,7 @@ struct SpeedMatchView: View {
             .padding(.horizontal)
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

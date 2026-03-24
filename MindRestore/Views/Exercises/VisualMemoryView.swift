@@ -287,6 +287,7 @@ struct VisualMemoryView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

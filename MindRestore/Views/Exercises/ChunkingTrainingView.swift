@@ -365,6 +365,7 @@ struct ChunkingTrainingView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.startFromIntro()
             } label: {

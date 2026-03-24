@@ -257,7 +257,14 @@ final class MemoryChainViewModel {
     func reset() {
         playbackTask?.cancel()
         phase = .intro
+        sequence = []
+        playerPosition = 0
+        longestChain = 0
+        roundNumber = 0
+        startTime = nil
         highlightedIndex = -1
+        lastTappedCell = nil
+        lastTapCorrect = nil
         isPlaybackActive = false
         showingChainComplete = false
         celebrationCellScales = Array(repeating: 1.0, count: 16)
@@ -382,6 +389,7 @@ struct MemoryChainView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.memoryChain.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")

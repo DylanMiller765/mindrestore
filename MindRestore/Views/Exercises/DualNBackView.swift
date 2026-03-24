@@ -176,6 +176,7 @@ struct DualNBackView: View {
             .padding(.horizontal)
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
                 gameStarted = true
                 viewModel.startGame(n: selectedN, dual: true)
             } label: {
