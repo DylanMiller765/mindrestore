@@ -138,7 +138,7 @@ struct ReactionTimeView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -161,6 +161,7 @@ struct ReactionTimeView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -175,6 +176,7 @@ struct ReactionTimeView: View {
                 )
             }
         }
+        */
         .navigationTitle("Reaction Time")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .tabBar)
@@ -454,6 +456,7 @@ struct ReactionTimeView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .reactionTime,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -468,7 +471,9 @@ struct ReactionTimeView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -480,6 +485,7 @@ struct ReactionTimeView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

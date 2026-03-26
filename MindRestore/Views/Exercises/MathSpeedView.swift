@@ -216,7 +216,7 @@ struct MathSpeedView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -234,6 +234,7 @@ struct MathSpeedView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -248,6 +249,7 @@ struct MathSpeedView: View {
                 )
             }
         }
+        */
         .navigationTitle("Math Speed")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -557,6 +559,7 @@ struct MathSpeedView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .mathSpeed,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -571,7 +574,9 @@ struct MathSpeedView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -583,6 +588,7 @@ struct MathSpeedView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

@@ -11,7 +11,7 @@ struct DailyChallengeView: View {
     @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @State private var viewModel = DailyChallengeViewModel()
-    @State private var showChallenge = false
+    // @State private var showChallenge = false
     @State private var showLeaderboard = false
     @State private var strategyTip: StrategyTip?
     @State private var shareImage: UIImage?
@@ -95,6 +95,7 @@ struct DailyChallengeView: View {
                 }
             }
         }
+        /*
         .sheet(isPresented: $showChallenge) {
             ChallengeView(
                 challengeType: .dailyChallenge(challengeName: viewModel.challengeType.displayName),
@@ -103,6 +104,7 @@ struct DailyChallengeView: View {
                 percentile: viewModel.percentile
             )
         }
+        */
         .sheet(isPresented: $showLeaderboard) {
             LeaderboardView()
         }
@@ -442,6 +444,7 @@ struct DailyChallengeView: View {
                 }
 
                 VStack(spacing: 12) {
+                    /*
                     Button {
                         showChallenge = true
                     } label: {
@@ -451,6 +454,7 @@ struct DailyChallengeView: View {
                         }
                         .gradientButton()
                     }
+                    */
 
                     Button {
                         showLeaderboard = true

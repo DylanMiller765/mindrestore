@@ -317,7 +317,7 @@ struct WordScrambleView: View {
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
     @Namespace private var tileNamespace
 
     private var user: User? { users.first }
@@ -339,6 +339,7 @@ struct WordScrambleView: View {
         }
         .animation(.easeInOut(duration: 0.15), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -353,6 +354,7 @@ struct WordScrambleView: View {
                 )
             }
         }
+        */
         .navigationTitle("Word Scramble")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -703,6 +705,7 @@ struct WordScrambleView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .wordScramble,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -717,7 +720,9 @@ struct WordScrambleView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -729,6 +734,7 @@ struct WordScrambleView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         viewModel.startGame()

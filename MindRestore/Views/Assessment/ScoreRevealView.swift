@@ -21,7 +21,7 @@ struct ScoreRevealView: View {
     @State private var showBreakdown = false
     @State private var showComparison = false
     @State private var scoreTimer: Timer?
-    @State private var showChallenge = false
+    // @State private var showChallenge = false
     @AppStorage("celebratedBrainAgeBelow") private var celebratedBrainAgeBelow = false
 
     // Brain Age dramatic reveal states
@@ -291,6 +291,7 @@ struct ScoreRevealView: View {
                             }
 
                             HStack(spacing: 12) {
+                                /*
                                 Button {
                                     showChallenge = true
                                 } label: {
@@ -304,6 +305,7 @@ struct ScoreRevealView: View {
                                     .padding(.vertical, 14)
                                     .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
                                 }
+                                */
 
                                 Button(action: onDone) {
                                     Text("Done")
@@ -336,6 +338,7 @@ struct ScoreRevealView: View {
         }
         .onAppear { startRevealSequence() }
         .task { await fetchRealPercentile() }
+        /*
         .sheet(isPresented: $showChallenge) {
             ChallengeView(
                 challengeType: .brainScore(
@@ -350,6 +353,7 @@ struct ScoreRevealView: View {
                 percentile: viewModel.percentile
             )
         }
+        */
         .sheet(isPresented: $showingPaywall) {
             PaywallView(isHighIntent: true)
         }

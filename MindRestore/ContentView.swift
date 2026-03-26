@@ -481,8 +481,9 @@ struct TrainingView: View {
         (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber, "Mental math"),
         (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky, "Working memory"),
         (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose, "Group & remember"),
-        (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
-        (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
+        // v1.2: uncomment when ready to ship new games
+        // (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
+        // (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
     ]
 
     var body: some View {

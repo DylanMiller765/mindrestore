@@ -180,7 +180,7 @@ struct VisualMemoryView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -206,6 +206,7 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -220,6 +221,7 @@ struct VisualMemoryView: View {
                 )
             }
         }
+        */
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -526,6 +528,7 @@ struct VisualMemoryView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .visualMemory,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -540,7 +543,9 @@ struct VisualMemoryView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -552,6 +557,7 @@ struct VisualMemoryView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

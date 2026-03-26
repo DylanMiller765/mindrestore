@@ -238,7 +238,7 @@ struct ChunkingTrainingView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -260,6 +260,7 @@ struct ChunkingTrainingView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -274,6 +275,7 @@ struct ChunkingTrainingView: View {
                 )
             }
         }
+        */
         .navigationTitle("Chunking Training")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -649,6 +651,7 @@ struct ChunkingTrainingView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .chunkingTraining,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -663,7 +666,9 @@ struct ChunkingTrainingView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -675,6 +680,7 @@ struct ChunkingTrainingView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

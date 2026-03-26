@@ -20,7 +20,7 @@ struct DualNBackView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -41,6 +41,7 @@ struct DualNBackView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -55,6 +56,7 @@ struct DualNBackView: View {
                 )
             }
         }
+        */
         .navigationTitle("Dual N-Back")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -418,6 +420,7 @@ struct DualNBackView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .dualNBack,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -432,7 +435,9 @@ struct DualNBackView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -444,6 +449,7 @@ struct DualNBackView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

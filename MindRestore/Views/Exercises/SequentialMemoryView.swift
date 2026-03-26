@@ -161,7 +161,7 @@ struct SequentialMemoryView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -183,6 +183,7 @@ struct SequentialMemoryView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -197,6 +198,7 @@ struct SequentialMemoryView: View {
                 )
             }
         }
+        */
         .navigationTitle("Number Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -508,6 +510,7 @@ struct SequentialMemoryView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .sequentialMemory,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -522,7 +525,9 @@ struct SequentialMemoryView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -534,6 +539,7 @@ struct SequentialMemoryView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

@@ -235,7 +235,7 @@ struct SpeedMatchView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -257,6 +257,7 @@ struct SpeedMatchView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -271,6 +272,7 @@ struct SpeedMatchView: View {
                 )
             }
         }
+        */
         .navigationTitle("Speed Match")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -649,6 +651,7 @@ struct SpeedMatchView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .speedMatch,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -663,7 +666,9 @@ struct SpeedMatchView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -675,6 +680,7 @@ struct SpeedMatchView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         saveExercise()

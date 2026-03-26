@@ -19,8 +19,9 @@ struct ProgressDashboardView: View {
     /// The 10 games available on the Train tab
     private static let availableGames: [ExerciseType] = [
         .reactionTime, .colorMatch, .speedMatch, .visualMemory,
-        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
-        .wordScramble, .memoryChain
+        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining
+        // v1.2: uncomment when ready to ship new games
+        // , .wordScramble, .memoryChain
     ]
 
     private var triedExerciseTypes: Set<ExerciseType> {

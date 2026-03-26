@@ -289,7 +289,7 @@ struct MemoryChainView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
-    @State private var showingChallengeResult = false
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -309,6 +309,7 @@ struct MemoryChainView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
         .sheet(isPresented: $showingChallengeResult) {
             if let challenge = activeChallenge {
                 FriendChallengeResultView(
@@ -323,6 +324,7 @@ struct MemoryChainView: View {
                 )
             }
         }
+        */
         .navigationTitle("Memory Chain")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -582,6 +584,7 @@ struct MemoryChainView: View {
                         }
                     }
 
+                    /*
                     if let challengeURL = ChallengeLink(
                         game: .memoryChain,
                         seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
@@ -596,7 +599,9 @@ struct MemoryChainView: View {
                             .gradientButton()
                         }
                     }
+                    */
 
+                    /*
                     if let challenge = activeChallenge {
                         Button {
                             showingChallengeResult = true
@@ -608,6 +613,7 @@ struct MemoryChainView: View {
                             .accentButton()
                         }
                     }
+                    */
 
                     Button {
                         shareImage = nil
