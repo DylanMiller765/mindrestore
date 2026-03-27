@@ -12,6 +12,7 @@ final class DualNBackViewModel {
     private var trialTimer: Timer?
     var wrongPositionNBack: Int? = nil
     var wrongLetterNBack: String? = nil
+    var trialFlash = false
 
     var currentN: Int { engine.currentN }
     var trialIndex: Int { engine.trialIndex }
@@ -44,6 +45,12 @@ final class DualNBackViewModel {
     }
 
     private func advanceTrial() {
+        // Brief flash to signal new trial (even if stimuli don't change)
+        trialFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.trialFlash = false
+        }
+
         engine.advanceToNextTrial()
 
         if engine.isComplete {

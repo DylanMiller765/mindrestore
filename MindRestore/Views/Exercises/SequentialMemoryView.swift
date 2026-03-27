@@ -310,12 +310,26 @@ struct SequentialMemoryView: View {
             Spacer()
 
             if viewModel.isShowingDigit {
-                Text(viewModel.currentDisplayDigit)
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(AppColors.accent)
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                    .animation(.easeOut(duration: 0.15), value: viewModel.displayDigitIndex)
-                    .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+                VStack(spacing: 16) {
+                    Text(viewModel.currentDisplayDigit)
+                        .font(.system(size: 96, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppColors.accent)
+                        .id("digit-\(viewModel.displayDigitIndex)")
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                        .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+
+                    // Dot indicator showing position in sequence
+                    HStack(spacing: 6) {
+                        ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                            Circle()
+                                .fill(i == viewModel.displayDigitIndex ? AppColors.accent : AppColors.accent.opacity(0.2))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(i == viewModel.displayDigitIndex ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: viewModel.displayDigitIndex)
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
             } else {
                 Text("...")
                     .font(.system(size: 48, weight: .bold))
@@ -362,23 +376,24 @@ struct SequentialMemoryView: View {
                             .stroke(AppColors.teal.opacity(0.3), lineWidth: 1.5)
                     )
                     .padding(.horizontal, 40)
+                    .onSubmit { viewModel.submitAnswer() }
 
                 Text("\(viewModel.userInput.count) / \(viewModel.currentLength) digits")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                Button {
+                    viewModel.submitAnswer()
+                } label: {
+                    Text("Submit")
+                        .accentButton()
+                }
+                .padding(.horizontal, 32)
+                .disabled(viewModel.userInput.isEmpty)
+                .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
             }
 
             Spacer()
-
-            Button {
-                viewModel.submitAnswer()
-            } label: {
-                Text("Submit")
-                    .accentButton()
-            }
-            .padding(.horizontal, 32)
-            .disabled(viewModel.userInput.isEmpty)
-            .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
         }
         .padding(.vertical, 24)
         .onAppear { inputFocused = true }

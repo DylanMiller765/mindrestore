@@ -219,7 +219,10 @@ struct DualNBackView: View {
                             : LinearGradient(colors: [Color.gray.opacity(0.08), Color.gray.opacity(0.05)], startPoint: .top, endPoint: .bottom)
                         )
                         .aspectRatio(1, contentMode: .fit)
+                        .scaleEffect(viewModel.trialFlash && index == viewModel.currentPosition ? 0.85 : 1.0)
+                        .opacity(viewModel.trialFlash && index == viewModel.currentPosition ? 0.4 : 1.0)
                         .animation(.easeInOut(duration: 0.15), value: viewModel.currentPosition)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: viewModel.trialFlash)
                         .accessibilityLabel("Grid cell \(index + 1)\(index == viewModel.currentPosition ? ", active" : "")")
                 }
             }
@@ -229,6 +232,9 @@ struct DualNBackView: View {
                 Text(viewModel.currentLetter)
                     .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(.secondary)
+                    .scaleEffect(viewModel.trialFlash ? 0.7 : 1.0)
+                    .opacity(viewModel.trialFlash ? 0.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: viewModel.trialFlash)
             }
 
             Spacer()

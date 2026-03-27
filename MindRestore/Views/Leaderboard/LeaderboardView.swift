@@ -134,7 +134,7 @@ struct LeaderboardView: View {
                 }
 
                 // Top 3 podium
-                if entries.count >= 3 {
+                if !entries.isEmpty {
                     podiumView
                         .padding(.bottom, 16)
                 }
@@ -249,23 +249,42 @@ struct LeaderboardView: View {
     // MARK: - Podium
 
     private var podiumView: some View {
-        VStack(spacing: 0) {
-            if entries.count >= 3 {
-                // Players floating above pedestals
-                HStack(alignment: .bottom, spacing: 6) {
+        let count = min(entries.count, 3)
+        return VStack(spacing: 0) {
+            // Players floating above pedestals
+            HStack(alignment: .bottom, spacing: 6) {
+                if count >= 2 {
                     podiumPlayer(entries[1], rank: 2)
                         .padding(.bottom, 64)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
+                }
+                if count >= 1 {
                     podiumPlayer(entries[0], rank: 1)
                         .padding(.bottom, 88)
+                }
+                if count >= 3 {
                     podiumPlayer(entries[2], rank: 3)
                         .padding(.bottom, 48)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
                 }
+            }
 
-                // Pedestals
-                HStack(alignment: .bottom, spacing: 4) {
+            // Pedestals
+            HStack(alignment: .bottom, spacing: 4) {
+                if count >= 2 {
                     podiumPedestal(rank: 2, height: 64)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                }
+                if count >= 1 {
                     podiumPedestal(rank: 1, height: 88)
+                }
+                if count >= 3 {
                     podiumPedestal(rank: 3, height: 48)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                 }
             }
         }
@@ -653,6 +672,24 @@ struct LeaderboardView: View {
                         isCurrentUser: entry.isCurrentUser
                     )
                 }
+            }
+
+            // Filter out zero-score entries (meaningless for all games)
+            loadedEntries = loadedEntries.filter { $0.score > 0 || $0.isCurrentUser }
+            // Re-assign ranks after filtering
+            loadedEntries = loadedEntries.enumerated().map { index, entry in
+                LeaderboardEntryData(
+                    rank: index + 1,
+                    username: entry.username,
+                    score: entry.score,
+                    avatarEmoji: entry.avatarEmoji,
+                    level: entry.level,
+                    isCurrentUser: entry.isCurrentUser
+                )
+            }
+            // Remove current user if their score is 0 (they haven't played this game)
+            if let userEntry = loadedEntries.first(where: { $0.isCurrentUser }), userEntry.score <= 0 {
+                loadedEntries = loadedEntries.filter { !$0.isCurrentUser }
             }
 
             entries = loadedEntries

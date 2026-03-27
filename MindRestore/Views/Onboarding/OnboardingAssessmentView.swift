@@ -11,6 +11,7 @@ struct OnboardingAssessmentView: View {
     @State private var viewModel = BrainAssessmentViewModel()
     @State private var hasSaved = false
     @State private var showingSkipConfirmation = false
+    @FocusState private var digitFieldFocused: Bool
 
     private var assessmentProgress: Double {
         switch viewModel.phase {
@@ -99,6 +100,9 @@ struct OnboardingAssessmentView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.showingRetryMessage)
         .onChange(of: viewModel.phase) { _, newPhase in
             backgroundColor = phaseBackgroundColor(for: newPhase)
+            if newPhase != .digitInput {
+                digitFieldFocused = false
+            }
         }
     }
 
@@ -284,6 +288,7 @@ struct OnboardingAssessmentView: View {
 
             TextField("Type the numbers...", text: $viewModel.digitInput)
                 .keyboardType(.numberPad)
+                .focused($digitFieldFocused)
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .padding()

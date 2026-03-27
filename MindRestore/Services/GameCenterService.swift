@@ -117,7 +117,7 @@ final class GameCenterService {
 
             for (index, entry) in (globalEntries ?? []).enumerated() {
                 entries.append(LeaderboardEntryData(
-                    rank: entry.rank,
+                    rank: max(1, entry.rank),
                     username: entry.player.displayName,
                     score: entry.score,
                     avatarEmoji: "",
@@ -129,7 +129,7 @@ final class GameCenterService {
             var localPlayerData: LeaderboardEntryData?
             if let localEntry {
                 localPlayerData = LeaderboardEntryData(
-                    rank: localEntry.rank,
+                    rank: max(1, localEntry.rank),
                     username: localEntry.player.displayName,
                     score: localEntry.score,
                     avatarEmoji: "",

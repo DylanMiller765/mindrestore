@@ -20,10 +20,8 @@ final class VisualMemoryViewModel {
     private var showTimer: Timer?
     var levelsCompleted = 0
 
-    let maxLevel = 10
-
     var score: Double {
-        Double(levelsCompleted) / Double(maxLevel)
+        Double(levelsCompleted) / 10.0
     }
 
     var maxLevelReached: Int {
@@ -117,19 +115,13 @@ final class VisualMemoryViewModel {
             SoundService.shared.playCorrect()
             HapticService.correct()
 
-            if level >= maxLevel {
-                HapticService.complete()
-                phase = .finished
-                SoundService.shared.playComplete()
-            } else {
-                phase = .correct
-                showTimer?.invalidate()
-                showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
-                    Task { @MainActor in
-                        HapticService.levelUp()
-                        self?.level += 1
-                        self?.startLevel()
-                    }
+            phase = .correct
+            showTimer?.invalidate()
+            showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    HapticService.levelUp()
+                    self?.level += 1
+                    self?.startLevel()
                 }
             }
         } else {
@@ -242,7 +234,7 @@ struct VisualMemoryView: View {
                     mainLabel: "Max Level",
                     ratingText: viewModel.ratingText,
                     stats: [
-                        ("Levels Cleared", "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)"),
+                        ("Levels Cleared", "\(viewModel.levelsCompleted)"),
                         ("Score", viewModel.score.percentString),
                         ("Time", viewModel.durationSeconds.durationString)
                     ],
@@ -495,7 +487,7 @@ struct VisualMemoryView: View {
                 }
 
                 VStack(spacing: 12) {
-                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)")
+                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted)")
                         .accessibilityElement(children: .combine)
                     Divider()
                     resultRow(label: "Score", value: viewModel.score.percentString)

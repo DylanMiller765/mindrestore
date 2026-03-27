@@ -12,15 +12,16 @@ struct OnboardingView: View {
     @State private var notificationsEnabled = false
     @State private var enteredName: String = ""
     @State private var selectedAge: Int = 25
+    @State private var selectedAppearance: Int = 0 // 0=system, 1=light, 2=dark
     @FocusState private var nameFieldFocused: Bool
 
     var onComplete: () -> Void
 
-    private let totalPages = 7
+    private let totalPages = 8
 
     var body: some View {
         ZStack {
-            (currentPage == 4 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            (currentPage == 5 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
@@ -28,15 +29,23 @@ struct OnboardingView: View {
                     namePage.tag(1)
                     goalsPage.tag(2)
                     agePage.tag(3)
-                    assessmentPage.tag(4)
-                    notificationsPage.tag(5)
-                    privacyPage.tag(6)
+                    appearancePage.tag(4)
+                    assessmentPage.tag(5)
+                    notificationsPage.tag(6)
+                    privacyPage.tag(7)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
                 .animation(.easeInOut, value: currentPage)
+                .onChange(of: currentPage) { _, newPage in
+                    if newPage == 1 {
+                        nameFieldFocused = true
+                    } else {
+                        nameFieldFocused = false
+                    }
+                }
 
-                if currentPage != 4 {
+                if currentPage != 5 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
                             Capsule()
@@ -179,7 +188,9 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
-        .onAppear { nameFieldFocused = true }
+        .onAppear {
+                if currentPage == 1 { nameFieldFocused = true }
+            }
     }
 
     private func dismissAndAdvance() {
@@ -301,7 +312,7 @@ struct OnboardingView: View {
                 try? modelContext.save()
             }
             withAnimation {
-                currentPage = 5
+                currentPage = 6
             }
         }
     }
@@ -340,7 +351,7 @@ struct OnboardingView: View {
                     Task {
                         let granted = await NotificationService.shared.requestPermission()
                         notificationsEnabled = granted
-                        withAnimation { currentPage = 6 }
+                        withAnimation { currentPage = 7 }
                     }
                 } label: {
                     Text("Enable Notifications")
@@ -348,7 +359,7 @@ struct OnboardingView: View {
                 }
 
                 Button {
-                    withAnimation { currentPage = 6 }
+                    withAnimation { currentPage = 7 }
                 } label: {
                     Text("Maybe Later")
                         .font(.subheadline.weight(.medium))
@@ -361,6 +372,101 @@ struct OnboardingView: View {
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Appearance Page
+
+    private var appearancePage: some View {
+        VStack(spacing: 28) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 140, height: 140)
+                Image(systemName: selectedAppearance == 2 ? "moon.fill" : selectedAppearance == 1 ? "sun.max.fill" : "circle.lefthalf.filled")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppColors.accent)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+
+            VStack(spacing: 8) {
+                Text("Choose your look")
+                    .font(.title.bold())
+                    .multilineTextAlignment(.center)
+                Text("You can change this anytime in Settings.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack(spacing: 12) {
+                appearanceOption(value: 0, label: "System", icon: "iphone", description: "Match device")
+                appearanceOption(value: 1, label: "Light", icon: "sun.max.fill", description: "Always light")
+                appearanceOption(value: 2, label: "Dark", icon: "moon.fill", description: "Always dark")
+            }
+            .padding(.horizontal, 24)
+
+            Spacer()
+
+            Button {
+                withAnimation { currentPage = 5 }
+            } label: {
+                Text("Continue")
+                    .gradientButton()
+            }
+            .padding(.horizontal, 32)
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func appearanceOption(value: Int, label: String, icon: String, description: String) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedAppearance = value
+                applyAppearance(value)
+            }
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(selectedAppearance == value ? .white : AppColors.accent)
+                    .frame(width: 48, height: 48)
+                    .background(
+                        selectedAppearance == value
+                            ? AnyShapeStyle(AppColors.accentGradient)
+                            : AnyShapeStyle(AppColors.accent.opacity(0.1))
+                        , in: Circle()
+                    )
+
+                Text(label)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(selectedAppearance == value ? .primary : .secondary)
+
+                Text(description)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(selectedAppearance == value ? AppColors.accent : AppColors.cardBorder, lineWidth: selectedAppearance == value ? 2 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func applyAppearance(_ value: Int) {
+        let theme: AppTheme = switch value {
+        case 1: .light
+        case 2: .dark
+        default: .system
+        }
+        UserDefaults.standard.set(theme.rawValue, forKey: "appTheme")
     }
 
     // MARK: - Privacy Page

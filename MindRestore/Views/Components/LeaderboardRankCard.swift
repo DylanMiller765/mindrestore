@@ -236,7 +236,7 @@ struct LeaderboardRankCard: View {
             var playerCount = result.totalPlayerCount
 
             if let userEntry = result.localPlayerEntry {
-                userRank = userEntry.rank
+                userRank = max(1, userEntry.rank)
             } else if userScore > 0 {
                 // GameCenter hasn't propagated yet — inject local score
                 let isLowToHigh = category == .reactionTime
