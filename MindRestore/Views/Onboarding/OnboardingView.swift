@@ -323,11 +323,8 @@ struct OnboardingView: View {
         OnboardingAssessmentView(backgroundColor: $assessmentBgColor) { result in
             assessmentResult = result
             Analytics.onboardingStep(step: "assessment")
-            // Save brain score immediately so it's not lost
-            if let result {
-                modelContext.insert(result)
-                try? modelContext.save()
-            }
+            // Brain score result is saved in completeOnboarding() along with the User,
+            // so both are persisted in a single transaction before the view transition.
             withAnimation {
                 currentPage = 6
             }
@@ -556,7 +553,8 @@ struct OnboardingView: View {
         user.userAge = selectedAge
 
         // Save brain score result — assessment does NOT count toward daily session/limit
-        if assessmentResult != nil {
+        if let result = assessmentResult {
+            modelContext.insert(result)
             user.totalXP += 50  // Bonus XP for completing onboarding assessment
         }
 

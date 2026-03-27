@@ -14,6 +14,7 @@ struct LeaderboardView: View {
     @State private var totalPlayerCount: Int = 0
     @State private var isLoading = false
     @State private var hasLoaded = false
+    @State private var podiumAppeared = false
     @State private var loadError: Error?
 
     private var user: User? { users.first }
@@ -258,16 +259,25 @@ struct LeaderboardView: View {
                 if count >= 2 {
                     podiumPlayer(entries[1], rank: 2)
                         .padding(.bottom, 64)
+                        .opacity(podiumAppeared ? 1 : 0)
+                        .offset(y: podiumAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3), value: podiumAppeared)
                 } else {
                     Color.clear.frame(maxWidth: .infinity)
                 }
                 if count >= 1 {
                     podiumPlayer(entries[0], rank: 1)
                         .padding(.bottom, 88)
+                        .opacity(podiumAppeared ? 1 : 0)
+                        .offset(y: podiumAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.5), value: podiumAppeared)
                 }
                 if count >= 3 {
                     podiumPlayer(entries[2], rank: 3)
                         .padding(.bottom, 48)
+                        .opacity(podiumAppeared ? 1 : 0)
+                        .offset(y: podiumAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.15), value: podiumAppeared)
                 } else {
                     Color.clear.frame(maxWidth: .infinity)
                 }
@@ -276,15 +286,18 @@ struct LeaderboardView: View {
             // Pedestals
             HStack(alignment: .bottom, spacing: 4) {
                 if count >= 2 {
-                    podiumPedestal(rank: 2, height: 64)
+                    podiumPedestal(rank: 2, height: podiumAppeared ? 64 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.2), value: podiumAppeared)
                 } else {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                 }
                 if count >= 1 {
-                    podiumPedestal(rank: 1, height: 88)
+                    podiumPedestal(rank: 1, height: podiumAppeared ? 88 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.35), value: podiumAppeared)
                 }
                 if count >= 3 {
-                    podiumPedestal(rank: 3, height: 48)
+                    podiumPedestal(rank: 3, height: podiumAppeared ? 48 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1), value: podiumAppeared)
                 } else {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                 }
@@ -292,6 +305,12 @@ struct LeaderboardView: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
+        .onAppear {
+            podiumAppeared = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                podiumAppeared = true
+            }
+        }
     }
 
     private func podiumPlayer(_ entry: LeaderboardEntryData, rank: Int) -> some View {
@@ -604,8 +623,7 @@ struct LeaderboardView: View {
                 .fill(AppColors.cardSurface)
                 .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
         }
-        .opacity(0.6)
-        .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: isLoading)
+        .shimmer()
     }
 
     private func loadLeaderboard() {

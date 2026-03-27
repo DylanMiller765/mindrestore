@@ -20,6 +20,7 @@ struct DualNBackView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -29,13 +30,13 @@ struct DualNBackView: View {
         VStack(spacing: 0) {
             if viewModel.showResults {
                 resultsView
-                    .transition(.opacity)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             } else if gameStarted {
                 gameView
                     .transition(.opacity)
             } else {
                 setupView
-                    .transition(.opacity)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
@@ -358,6 +359,8 @@ struct DualNBackView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     resultRow(label: "Position Accuracy", value: viewModel.positionScore.percentString)
@@ -385,6 +388,8 @@ struct DualNBackView: View {
                 }
                 .glowingCard(color: AppColors.accent, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 if let tip = strategyTip {
                     VStack(alignment: .leading, spacing: 8) {
@@ -411,6 +416,8 @@ struct DualNBackView: View {
                     userScore: viewModel.currentN,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -459,6 +466,7 @@ struct DualNBackView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         saveExercise()
                         selectedN = viewModel.nextN
                         gameStarted = true
@@ -480,8 +488,11 @@ struct DualNBackView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

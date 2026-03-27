@@ -172,6 +172,9 @@ struct VisualMemoryView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
+    @State private var shakeAmount: CGFloat = 0
+    @State private var correctPulse = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -182,16 +185,22 @@ struct VisualMemoryView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .showing:
                 gameView(interactable: false)
+                    .transition(.opacity)
             case .input:
                 gameView(interactable: true)
+                    .transition(.opacity)
             case .correct:
                 correctView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .wrongReveal:
                 wrongRevealView
+                    .transition(.opacity)
             case .finished:
                 resultsView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
@@ -223,6 +232,12 @@ struct VisualMemoryView: View {
             }
         }
         .onChange(of: viewModel.phase) { _, newPhase in
+            if newPhase == .correct {
+                correctPulse = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { correctPulse = false }
+            } else if newPhase == .wrongReveal {
+                withAnimation(.default) { shakeAmount += 1 }
+            }
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached) }
@@ -355,6 +370,9 @@ struct VisualMemoryView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .modifier(ShakeEffect(animatableData: shakeAmount))
+        .scaleEffect(correctPulse ? 1.03 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
     }
 
     @ViewBuilder
@@ -477,6 +495,8 @@ struct VisualMemoryView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 if isNewPersonalBest {
                     Label("New Personal Best!", systemImage: "trophy.fill")
@@ -485,6 +505,8 @@ struct VisualMemoryView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
                         .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
                 }
 
                 VStack(spacing: 12) {
@@ -498,12 +520,16 @@ struct VisualMemoryView: View {
                 }
                 .glowingCard(color: AppColors.violet, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 LeaderboardRankCard(
                     exerciseType: .visualMemory,
                     userScore: viewModel.maxLevelReached,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -552,6 +578,7 @@ struct VisualMemoryView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         saveExercise()
                         viewModel.startGame()
                     } label: {
@@ -571,8 +598,11 @@ struct VisualMemoryView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

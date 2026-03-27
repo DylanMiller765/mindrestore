@@ -59,20 +59,20 @@ struct ScoreRevealView: View {
         ZStack {
             AppColors.pageBg.ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    Spacer(minLength: 12)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 10) {
+                    Spacer(minLength: 4)
 
                     // Brain Score
                     if showScore {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 4) {
                             Text("\(displayedScore)")
-                                .font(.system(size: 60, weight: .bold, design: .rounded))
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
                                 .foregroundStyle(AppColors.accent)
                                 .contentTransition(.numericText(value: Double(displayedScore)))
 
                             Text("Brain Score")
-                                .font(.title3.weight(.medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
                         .accessibilityElement(children: .combine)
@@ -91,38 +91,32 @@ struct ScoreRevealView: View {
                                 .font(.title2.weight(.bold))
                                 .foregroundStyle(brainAgeColor(for: viewModel.brainAge))
                         }
-                        .font(.title3)
+                        .font(.subheadline)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Your brain age is \(viewModel.brainAge)")
                         .transition(.move(edge: .bottom).combined(with: .opacity))
 
                         if let comparison = ageComparisonText {
                             Text(comparison)
-                                .font(.subheadline.weight(.semibold))
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(ageComparisonColor)
                         }
 
                         // First-time brain age below real age celebration
                         if userAge > 0 && viewModel.brainAge < userAge && !celebratedBrainAgeBelow {
-                            VStack(spacing: 8) {
-                                Text("Your brain is younger than you!")
-                                    .font(.headline.weight(.bold))
-                                    .foregroundStyle(AppColors.teal)
-
-                                ShareLink(
-                                    item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
-                                ) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "square.and.arrow.up")
-                                            .font(.caption.weight(.semibold))
-                                        Text("Share This")
-                                            .font(.subheadline.weight(.bold))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .background(AppColors.teal, in: Capsule())
+                            ShareLink(
+                                item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                            ) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.caption2.weight(.semibold))
+                                    Text("Brain younger than you! Share")
+                                        .font(.caption.weight(.bold))
                                 }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(AppColors.teal, in: Capsule())
                             }
                             .transition(.scale.combined(with: .opacity))
                             .onAppear {
@@ -133,17 +127,17 @@ struct ScoreRevealView: View {
 
                     // Brain Type
                     if showType {
-                        VStack(spacing: 8) {
-                            HStack(spacing: 10) {
+                        VStack(spacing: 4) {
+                            HStack(spacing: 8) {
                                 Image(systemName: viewModel.brainType.icon)
-                                    .font(.title2)
+                                    .font(.headline)
                                 Text(viewModel.brainType.displayName)
-                                    .font(.title2.weight(.bold))
+                                    .font(.headline.weight(.bold))
                             }
                             .foregroundStyle(brainTypeColor)
 
                             Text(viewModel.brainType.description)
-                                .font(.subheadline)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
@@ -154,10 +148,10 @@ struct ScoreRevealView: View {
                     // Percentile (inline, after overlay)
                     if brainAgeOverlayDismissed {
                         Text("Better than \(viewModel.percentile)% of players")
-                            .font(.headline)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(AppColors.accent)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
                             .background(AppColors.accent.opacity(0.18), in: Capsule())
                             .accessibilityLabel("Better than \(viewModel.percentile) percent of players")
                             .transition(.opacity)
@@ -209,9 +203,9 @@ struct ScoreRevealView: View {
 
                     // Breakdown
                     if showBreakdown {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 8) {
                             Text("Performance Breakdown")
-                                .font(.subheadline.weight(.semibold))
+                                .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             breakdownRow(

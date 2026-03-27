@@ -254,18 +254,25 @@ struct OnboardingAssessmentView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Text(viewModel.isShowingDigit ? viewModel.currentDisplayDigit : " ")
-                .font(.system(size: 96, weight: .bold, design: .monospaced))
-                .foregroundStyle(AppColors.accent)
-                .transition(.scale.combined(with: .opacity))
-                .id("digit_\(viewModel.displayDigitIndex)")
+            if viewModel.isShowingDigit {
+                Text(viewModel.currentDisplayDigit)
+                    .font(.system(size: 96, weight: .bold, design: .monospaced))
+                    .foregroundStyle(AppColors.accent)
+                    .id("onboard-digit-\(viewModel.displayDigitIndex)")
+                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+            } else {
+                Text(" ")
+                    .font(.system(size: 96, weight: .bold, design: .monospaced))
+            }
 
             // Progress dots
             HStack(spacing: 6) {
                 ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
                     Circle()
-                        .fill(i <= viewModel.displayDigitIndex ? AppColors.accent : Color.gray.opacity(0.3))
+                        .fill(i == viewModel.displayDigitIndex ? AppColors.accent : i < viewModel.displayDigitIndex ? AppColors.accent.opacity(0.5) : Color.gray.opacity(0.3))
                         .frame(width: 8, height: 8)
+                        .scaleEffect(i == viewModel.displayDigitIndex ? 1.3 : 1.0)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
                 }
             }
 
@@ -275,41 +282,37 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.displayDigitIndex)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
     }
 
     private var digitInputView: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        VStack(spacing: 16) {
+            Text("What were the numbers?")
+                .font(.title2.weight(.semibold))
+                .padding(.top, 40)
 
-            VStack(spacing: 16) {
-                Text("What were the numbers?")
-                    .font(.title2.weight(.semibold))
+            Text("\(viewModel.currentDigits.count) digits in order")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
-                Text("\(viewModel.currentDigits.count) digits in order")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            TextField("Type the numbers...", text: $viewModel.digitInput)
+                .keyboardType(.numberPad)
+                .focused($digitFieldFocused)
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .padding()
+                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 40)
 
-                TextField("Type the numbers...", text: $viewModel.digitInput)
-                    .keyboardType(.numberPad)
-                    .focused($digitFieldFocused)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 40)
-
-                Button {
-                    digitFieldFocused = false
-                    viewModel.submitDigitAnswer()
-                } label: {
-                    Text("Submit")
-                        .gradientButton()
-                }
-                .padding(.horizontal, 32)
+            Button {
+                digitFieldFocused = false
+                viewModel.submitDigitAnswer()
+            } label: {
+                Text("Submit")
+                    .gradientButton()
             }
-
-            Spacer()
+            .padding(.horizontal, 32)
+            .padding(.bottom, 16)
         }
     }
 

@@ -238,6 +238,8 @@ struct ChunkingTrainingView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
+    @State private var shakeAmount: CGFloat = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -248,17 +250,23 @@ struct ChunkingTrainingView: View {
             switch viewModel.phase {
             case .intro:
                 introView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .memorize:
                 memorizeView
+                    .transition(.opacity)
             case .chunkHint:
                 // Skip chunk hint, go straight to recall
                 recallView
+                    .transition(.opacity)
             case .recall:
                 recallView
+                    .transition(.opacity)
             case .results:
                 resultsView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -286,6 +294,9 @@ struct ChunkingTrainingView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {
+                if viewModel.score < 0.7 {
+                    withAnimation(.default) { shakeAmount += 1 }
+                }
                 let card = ExerciseShareCard(
                     exerciseName: "Chunking",
                     exerciseIcon: "square.grid.4x3.fill",
@@ -546,6 +557,7 @@ struct ChunkingTrainingView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .modifier(ShakeEffect(animatableData: shakeAmount))
     }
 
     // MARK: - Results
@@ -563,6 +575,8 @@ struct ChunkingTrainingView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 Text("Score: \(viewModel.score.percentString)")
                     .font(.title2)
@@ -603,6 +617,8 @@ struct ChunkingTrainingView: View {
                 }
                 .glowingCard(color: AppColors.teal, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 // Strategy Tip
                 if let tip = viewModel.strategyTip {
@@ -634,6 +650,8 @@ struct ChunkingTrainingView: View {
                     userScore: viewModel.correctDigits,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -682,6 +700,7 @@ struct ChunkingTrainingView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         saveExercise()
                         viewModel.startChallenge()
@@ -702,8 +721,11 @@ struct ChunkingTrainingView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private var digitComparisonView: some View {

@@ -235,6 +235,9 @@ struct SpeedMatchView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
+    @State private var shakeAmount: CGFloat = 0
+    @State private var correctPulse = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -245,13 +248,13 @@ struct SpeedMatchView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.opacity)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .answering, .showing, .feedback:
                 gameView
                     .transition(.opacity)
             case .finished:
                 resultsView
-                    .transition(.opacity)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
@@ -591,6 +594,19 @@ struct SpeedMatchView: View {
             Spacer().frame(height: 16)
         }
         .padding(.vertical, 24)
+        .modifier(ShakeEffect(animatableData: shakeAmount))
+        .scaleEffect(correctPulse ? 1.03 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
+        .onChange(of: viewModel.lastAnswerCorrect) { _, newVal in
+            if let correct = newVal {
+                if correct {
+                    correctPulse = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { correctPulse = false }
+                } else {
+                    withAnimation(.default) { shakeAmount += 1 }
+                }
+            }
+        }
     }
 
     // MARK: - Results
@@ -608,6 +624,8 @@ struct SpeedMatchView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
@@ -628,12 +646,16 @@ struct SpeedMatchView: View {
                 }
                 .glowingCard(color: AppColors.accent, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 LeaderboardRankCard(
                     exerciseType: .speedMatch,
                     userScore: viewModel.leaderboardScore,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -682,6 +704,7 @@ struct SpeedMatchView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         saveExercise()
                         viewModel.startGame()
                     } label: {
@@ -701,8 +724,11 @@ struct SpeedMatchView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

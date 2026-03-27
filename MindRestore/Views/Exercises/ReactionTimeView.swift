@@ -138,6 +138,7 @@ struct ReactionTimeView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -148,18 +149,25 @@ struct ReactionTimeView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .waiting:
                 waitingView
+                    .transition(.opacity)
             case .ready:
                 goView
+                    .transition(.opacity)
             case .tooEarly:
                 tooEarlyView
+                    .transition(.opacity)
             case .result:
                 roundResultView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .finished:
                 resultsView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -241,6 +249,7 @@ struct ReactionTimeView: View {
             Spacer()
 
             Button {
+                resultsAppeared = false
                 Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
                 viewModel.startGame()
             } label: {
@@ -390,6 +399,8 @@ struct ReactionTimeView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 if isNewPersonalBest {
                     Label("New Personal Best!", systemImage: "trophy.fill")
@@ -398,6 +409,8 @@ struct ReactionTimeView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
                         .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
                 }
 
                 VStack(spacing: 12) {
@@ -426,12 +439,16 @@ struct ReactionTimeView: View {
                 }
                 .glowingCard(color: AppColors.coral, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 LeaderboardRankCard(
                     exerciseType: .reactionTime,
                     userScore: viewModel.averageMs,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -489,6 +506,7 @@ struct ReactionTimeView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         saveExercise()
                         viewModel.startGame()
                     } label: {
@@ -508,8 +526,11 @@ struct ReactionTimeView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

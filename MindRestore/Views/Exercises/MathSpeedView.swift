@@ -225,6 +225,9 @@ struct MathSpeedView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var activeChallenge: ChallengeLink?
+    @State private var resultsAppeared = false
+    @State private var shakeAmount: CGFloat = 0
+    @State private var correctPulse = false
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -236,12 +239,16 @@ struct MathSpeedView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             case .playing:
                 playingView
+                    .transition(.opacity)
             case .finished:
                 resultsView
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -482,6 +489,19 @@ struct MathSpeedView: View {
             .padding(.bottom, 24)
         }
         .padding(.vertical, 16)
+        .modifier(ShakeEffect(animatableData: shakeAmount))
+        .scaleEffect(correctPulse ? 1.03 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
+        .onChange(of: viewModel.currentProblemIndex) { _, _ in
+            if let last = viewModel.results.last {
+                if last.correct {
+                    correctPulse = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { correctPulse = false }
+                } else {
+                    withAnimation(.default) { shakeAmount += 1 }
+                }
+            }
+        }
         .onAppear { inputFocused = true }
     }
 
@@ -500,6 +520,8 @@ struct MathSpeedView: View {
                         .font(.title2.weight(.bold))
                 }
                 .padding(.top, 20)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
                 if isNewPersonalBest {
                     Label("New Personal Best!", systemImage: "trophy.fill")
@@ -508,6 +530,8 @@ struct MathSpeedView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
                         .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
                 }
 
                 VStack(spacing: 12) {
@@ -546,12 +570,16 @@ struct MathSpeedView: View {
                 }
                 .glowingCard(color: AppColors.amber, intensity: 0.08)
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
 
                 LeaderboardRankCard(
                     exerciseType: .mathSpeed,
                     userScore: viewModel.leaderboardScore,
                 )
                 .padding(.horizontal)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
 
                 VStack(spacing: 12) {
                     if let shareImage {
@@ -600,6 +628,7 @@ struct MathSpeedView: View {
                     */
 
                     Button {
+                        resultsAppeared = false
                         saveExercise()
                         viewModel.startGame()
                     } label: {
@@ -619,8 +648,11 @@ struct MathSpeedView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
             }
         }
+        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

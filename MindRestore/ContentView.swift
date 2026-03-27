@@ -553,7 +553,7 @@ struct TrainingView: View {
                                     lastPlayedText: lastPlayedText(for: game.type)
                                 )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(PressButtonStyle())
                         }
                     }
                     .padding(.horizontal)
@@ -675,6 +675,22 @@ struct TrainingView: View {
 
 // MARK: - Training Tile (Game-style grid card)
 
+struct LockPulse: View {
+    let color: Color
+    @State private var pulse = false
+
+    var body: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(color.opacity(0.7))
+            .padding(8)
+            .background(color.opacity(pulse ? 0.22 : 0.12), in: Circle())
+            .scaleEffect(pulse ? 1.08 : 1.0)
+            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: pulse)
+            .onAppear { pulse = true }
+    }
+}
+
 struct TrainingTile: View {
     let title: String
     let type: ExerciseType
@@ -727,11 +743,7 @@ struct TrainingTile: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
                         .fill(Color.black.opacity(0.55))
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(color.opacity(0.7))
-                        .padding(8)
-                        .background(color.opacity(0.15), in: Circle())
+                    LockPulse(color: color)
                 }
             }
         }
