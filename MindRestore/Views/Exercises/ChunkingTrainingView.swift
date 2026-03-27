@@ -647,6 +647,7 @@ struct ChunkingTrainingView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue) })
                     }
 
                     /*
@@ -750,7 +751,9 @@ struct ChunkingTrainingView: View {
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
-        PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining)
+        if PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining) {
+            Analytics.personalBest(game: ExerciseType.chunkingTraining.rawValue, score: viewModel.correctDigits)
+        }
 
         let exercise = Exercise(
             type: .chunkingTraining,

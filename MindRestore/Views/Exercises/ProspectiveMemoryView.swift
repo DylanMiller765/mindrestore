@@ -993,7 +993,9 @@ struct ProspectiveMemoryView: View {
             NotificationService.shared.scheduleMilestone(streak: streak)
         }
 
-        PersonalBestTracker.shared.record(score: Int(viewModel.overallScore * 100), for: .prospectiveMemory)
+        if PersonalBestTracker.shared.record(score: Int(viewModel.overallScore * 100), for: .prospectiveMemory) {
+            Analytics.personalBest(game: ExerciseType.prospectiveMemory.rawValue, score: Int(viewModel.overallScore * 100))
+        }
 
         if let user {
             _ = ContentView.awardXP(

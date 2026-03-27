@@ -536,6 +536,7 @@ struct ColorMatchView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.colorMatch.rawValue) })
                     }
 
                     /*
@@ -611,7 +612,9 @@ struct ColorMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch)
+        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch) {
+            Analytics.personalBest(game: ExerciseType.colorMatch.rawValue, score: viewModel.correctCount)
+        }
 
         let exercise = Exercise(
             type: .colorMatch,

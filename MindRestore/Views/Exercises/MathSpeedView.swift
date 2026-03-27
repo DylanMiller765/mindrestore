@@ -271,6 +271,7 @@ struct MathSpeedView: View {
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.mathSpeed.rawValue, score: viewModel.correctCount) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
                 let card = ExerciseShareCard(
                     exerciseName: "Math Speed",
@@ -564,6 +565,7 @@ struct MathSpeedView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue) })
                     }
 
                     /*

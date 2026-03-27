@@ -72,7 +72,9 @@ struct DualNBackView: View {
             if showingResults {
                 let correctCount = Int(round(viewModel.overallScore * Double(viewModel.totalTrials)))
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .nBack, correct: correctCount, total: viewModel.totalTrials)
-                PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack)
+                if PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack) {
+                    Analytics.personalBest(game: ExerciseType.dualNBack.rawValue, score: viewModel.currentN)
+                }
                 strategyTip = StrategyTipService.shared.freshTip(for: .nBack)
                 SoundService.shared.playComplete()
                 HapticService.complete()
@@ -422,6 +424,7 @@ struct DualNBackView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue) })
                     }
 
                     /*

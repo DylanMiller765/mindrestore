@@ -192,12 +192,6 @@ struct ContentView: View {
                 }
             }
         }
-        .onChange(of: selectedTab) { _, newTab in
-            let tabNames = ["Home", "Train", "Compete", "Insights", "Profile"]
-            if newTab < tabNames.count {
-                Analytics.tabViewed(tab: tabNames[newTab])
-            }
-        }
         .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
             guard let destination else { return }
             switch destination {
@@ -404,6 +398,7 @@ extension ContentView {
             let lastCelebrated = UserDefaults.standard.integer(forKey: "lastCelebratedStreak")
             if lastCelebrated < user.currentStreak {
                 UserDefaults.standard.set(user.currentStreak, forKey: "lastCelebratedStreak")
+                Analytics.streakMilestone(streak: user.currentStreak)
                 NotificationCenter.default.post(
                     name: .streakMilestoneCelebration,
                     object: nil,

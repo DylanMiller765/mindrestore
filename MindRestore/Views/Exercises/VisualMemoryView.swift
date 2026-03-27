@@ -225,6 +225,7 @@ struct VisualMemoryView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .visualMemory, correct: viewModel.maxLevelReached, total: viewModel.level)
                 let card = ExerciseShareCard(
                     exerciseName: "Visual Memory",
@@ -516,6 +517,7 @@ struct VisualMemoryView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue) })
                     }
 
                     /*

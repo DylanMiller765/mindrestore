@@ -647,6 +647,7 @@ struct SpeedMatchView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue) })
                     }
 
                     /*
@@ -722,7 +723,9 @@ struct SpeedMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch)
+        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch) {
+            Analytics.personalBest(game: ExerciseType.speedMatch.rawValue, score: viewModel.correctCount)
+        }
 
         let exercise = Exercise(
             type: .speedMatch,

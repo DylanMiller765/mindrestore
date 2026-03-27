@@ -192,6 +192,7 @@ struct ReactionTimeView: View {
                 SoundService.shared.playComplete()
                 let invertedScore = viewModel.averageMs > 0 ? (1000 - viewModel.averageMs) : 0
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: invertedScore, for: .reactionTime)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.reactionTime.rawValue, score: invertedScore) }
                 // Generate share card image
                 let card = ReactionTimeShareCard(
                     averageMs: viewModel.averageMs,
@@ -444,6 +445,7 @@ struct ReactionTimeView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
                     } else {
                         ShareLink(item: "My reaction time is \(viewModel.averageMs)ms — \(viewModel.ratingText)\n\nTest yours with Memori") {
                             HStack(spacing: 8) {
@@ -452,6 +454,7 @@ struct ReactionTimeView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
                     }
 
                     /*

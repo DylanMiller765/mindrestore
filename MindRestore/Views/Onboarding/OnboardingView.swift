@@ -95,7 +95,10 @@ struct OnboardingView: View {
 
             Spacer()
 
-            continueButton { currentPage = 1 }
+            continueButton {
+                Analytics.onboardingStep(step: "welcome")
+                currentPage = 1
+            }
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
@@ -195,6 +198,7 @@ struct OnboardingView: View {
 
     private func dismissAndAdvance() {
         nameFieldFocused = false
+        Analytics.onboardingStep(step: "name")
         withAnimation { currentPage = 2 }
     }
 
@@ -233,7 +237,10 @@ struct OnboardingView: View {
 
             Spacer()
 
-            continueButton { currentPage = 3 }
+            continueButton {
+                Analytics.onboardingStep(step: "goals")
+                currentPage = 3
+            }
                 .disabled(selectedGoals.isEmpty)
                 .opacity(selectedGoals.isEmpty ? 0.4 : 1)
         }
@@ -283,10 +290,14 @@ struct OnboardingView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                continueButton { currentPage = 4 }
+                continueButton {
+                    Analytics.onboardingStep(step: "age")
+                    currentPage = 4
+                }
 
                 Button {
                     selectedAge = 0
+                    Analytics.onboardingStep(step: "age")
                     withAnimation { currentPage = 4 }
                 } label: {
                     Text("Skip")
@@ -306,6 +317,7 @@ struct OnboardingView: View {
     private var assessmentPage: some View {
         OnboardingAssessmentView(backgroundColor: $assessmentBgColor) { result in
             assessmentResult = result
+            Analytics.onboardingStep(step: "assessment")
             // Save brain score immediately so it's not lost
             if let result {
                 modelContext.insert(result)
@@ -351,6 +363,7 @@ struct OnboardingView: View {
                     Task {
                         let granted = await NotificationService.shared.requestPermission()
                         notificationsEnabled = granted
+                        Analytics.onboardingStep(step: "notifications")
                         withAnimation { currentPage = 7 }
                     }
                 } label: {
@@ -359,6 +372,7 @@ struct OnboardingView: View {
                 }
 
                 Button {
+                    Analytics.onboardingStep(step: "notifications")
                     withAnimation { currentPage = 7 }
                 } label: {
                     Text("Maybe Later")
@@ -410,6 +424,7 @@ struct OnboardingView: View {
             Spacer()
 
             Button {
+                Analytics.onboardingStep(step: "appearance")
                 withAnimation { currentPage = 5 }
             } label: {
                 Text("Continue")
@@ -497,6 +512,7 @@ struct OnboardingView: View {
             Spacer()
 
             Button {
+                Analytics.onboardingStep(step: "privacy")
                 completeOnboarding()
             } label: {
                 Text("Get Started")

@@ -336,6 +336,7 @@ struct MemoryChainView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .gameOver {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.longestChain, for: .memoryChain)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.memoryChain.rawValue, score: viewModel.longestChain) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .memoryChain, correct: viewModel.longestChain, total: viewModel.longestChain + 1)
                 let card = ExerciseShareCard(
                     exerciseName: "Memory Chain",
@@ -580,6 +581,7 @@ struct MemoryChainView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.memoryChain.rawValue) })
                     }
 
                     /*

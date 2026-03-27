@@ -29,6 +29,7 @@ struct LeaderboardView: View {
                                 withAnimation(.spring(response: 0.3)) {
                                     selectedCategory = category
                                 }
+                                Analytics.leaderboardViewed(category: category.rawValue)
                                 loadLeaderboard()
                             } label: {
                                 HStack(spacing: 6) {
@@ -114,6 +115,7 @@ struct LeaderboardView: View {
             }
             .onAppear {
                 guard !hasLoaded else { return }
+                Analytics.leaderboardViewed(category: selectedCategory.rawValue)
                 loadLeaderboard()
             }
         }

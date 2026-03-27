@@ -174,6 +174,7 @@ struct PaywallView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         if hasSeenExitOffer || !isHighIntent || exitOfferShownCount >= maxExitOffers {
+                            Analytics.paywallDismissed(trigger: isHighIntent ? "highIntent" : "browse")
                             dismiss()
                         } else {
                             showExitOffer = true
@@ -196,6 +197,7 @@ struct PaywallView: View {
                     Task { await purchase() }
                 } onDismiss: {
                     showExitOffer = false
+                    Analytics.paywallDismissed(trigger: "exitOffer")
                     dismiss()
                 }
                 .presentationDetents([.medium])

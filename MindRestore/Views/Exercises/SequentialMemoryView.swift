@@ -211,6 +211,7 @@ struct SequentialMemoryView: View {
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
                 let card = ExerciseShareCard(
                     exerciseName: "Number Memory",
@@ -521,6 +522,7 @@ struct SequentialMemoryView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue) })
                     }
 
                     /*

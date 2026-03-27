@@ -366,6 +366,7 @@ struct WordScrambleView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .wordScramble)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.wordScramble.rawValue, score: viewModel.leaderboardScore) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .wordScramble, correct: viewModel.wordsCorrect, total: viewModel.totalRounds)
 
                 let avgTimeFormatted = String(format: "%.1f", viewModel.averageTime)
@@ -701,6 +702,7 @@ struct WordScrambleView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.wordScramble.rawValue) })
                     }
 
                     /*

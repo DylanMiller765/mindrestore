@@ -496,6 +496,7 @@ struct DailyChallengeView: View {
                             )
                             .foregroundStyle(AppColors.accent)
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: "dailyChallenge") })
                     }
 
                     Button {
