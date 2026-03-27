@@ -104,6 +104,9 @@ struct OnboardingAssessmentView: View {
                 digitFieldFocused = false
             }
         }
+        .onDisappear {
+            digitFieldFocused = false
+        }
     }
 
     private func phaseBackgroundColor(for phase: AssessmentPhase) -> Color {
@@ -279,32 +282,34 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Text("What were the numbers?")
-                .font(.title2.weight(.semibold))
+            VStack(spacing: 16) {
+                Text("What were the numbers?")
+                    .font(.title2.weight(.semibold))
 
-            Text("\(viewModel.currentDigits.count) digits in order")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("\(viewModel.currentDigits.count) digits in order")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-            TextField("Type the numbers...", text: $viewModel.digitInput)
-                .keyboardType(.numberPad)
-                .focused($digitFieldFocused)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .padding()
-                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal, 40)
+                TextField("Type the numbers...", text: $viewModel.digitInput)
+                    .keyboardType(.numberPad)
+                    .focused($digitFieldFocused)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 40)
+
+                Button {
+                    digitFieldFocused = false
+                    viewModel.submitDigitAnswer()
+                } label: {
+                    Text("Submit")
+                        .gradientButton()
+                }
+                .padding(.horizontal, 32)
+            }
 
             Spacer()
-
-            Button {
-                viewModel.submitDigitAnswer()
-            } label: {
-                Text("Submit")
-                    .gradientButton()
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 16)
         }
     }
 

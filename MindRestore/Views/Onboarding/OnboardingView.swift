@@ -38,10 +38,15 @@ struct OnboardingView: View {
                 .scrollDisabled(true)
                 .animation(.easeInOut, value: currentPage)
                 .onChange(of: currentPage) { _, newPage in
+                    // Animate keyboard dismiss smoothly
+                    UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    nameFieldFocused = false
                     if newPage == 1 {
-                        nameFieldFocused = true
-                    } else {
-                        nameFieldFocused = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            nameFieldFocused = true
+                        }
                     }
                 }
 
