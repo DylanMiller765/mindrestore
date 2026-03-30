@@ -77,9 +77,11 @@ struct ContentView: View {
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
-            // v1.2: Brain score decay (disabled for now)
-            // let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
-            // if decayed > 0 { NotificationService.shared.scheduleDecayWarning(pointsLost: decayed) }
+            // Brain score decay — mascot ages if you don't train
+            let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
+            if decayed > 0 {
+                NotificationService.shared.scheduleDecayWarning(pointsLost: decayed)
+            }
             // Sync widget data on app launch (off the main thread)
             Task { syncWidgetData() }
         }
@@ -331,14 +333,90 @@ extension ContentView {
             return (try? modelContext.fetch(descriptor))?.first?.brainScore ?? 0
         }()
 
-        // v1.2: Rolling Brain Score (disabled for now)
-        // Uncomment to enable brain score updating after every game
-        /*
+        // Rolling Brain Score: update domain if game improved it
         if let exerciseType, let rawScore = gameScore,
            let (domain, newDomainScore) = BrainScoring.domainScore(for: exerciseType, gameScore: rawScore, score: score) {
-            // ... rolling brain score logic ...
+
+            var bsDescriptor = FetchDescriptor<BrainScoreResult>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+            bsDescriptor.fetchLimit = 1
+            let latestResult = (try? modelContext.fetch(bsDescriptor))?.first
+
+            let currentMemory = latestResult?.digitSpanScore ?? 0
+            let currentSpeed = latestResult?.reactionTimeScore ?? 0
+            let currentVisual = latestResult?.visualMemoryScore ?? 0
+
+            var updatedMemory = currentMemory
+            var updatedSpeed = currentSpeed
+            var updatedVisual = currentVisual
+
+            var improved = false
+            switch domain {
+            case "memory":
+                if newDomainScore > currentMemory {
+                    updatedMemory = newDomainScore
+                    improved = true
+                }
+            case "speed":
+                if newDomainScore > currentSpeed {
+                    updatedSpeed = newDomainScore
+                    improved = true
+                }
+            case "visual":
+                if newDomainScore > currentVisual {
+                    updatedVisual = newDomainScore
+                    improved = true
+                }
+            default: break
+            }
+
+            if improved, latestResult != nil {
+                let newBrainScore = BrainScoring.compositeBrainScore(
+                    digit: updatedMemory,
+                    reaction: updatedSpeed,
+                    visual: updatedVisual
+                )
+                let newAge = BrainScoring.brainAge(from: newBrainScore)
+
+                let result = BrainScoreResult()
+                result.date = Date()
+                result.brainScore = newBrainScore
+                result.brainAge = newAge
+                result.digitSpanScore = updatedMemory
+                result.reactionTimeScore = updatedSpeed
+                result.visualMemoryScore = updatedVisual
+                result.digitSpanMax = latestResult?.digitSpanMax ?? 0
+                result.reactionTimeAvgMs = latestResult?.reactionTimeAvgMs ?? 0
+                result.visualMemoryMax = latestResult?.visualMemoryMax ?? 0
+                result.percentile = BrainScoring.percentile(score: newBrainScore)
+                result.brainType = BrainScoring.determineBrainType(
+                    digit: updatedMemory,
+                    reaction: updatedSpeed,
+                    visual: updatedVisual
+                )
+                result.source = .workout
+
+                if domain == "memory", exerciseType == .sequentialMemory {
+                    result.digitSpanMax = rawScore
+                } else if domain == "speed", exerciseType == .reactionTime {
+                    result.reactionTimeAvgMs = rawScore
+                } else if domain == "visual", exerciseType == .visualMemory {
+                    result.visualMemoryMax = rawScore
+                }
+
+                modelContext.insert(result)
+                try? modelContext.save()
+
+                let delta = newBrainScore - (latestResult?.brainScore ?? 0)
+                if delta > 0 {
+                    NotificationCenter.default.post(
+                        name: .brainScoreImproved,
+                        object: nil,
+                        userInfo: ["delta": delta, "newScore": newBrainScore]
+                    )
+                    NotificationService.shared.scheduleBrainScoreFollowUp(currentScore: newBrainScore)
+                }
+            }
         }
-        */
 
         WidgetDataService.updateWidgetData(
             streak: user.currentStreak,

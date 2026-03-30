@@ -28,16 +28,6 @@ struct ProgressDashboardView: View {
         Set(exercises.map(\.type)).intersection(Self.availableGames)
     }
 
-    private var consistencyPercent: Int {
-        let calendar = Calendar.current
-        let now = Date.now
-        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else { return 0 }
-        let dayOfMonth = calendar.component(.day, from: now)
-        let daysTrainedThisMonth = viewModel.trainingDays.filter { $0 >= monthStart }.count
-        guard dayOfMonth > 0 else { return 0 }
-        return Int(Double(daysTrainedThisMonth) / Double(dayOfMonth) * 100)
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -45,36 +35,33 @@ struct ProgressDashboardView: View {
                     emptyState
                 } else {
                     VStack(spacing: 24) {
+                        // 1. Brain Score Overview (hero)
                         if let latestScore = brainScores.first {
-                            brainScoreProgressCard(latestScore)
+                            brainScoreOverview(latestScore)
                         }
 
-                        // Brain Score History Chart
+                        // 2. Brain Score History Chart
                         if brainScores.count >= 2 {
                             VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "Brain Score History")
+                                SectionHeader(title: "Score History")
                                 BrainScoreChart(scores: brainScores, height: 200, showHeader: false)
                             }
                             .appCard()
                         }
 
-                        // Level & XP Card
-                        if let user {
-                            levelProgressCard(user)
-                        }
+                        // 3. This Week Summary
+                        thisWeekSummary
 
-                        streakSection
-                        calendarHeatmap
-
-                        // NEW: Consistency + Exercise Library
-                        consistencyAndLibrary
-
-                        // NEW: Personal Records (free)
+                        // 4. Personal Records
                         personalRecordsSection
 
-                        // Achievements summary
+                        // 5. Training Consistency (heatmap only)
+                        calendarHeatmap
+
+                        // 6. Achievements summary
                         achievementsSummary
 
+                        // 7. Pro Analytics or Upsell
                         if isProUser {
                             exerciseScoreTrends
                             scoreChart
@@ -130,168 +117,114 @@ struct ProgressDashboardView: View {
         .padding(.top, 8)
     }
 
-    // MARK: - Brain Score Progress Card
+    // MARK: - Brain Score Overview (Hero)
 
-    private func brainScoreProgressCard(_ score: BrainScoreResult) -> some View {
-        BrainScoreCard(score: score, compact: false, userAge: user?.userAge ?? 0)
-            .heroCard(color: AppColors.accent)
-    }
-
-    // MARK: - Level Progress Card
-
-    private func levelProgressCard(_ user: User) -> some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 68, height: 68)
-                Circle()
-                    .fill(AppColors.accent)
-                    .frame(width: 52, height: 52)
-
-                Text("\(user.level)")
-                    .font(.title2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white)
+    private func brainScoreOverview(_ score: BrainScoreResult) -> some View {
+        VStack(spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Brain Score")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(1)
+                    Text("\(score.brainScore)")
+                        .font(.system(size: 44, weight: .black, design: .rounded))
+                        .foregroundStyle(AppColors.accent)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Brain Age")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(1)
+                    Text("\(score.brainAge)")
+                        .font(.system(size: 44, weight: .black, design: .rounded))
+                        .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
+                }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(user.levelName)
-                    .font(.subheadline.weight(.bold))
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(AppColors.accent.opacity(0.15))
-                            .frame(height: 8)
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(AppColors.accent)
-                            .frame(width: max(4, geo.size.width * user.xpProgress), height: 8)
-                    }
-                }
-                .frame(height: 8)
-
-                HStack {
-                    Text("\(user.totalXP) XP")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(AppColors.accent)
-                    Spacer()
-                    Text("\(Int(user.xpProgress * 100))%")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.accent)
-                }
+            // Domain bars
+            VStack(spacing: 8) {
+                domainBar(label: "Memory", score: score.digitSpanScore, color: AppColors.violet)
+                domainBar(label: "Speed", score: score.reactionTimeScore, color: AppColors.coral)
+                domainBar(label: "Visual", score: score.visualMemoryScore, color: AppColors.sky)
             }
         }
         .appCard()
     }
 
-    // MARK: - Achievements Summary
-
-    private var achievementsSummary: some View {
-        NavigationLink {
-            AchievementsView()
-        } label: {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "medal.fill", color: AppColors.violet, size: 40)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Achievements")
-                        .font(.subheadline.weight(.semibold))
-                    Text("\(achievements.count) of \(AchievementType.allCases.count) unlocked")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                // Mini progress
-                Text("\(Int(Double(achievements.count) / Double(AchievementType.allCases.count) * 100))%")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(AppColors.violet)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .appCard()
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Streak Section
-
-    private var streakSection: some View {
+    private func domainBar(label: String, score: Double, color: Color) -> some View {
         HStack(spacing: 10) {
-            streakMiniCard(
-                value: "\(user?.currentStreak ?? 0)",
-                unit: "streak",
-                icon: "flame.fill",
-                color: AppColors.coral,
-                detail: "Best: \(user?.longestStreak ?? 0)"
-            )
-            streakMiniCard(
-                value: "\(sessions.count)",
-                unit: "sessions",
-                icon: "brain.head.profile",
-                color: AppColors.indigo
-            )
-            let totalMins = sessions.reduce(0) { $0 + $1.durationSeconds } / 60
-            streakMiniCard(
-                value: totalMins > 60 ? "\(totalMins / 60)h" : "\(totalMins)m",
-                unit: "trained",
-                icon: "clock.fill",
-                color: AppColors.teal
-            )
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 55, alignment: .leading)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(color.opacity(0.15))
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(color)
+                        .frame(width: geo.size.width * min(1, score / 100))
+                }
+            }
+            .frame(height: 8)
+
+            Text("\(Int(score))")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .frame(width: 30, alignment: .trailing)
         }
     }
 
-    private func streakMiniCard(value: String, unit: String, icon: String, color: Color, detail: String? = nil) -> some View {
-        VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(color)
-            }
+    // MARK: - This Week Summary
 
+    private var thisWeekSummary: some View {
+        VStack(spacing: 14) {
+            SectionHeader(title: "This Week")
+
+            HStack(spacing: 12) {
+                weekStat(value: "\(exercisesThisWeek)", label: "Games", icon: "gamecontroller.fill", color: AppColors.accent)
+                weekStat(value: formatTrainingTime(minutesThisWeek), label: "Trained", icon: "clock.fill", color: AppColors.teal)
+                weekStat(value: "\(user?.currentStreak ?? 0)", label: "Streak", icon: "flame.fill", color: AppColors.coral)
+            }
+        }
+    }
+
+    private func weekStat(value: String, label: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(height: 34)
-
-            Text(unit)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(AppColors.textTertiary)
-                .textCase(.uppercase)
-                .tracking(0.5)
-
-            if let detail {
-                Text(detail)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(AppColors.textTertiary)
-            } else {
-                Text(" ")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.clear)
-            }
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(AppColors.cardSurface)
-                .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-        }
-        .overlay(alignment: .top) {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(color)
-                .frame(height: 3)
-                .padding(.horizontal, 12)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(unit): \(value)")
+        .background(color.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.12), lineWidth: 1))
+    }
+
+    private var exercisesThisWeek: Int {
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return exercises.filter { $0.completedAt >= weekAgo }.count
+    }
+
+    private var minutesThisWeek: Int {
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let seconds = exercises.filter { $0.completedAt >= weekAgo }.reduce(0) { $0 + $1.durationSeconds }
+        return seconds / 60
+    }
+
+    private func formatTrainingTime(_ minutes: Int) -> String {
+        if minutes < 60 { return "\(minutes)m" }
+        return "\(minutes / 60)h \(minutes % 60)m"
     }
 
     // MARK: - Calendar Heatmap
@@ -299,74 +232,6 @@ struct ProgressDashboardView: View {
     private var calendarHeatmap: some View {
         HeatmapCalendarView(trainingDays: viewModel.trainingDays)
             .appCard()
-    }
-
-    // MARK: - Consistency + Exercise Library
-
-    private var consistencyAndLibrary: some View {
-        HStack(spacing: 10) {
-            // Consistency Score
-            VStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .stroke(AppColors.cardBorder, lineWidth: 6)
-                        .frame(width: 56, height: 56)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(consistencyPercent) / 100.0)
-                        .stroke(AppColors.teal, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .frame(width: 56, height: 56)
-                        .rotationEffect(.degrees(-90))
-                    Text("\(consistencyPercent)%")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                }
-                Text("Consistency")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(AppColors.textTertiary)
-                Text("this month")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(AppColors.cardSurface)
-                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Consistency: \(consistencyPercent) percent this month")
-
-            // Exercise Library Progress
-            VStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .stroke(AppColors.cardBorder, lineWidth: 6)
-                        .frame(width: 56, height: 56)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(triedExerciseTypes.count) / CGFloat(Self.availableGames.count))
-                        .stroke(AppColors.indigo, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .frame(width: 56, height: 56)
-                        .rotationEffect(.degrees(-90))
-                    Text("\(triedExerciseTypes.count)/\(Self.availableGames.count)")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                }
-                Text("Games Tried")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(AppColors.textTertiary)
-                Text("keep exploring!")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(AppColors.cardSurface)
-                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(triedExerciseTypes.count) of \(Self.availableGames.count) games tried")
-        }
     }
 
     // MARK: - Personal Records
@@ -468,6 +333,39 @@ struct ProgressDashboardView: View {
         case .memoryChain: return AppColors.mint
         default: return AppColors.accent
         }
+    }
+
+    // MARK: - Achievements Summary
+
+    private var achievementsSummary: some View {
+        NavigationLink {
+            AchievementsView()
+        } label: {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: "medal.fill", color: AppColors.violet, size: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Achievements")
+                        .font(.subheadline.weight(.semibold))
+                    Text("\(achievements.count) of \(AchievementType.allCases.count) unlocked")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                // Mini progress
+                Text("\(Int(Double(achievements.count) / Double(AchievementType.allCases.count) * 100))%")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(AppColors.violet)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .appCard()
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Exercise Score Trends (Pro)

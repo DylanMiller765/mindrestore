@@ -154,7 +154,17 @@ struct HomeView: View {
                             .staggeredEntrance(index: 1)
                     }
 
-                    // Smart Daily Workout — primary daily action, top of page
+                    // Mascot Hero — the emotional center of the app
+                    if let score = latestBrainScore {
+                        mascotHeroSection(score: score)
+                            .staggeredEntrance(index: 2)
+                    }
+
+                    // Brain Score actions (Retake + Share)
+                    brainScoreCard
+                        .staggeredEntrance(index: 3)
+
+                    // Smart Daily Workout
                     if let workout = workoutEngine.todaysWorkout {
                         WorkoutCard(
                             workout: workout,
@@ -182,30 +192,22 @@ struct HomeView: View {
                                 showingWorkoutComplete = true
                             }
                         )
-                        .staggeredEntrance(index: 1)
+                        .staggeredEntrance(index: 4)
                     }
-
-                    // Brain Score Ring + Stats
-                    brainScoreCard
-                        .staggeredEntrance(index: 2)
 
                     // Streak Week Calendar
                     streakWeekCard
-                        .staggeredEntrance(index: 3)
-
-                    // Daily Challenge — high priority, brings users back
-                    dailyChallengeCard
-                        .staggeredEntrance(index: 4)
+                        .staggeredEntrance(index: 5)
 
                     if isNewUser {
                         getStartedCard
-                            .staggeredEntrance(index: 5)
+                            .staggeredEntrance(index: 6)
                     } else {
                         // Brain Score History Chart
                         if brainScores.count >= 2 {
                             BrainScoreChart(scores: brainScores, height: 150, showHeader: true)
                                 .glowingCard(color: AppColors.accent, intensity: 0.15)
-                                .staggeredEntrance(index: 5)
+                                .staggeredEntrance(index: 6)
                         }
 
                         TrainingLimitBanner(trainingMinutes: trainingManager.todayTrainingMinutes)
@@ -615,116 +617,89 @@ struct HomeView: View {
     private var brainScoreCard: some View {
         Group {
             if let score = latestBrainScore {
-                VStack(spacing: 0) {
-                    BrainScoreCard(score: score, compact: false, userAge: user?.userAge ?? 0)
-
-                    // Divider
-                    Rectangle()
-                        .fill(AppColors.cardBorder)
-                        .frame(height: 1)
-
-                    // Actions row
-                    HStack {
-                        Button {
-                            if storeService.isProUser {
-                                showingAssessment = true
-                            } else {
-                                showingPaywall = true
-                            }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: storeService.isProUser ? "arrow.counterclockwise" : "lock.fill")
-                                    .font(.system(size: 11, weight: .bold))
-                                Text("Retake")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
-                            .foregroundStyle(AppColors.accent)
-                        }
-
-                        Spacer()
-
-                        if let shareImg = brainScoreShareImage {
-                            ShareLink(
-                                item: Image(uiImage: shareImg),
-                                preview: SharePreview(
-                                    "Brain Score: \(score.brainScore)",
-                                    image: Image(uiImage: shareImg)
-                                )
-                            ) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text("Share")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .foregroundStyle(AppColors.textTertiary)
-                            }
+                // Retake + Share actions only (score info is in mascot hero above)
+                HStack {
+                    Button {
+                        if storeService.isProUser {
+                            showingAssessment = true
                         } else {
-                            ShareLink(item: "My Brain Score is \(score.brainScore)/1000 (Brain Age: \(score.brainAge)) — \(score.brainType.displayName)\nTest yours with Memori") {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text("Share")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .foregroundStyle(AppColors.textTertiary)
+                            showingPaywall = true
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: storeService.isProUser ? "arrow.clockwise" : "lock.fill")
+                                .font(.caption)
+                            Text("Retake")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(storeService.isProUser ? AppColors.accent : AppColors.amber)
+                    }
+
+                    Spacer()
+
+                    if let shareImage = brainScoreShareImage {
+                        ShareLink(item: Image(uiImage: shareImage), preview: SharePreview("Brain Score", image: Image(uiImage: shareImage))) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.caption)
+                                Text("Share")
+                                    .font(.subheadline.weight(.semibold))
                             }
+                            .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        ShareLink(item: "My Brain Score is \(score.brainScore)/1000 (Brain Age: \(score.brainAge))! Test yours with Memori") {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.caption)
+                                Text("Share")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
                 }
-                .background {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(AppColors.cardSurface)
-                        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 4)
             } else {
-                Button {
-                    showingAssessment = true
-                } label: {
-                    VStack(spacing: 20) {
-                        Image("mascot-no-score")
-                            .renderingMode(.original)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 150)
+                // No brain score yet — show CTA to take assessment
+                VStack(spacing: 20) {
+                    Image("mascot-no-score")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 100)
 
-                        VStack(spacing: 6) {
-                            Text("Discover Your\nBrain Score")
-                                .font(.title2.weight(.bold))
-                                .multilineTextAlignment(.center)
-                            Text("2-minute assessment across 3 cognitive domains")
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.textSecondary)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        HStack(spacing: 8) {
-                            ForEach(["Memory", "Speed", "Visual"], id: \.self) { name in
-                                Text(name)
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(AppColors.accent)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(AppColors.accent.opacity(0.1), in: Capsule())
-                            }
-                        }
-
-                        Text("Start Assessment")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 12))
+                    VStack(spacing: 6) {
+                        Text("Discover Your\nBrain Score")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
+                        Text("2-minute assessment across 3\ncognitive domains")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.vertical, 28)
-                    .padding(.horizontal, 24)
-                    .frame(maxWidth: .infinity)
-                    .appCard(padding: 0)
+
+                    HStack(spacing: 8) {
+                        ForEach(["Memory", "Speed", "Visual"], id: \.self) { domain in
+                            Text(domain)
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(AppColors.cardBorder, in: Capsule())
+                        }
+                    }
+
+                    Button {
+                        showingAssessment = true
+                    } label: {
+                        Text("Start Assessment")
+                            .accentButton()
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .buttonStyle(.plain)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
+                .appCard()
             }
         }
     }
@@ -742,6 +717,97 @@ struct HomeView: View {
             visualScore: score.visualMemoryScore
         )
         brainScoreShareImage = card.renderImage()
+    }
+
+    // MARK: - Mascot Hero Section
+
+    private func mascotHeroSection(score: BrainScoreResult) -> some View {
+        VStack(spacing: 8) {
+            // Big animated mascot
+            MascotStateView(
+                brainScore: score.brainScore,
+                brainAge: score.brainAge,
+                size: 140
+            )
+
+            // Mood label
+            Text(MascotMood.from(brainScore: score.brainScore).statusText)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(MascotMood.from(brainScore: score.brainScore).statusColor)
+
+            // Brain Score number — big and bold
+            VStack(spacing: 2) {
+                Text("\(score.brainScore)")
+                    .font(.system(size: 48, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .contentTransition(.numericText(value: Double(score.brainScore)))
+
+                Text("Brain Score")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            // Brain Age + Percentile side by side
+            HStack(spacing: 24) {
+                VStack(spacing: 2) {
+                    Text("\(score.brainAge)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
+                    Text("Brain Age")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                Rectangle()
+                    .fill(AppColors.cardBorder)
+                    .frame(width: 1, height: 36)
+
+                VStack(spacing: 2) {
+                    Text("Top \(score.percentile)%")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.accent)
+                    Text("Percentile")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.top, 4)
+
+            // Domain scores inline
+            HStack(spacing: 8) {
+                domainPill(label: "MEM", score: Int(score.digitSpanScore), color: AppColors.violet)
+                domainPill(label: "SPD", score: Int(score.reactionTimeScore), color: AppColors.coral)
+                domainPill(label: "VIS", score: Int(score.visualMemoryScore), color: AppColors.sky)
+            }
+            .padding(.top, 4)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(AppColors.cardSurface)
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(AppColors.cardBorder, lineWidth: 1)
+        )
+    }
+
+    private func domainPill(label: String, score: Int, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+            Text("\(score)")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Streak Week Calendar Card
