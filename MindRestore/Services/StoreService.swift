@@ -84,7 +84,11 @@ final class StoreService {
             }
         }
 
-        isProUser = hasActiveEntitlement
+        // Also check referral trial
+        let referralExpiry = UserDefaults.standard.object(forKey: "referral_trial_expiry") as? Date
+        let hasReferralTrial = referralExpiry.map { $0 > Date.now } ?? false
+
+        isProUser = hasActiveEntitlement || hasReferralTrial
     }
 
     private func listenForTransactions() -> Task<Void, Error> {

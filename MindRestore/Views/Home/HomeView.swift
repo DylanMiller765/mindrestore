@@ -722,13 +722,15 @@ struct HomeView: View {
     // MARK: - Mascot Hero Section
 
     private func mascotHeroSection(score: BrainScoreResult) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: -4) {
             // Big animated mascot
             MascotStateView(
                 brainScore: score.brainScore,
                 brainAge: score.brainAge,
-                size: 140
+                size: 110
             )
+            .frame(height: 100)
+            .clipped()
 
             // Mood label
             Text(MascotMood.from(brainScore: score.brainScore).statusText)

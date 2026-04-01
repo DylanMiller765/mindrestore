@@ -9,6 +9,7 @@ enum DeepLinkDestination: Equatable {
     case profile
     case dailyChallenge
     case challenge(ChallengeLink)
+    case referral(String)
 }
 
 @MainActor @Observable
@@ -39,6 +40,13 @@ final class DeepLinkRouter {
                 pendingDestination = .game(type)
             } else {
                 pendingDestination = .train
+            }
+        case "refer":
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+                pendingDestination = .referral(code)
+            } else {
+                pendingDestination = .home
             }
         default:
             pendingDestination = .home

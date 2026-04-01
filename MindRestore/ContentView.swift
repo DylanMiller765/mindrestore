@@ -22,9 +22,11 @@ struct ContentView: View {
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
     @State private var workoutEngine = WorkoutEngine()
+    @State private var referralService = ReferralService()
 
     // Challenge accept flow
     @State private var showingChallengeAccept = false
+    @State private var showReferralWelcome = false
 
     // Toast state
     @State private var showingXPToast = false
@@ -65,6 +67,7 @@ struct ContentView: View {
         .environment(gameCenterService)
         .environment(deepLinkRouter)
         .environment(workoutEngine)
+        .environment(referralService)
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
@@ -223,6 +226,26 @@ struct ContentView: View {
             case .profile:
                 selectedTab = 4
                 deepLinkRouter.pendingDestination = nil
+            case .referral(let code):
+                // Don't process self-referrals
+                if let myCode = referralService.getReferralCode(modelContext: modelContext),
+                   code == myCode {
+                    deepLinkRouter.pendingDestination = nil
+                    break
+                }
+                // Record referrer and grant trial to new user
+                if !referralService.wasReferred {
+                    referralService.recordReferrer(code: code)
+                    referralService.grantReferralTrial()
+                    showReferralWelcome = true
+                    // Notify referrer via CloudKit so they get their trial too
+                    referralService.notifyReferrer(referrerCode: code)
+                    // Refresh Pro status
+                    Task { await storeService.updateSubscriptionStatus() }
+                    Analytics.trackReferralRedeemed()
+                    Analytics.trackReferralTrialStarted()
+                }
+                deepLinkRouter.pendingDestination = nil
             }
         }
         .fullScreenCover(isPresented: $showingChallengeAccept) {
@@ -240,6 +263,18 @@ struct ContentView: View {
                         deepLinkRouter.pendingChallenge = nil
                     }
                 )
+            }
+        }
+        .alert("Welcome to Memori!", isPresented: $showReferralWelcome) {
+            Button("Let's go!") {}
+        } message: {
+            Text("Your friend referred you! Enjoy 1 week of Memori Pro — all games unlocked.")
+        }
+        .task {
+            // Check for pending referral rewards from CloudKit (only after onboarding)
+            guard user?.hasCompletedOnboarding == true else { return }
+            if let myCode = referralService.getReferralCode(modelContext: modelContext) {
+                referralService.checkForPendingRewards(myCode: myCode)
             }
         }
     }
@@ -625,6 +660,10 @@ struct TrainingView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal)
+
+                    // Referral banner — always show so users can keep inviting
+                    ReferralBannerView()
+                        .padding(.horizontal)
 
                     // Games Grid
                     SectionHeader(title: "Games")

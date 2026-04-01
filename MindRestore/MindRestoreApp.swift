@@ -5,7 +5,7 @@ import UIKit
 
 @main
 struct MindRestoreApp: App {
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.dark.rawValue
 
     init() {
         Analytics.configure()
@@ -47,13 +47,12 @@ struct MindRestoreApp: App {
             ContentView()
                 .preferredColorScheme(colorScheme)
         }
-        .modelContainer(for: [
-            User.self,
-            Exercise.self,
-            SpacedRepetitionCard.self,
-            DailySession.self,
-            BrainScoreResult.self,
-            Achievement.self,
-        ])
+        .modelContainer(
+            try! ModelContainer(
+                for: User.self, Exercise.self, SpacedRepetitionCard.self,
+                     DailySession.self, BrainScoreResult.self, Achievement.self,
+                configurations: ModelConfiguration(cloudKitDatabase: .none)
+            )
+        )
     }
 }

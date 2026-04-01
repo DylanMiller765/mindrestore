@@ -10,7 +10,7 @@ struct SettingsView: View {
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
 
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.dark.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
     @State private var showingScreenshotDataConfirmation = false
@@ -33,6 +33,9 @@ struct SettingsView: View {
 
                     // 2. Stats Grid
                     statsGrid
+
+                    // 2.5 Referral Stats
+                    referralCard
 
                     // 3. Achievements Preview
                     achievementsPreview
@@ -81,13 +84,15 @@ struct SettingsView: View {
     // MARK: - 1. Player Card Hero
 
     private var playerCardHero: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 8) {
             // Compact mascot
             MascotStateView(
                 brainScore: latestScore?.brainScore ?? 0,
                 brainAge: latestScore?.brainAge ?? 50,
-                size: 80
+                size: 90
             )
+            .frame(height: 85)
+            .clipped()
 
             // Name + level
             VStack(spacing: 4) {
@@ -151,6 +156,35 @@ struct SettingsView: View {
         .padding(.vertical, 12)
         .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
+    }
+
+    // MARK: - 2.5 Referral Card
+
+    private var referralCard: some View {
+        let service = ReferralService()
+        let count = service.referralCount
+        let daysLeft = service.trialDaysRemaining
+
+        return VStack(spacing: 8) {
+            ReferralBannerView()
+
+            if count > 0 || daysLeft > 0 {
+                HStack {
+                    if count > 0 {
+                        Label("\(count) friend\(count == 1 ? "" : "s") invited", systemImage: "person.2.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if daysLeft > 0 {
+                        Text("\(daysLeft)d Pro remaining")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.teal)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+        }
     }
 
     private func formatTotalTime() -> String {
@@ -465,7 +499,7 @@ struct SettingsView: View {
                 Task { await storeService.restorePurchases() }
             }
             Divider().padding(.leading, 52)
-            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/privacy")!) {
+            Link(destination: URL(string: "https://getmemoriapp.com/privacy")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "hand.raised.fill")
                         .font(.caption)
@@ -487,7 +521,7 @@ struct SettingsView: View {
                 .padding(.vertical, 13)
             }
             Divider().padding(.leading, 52)
-            Link(destination: URL(string: "https://memori-website-sooty.vercel.app/terms")!) {
+            Link(destination: URL(string: "https://getmemoriapp.com/terms")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "doc.text.fill")
                         .font(.caption)

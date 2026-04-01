@@ -35,13 +35,18 @@ struct PaywallView: View {
                 }
                 .padding(.bottom, 18)
 
+                // Referral option — top placement for growth
+                ReferralBannerView()
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+
                 // Mascot
                 Image("mascot-locked-sad")
                     .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 120)
-                    .padding(.bottom, 10)
+                    .frame(height: 100)
+                    .padding(.bottom, 6)
 
                 // Benefits
                 HStack(spacing: 10) {
@@ -148,13 +153,13 @@ struct PaywallView: View {
                         }
                         Text("·").foregroundStyle(.quaternary)
                         Button("Terms") {
-                            if let url = URL(string: "https://memori-website-sooty.vercel.app/terms") {
+                            if let url = URL(string: "https://getmemoriapp.com/terms") {
                                 UIApplication.shared.open(url)
                             }
                         }
                         Text("·").foregroundStyle(.quaternary)
                         Button("Privacy") {
-                            if let url = URL(string: "https://memori-website-sooty.vercel.app/privacy") {
+                            if let url = URL(string: "https://getmemoriapp.com/privacy") {
                                 UIApplication.shared.open(url)
                             }
                         }

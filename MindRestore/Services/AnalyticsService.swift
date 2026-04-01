@@ -103,4 +103,18 @@ enum Analytics {
             "category": category
         ])
     }
+
+    // MARK: - Referrals
+
+    static func trackReferralShared() {
+        TelemetryDeck.signal("referral.shared")
+    }
+
+    static func trackReferralRedeemed() {
+        TelemetryDeck.signal("referral.redeemed")
+    }
+
+    static func trackReferralTrialStarted() {
+        TelemetryDeck.signal("referral.trial.started")
+    }
 }
