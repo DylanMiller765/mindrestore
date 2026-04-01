@@ -303,9 +303,9 @@ struct MathSpeedView: View {
         .onAppear {
             let level = AdaptiveDifficultyEngine.shared.currentLevel(for: .mathSpeed)
             switch level {
-            case 1...2: viewModel.difficulty = .easy
-            case 3: viewModel.difficulty = .medium
-            default: viewModel.difficulty = .hard
+            case 1: viewModel.difficulty = .easy
+            case 2...3: viewModel.difficulty = .medium
+            default: viewModel.difficulty = .medium
             }
         }
     }
