@@ -5,7 +5,7 @@ import UIKit
 
 @main
 struct MindRestoreApp: App {
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.dark.rawValue
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
 
     init() {
         Analytics.configure()

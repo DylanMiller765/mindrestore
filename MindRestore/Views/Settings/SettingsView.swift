@@ -10,7 +10,7 @@ struct SettingsView: View {
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
 
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.dark.rawValue
+    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
     @State private var showingScreenshotDataConfirmation = false

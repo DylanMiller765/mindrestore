@@ -69,12 +69,6 @@ struct MascotStateView: View {
                     // Aging effects
                     .saturation(1.0 - agingFactor * 0.35)
                     .contrast(1.0 - agingFactor * 0.1)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size * 0.3)
-                            .fill(Color.gray.opacity(agingFactor * 0.08))
-                            .blendMode(.multiply)
-                            .allowsHitTesting(false)
-                    )
                     // Slight wobble for low scores — symmetric left AND right
                     .rotationEffect(.degrees(brainScore < 400 ? sin(bobPhase * 0.7) * 2 : 0))
                     // State change transition
