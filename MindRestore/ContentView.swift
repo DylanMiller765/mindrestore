@@ -734,7 +734,7 @@ struct TrainingView: View {
                                         } label: {
                                             GameCard(
                                                 title: game.title,
-                                                icon: game.icon,
+                                                type: game.type,
                                                 color: category.color,
                                                 isLocked: hasReachedLimit,
                                                 lastPlayedText: lastPlayedText(for: game.type)
@@ -1185,7 +1185,7 @@ struct GameCardButtonStyle: ButtonStyle {
 
 struct GameCard: View {
     let title: String
-    let icon: String
+    let type: ExerciseType
     let color: Color
     let isLocked: Bool
     var lastPlayedText: String? = nil
@@ -1197,7 +1197,7 @@ struct GameCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top: colored area with icon
+            // Top: colored area with mini preview
             ZStack {
                 // Main fill
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -1209,11 +1209,8 @@ struct GameCard: View {
                         )
                     )
 
-                // Icon
-                Image(systemName: icon)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                // Mini preview
+                cardMiniPreview
             }
             .frame(width: 130, height: 88)
 
@@ -1261,5 +1258,188 @@ struct GameCard: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var cardMiniPreview: some View {
+        switch type {
+        case .reactionTime:
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.3), lineWidth: 2)
+                    .frame(width: 44, height: 44)
+                Circle()
+                    .fill(.white.opacity(0.2))
+                    .frame(width: 32, height: 32)
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+        case .colorMatch:
+            VStack(spacing: 3) {
+                Text("RED")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(red: 0.4, green: 0.7, blue: 1.0))
+                Text("BLUE")
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(red: 1.0, green: 0.5, blue: 0.5))
+                Text("GREEN")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
+            }
+
+        case .speedMatch:
+            ZStack {
+                HStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.white.opacity(0.2))
+                        .frame(width: 30, height: 36)
+                        .overlay(
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white)
+                        )
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.white.opacity(0.2))
+                        .frame(width: 30, height: 36)
+                        .overlay(
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white)
+                        )
+                }
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+                    .offset(x: 22, y: -14)
+            }
+
+        case .visualMemory:
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
+                ForEach(0..<16, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill([2, 5, 7, 10, 13].contains(i) ? .white : .white.opacity(0.2))
+                        .frame(height: 14)
+                }
+            }
+
+        case .sequentialMemory:
+            HStack(spacing: 4) {
+                ForEach(["3", "8", "1", "5"], id: \.self) { digit in
+                    Text(digit)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .frame(width: 24, height: 28)
+                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 5))
+                }
+            }
+
+        case .mathSpeed:
+            VStack(spacing: 4) {
+                Text("7 × 8")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                HStack(spacing: 6) {
+                    ForEach(["54", "56", "58"], id: \.self) { ans in
+                        Text(ans)
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(ans == "56" ? color : .white.opacity(0.7))
+                            .frame(width: 28, height: 20)
+                            .background(
+                                (ans == "56" ? .white : .white.opacity(0.2)),
+                                in: RoundedRectangle(cornerRadius: 4)
+                            )
+                    }
+                }
+            }
+
+        case .dualNBack:
+            ZStack {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(18), spacing: 3), count: 3), spacing: 3) {
+                    ForEach(0..<9, id: \.self) { i in
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(i == 4 ? .white : .white.opacity(0.2))
+                            .frame(height: 18)
+                    }
+                }
+                Text("2")
+                    .font(.system(size: 9, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .offset(x: 22, y: -22)
+                    .padding(3)
+                    .background(.white.opacity(0.25), in: Circle())
+            }
+
+        case .chunkingTraining:
+            HStack(spacing: 8) {
+                ForEach(["482", "917", "35"], id: \.self) { chunk in
+                    Text(chunk)
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 5))
+                }
+            }
+
+        case .wordScramble:
+            HStack(spacing: 3) {
+                ForEach(["B", "R", "A", "I", "N"], id: \.self) { letter in
+                    Text(letter)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(width: 18, height: 22)
+                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 4))
+                }
+            }
+
+        case .memoryChain:
+            ZStack {
+                let icons = ["circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                             "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill",
+                             "circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                             "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill"]
+                let glowing = [2, 5, 10]
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
+                    ForEach(0..<16, id: \.self) { i in
+                        Image(systemName: icons[i])
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(glowing.contains(i) ? color : .white.opacity(0.5))
+                            .frame(width: 14, height: 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(glowing.contains(i) ? .white : .white.opacity(0.15))
+                            )
+                    }
+                }
+            }
+
+        case .chimpTest:
+            HStack(spacing: 4) {
+                ForEach([1, 2, 3], id: \.self) { n in
+                    Text("\(n)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(color)
+                        .frame(width: 18, height: 18)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 4))
+                }
+            }
+
+        case .verbalMemory:
+            VStack(spacing: 2) {
+                Text("seen?")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text("apple")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+
+        default:
+            Image(systemName: "brain.fill")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+        }
     }
 }
