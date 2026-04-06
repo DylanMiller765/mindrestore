@@ -80,6 +80,10 @@ struct ContentView: View {
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
+            // Daily brain fact notification
+            if user?.notificationsEnabled == true {
+                NotificationService.shared.scheduleDailyBrainFact()
+            }
             // Brain score decay — mascot ages if you don't train
             let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
             if decayed > 0 {
@@ -803,6 +807,10 @@ struct TrainingView: View {
             WordScrambleView()
         case .memoryChain:
             MemoryChainView()
+        case .chimpTest:
+            EmptyView() // TODO: ChimpTestView()
+        case .verbalMemory:
+            EmptyView() // TODO: VerbalMemoryView()
         }
     }
 

@@ -39,6 +39,8 @@ struct ExerciseCard: View {
         case .memoryPalace: return AppColors.indigo
         case .wordScramble: return AppColors.rose
         case .memoryChain: return AppColors.mint
+        case .chimpTest: return AppColors.amber
+        case .verbalMemory: return AppColors.violet
         }
     }
 

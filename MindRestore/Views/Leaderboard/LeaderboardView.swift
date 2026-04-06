@@ -765,6 +765,10 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .wordScramble)
         case .memoryChain:
             return PersonalBestTracker.shared.best(for: .memoryChain)
+        case .chimpTest:
+            return PersonalBestTracker.shared.best(for: .chimpTest)
+        case .verbalMemory:
+            return PersonalBestTracker.shared.best(for: .verbalMemory)
         case .dailyChallenge:
             return nil
         }

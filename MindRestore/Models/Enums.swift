@@ -13,6 +13,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
     case memoryPalace, reactionTime, sequentialMemory, mathSpeed, speedMatch, visualMemory, colorMatch
     case wordScramble
     case memoryChain
+    case chimpTest
+    case verbalMemory
     var id: String { rawValue }
 
     var displayName: String {
@@ -31,6 +33,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .colorMatch: return "Color Match"
         case .wordScramble: return "Word Scramble"
         case .memoryChain: return "Memory Chain"
+        case .chimpTest: return "Chimp Test"
+        case .verbalMemory: return "Verbal Memory"
         }
     }
 
@@ -50,6 +54,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .colorMatch: return "paintpalette.fill"
         case .wordScramble: return "textformat.abc.dottedunderline"
         case .memoryChain: return "link.circle.fill"
+        case .chimpTest: return "pawprint.fill"
+        case .verbalMemory: return "text.book.closed.fill"
         }
     }
 
@@ -69,6 +75,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .colorMatch: return "Stroop effect color-word challenge"
         case .wordScramble: return "Unscramble words against the clock"
         case .memoryChain: return "Remember growing sequences of items"
+        case .chimpTest: return "Remember number positions like a chimp"
+        case .verbalMemory: return "Have you seen this word before?"
         }
     }
 }
@@ -206,7 +214,7 @@ enum SelfRating: Int, CaseIterable {
 // MARK: - User Level
 
 enum UserLevel {
-    static let maxLevel = 20
+    static let maxLevel = 50
 
     static func name(for level: Int) -> String {
         switch level {
@@ -230,7 +238,37 @@ enum UserLevel {
         case 18: return "Memory Titan"
         case 19: return "Cognitive Legend"
         case 20: return "Brain God"
-        default: return level > 20 ? "Brain God" : "Beginner Brain"
+        case 21: return "Ascended Mind"
+        case 22: return "Thought Weaver"
+        case 23: return "Dendrite Dragon"
+        case 24: return "Hippocampus Hero"
+        case 25: return "Prefrontal Prime"
+        case 26: return "Dopamine Dealer"
+        case 27: return "Amygdala Ace"
+        case 28: return "Cerebral Sage"
+        case 29: return "Neuron Nova"
+        case 30: return "Infinite Recall"
+        case 31: return "Temporal Titan"
+        case 32: return "Brainwave Boss"
+        case 33: return "Cortex Crusher"
+        case 34: return "Apex Thinker"
+        case 35: return "Omega Brain"
+        case 36: return "Quantum Mind"
+        case 37: return "Neural Architect"
+        case 38: return "Cognitive Deity"
+        case 39: return "Synapse Sovereign"
+        case 40: return "Transcendent Mind"
+        case 41: return "Galactic Brain"
+        case 42: return "Reality Bender"
+        case 43: return "Time Lord Brain"
+        case 44: return "Multiverse Mind"
+        case 45: return "Cosmic Thinker"
+        case 46: return "Eternal Neuron"
+        case 47: return "Dimension Breaker"
+        case 48: return "Singularity"
+        case 49: return "Beyond Cognition"
+        case 50: return "The Architect"
+        default: return level > 50 ? "The Architect" : "Beginner Brain"
         }
     }
 

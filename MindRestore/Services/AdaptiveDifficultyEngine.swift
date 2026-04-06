@@ -28,6 +28,8 @@ enum ExerciseDomain: String, CaseIterable, Codable {
     case sequentialMemory
     case wordScramble
     case memoryChain
+    case chimpTest
+    case verbalMemory
 }
 
 // MARK: - Difficulty Parameters
@@ -289,6 +291,14 @@ final class AdaptiveDifficultyEngine {
         case .memoryChain:
             // Sequence display time: decreases with difficulty
             return max(1.5 - Double(difficulty) * 0.08, 0.5)
+
+        case .chimpTest:
+            // Number display time: decreases with difficulty
+            return max(2.0 - Double(difficulty) * 0.1, 0.5)
+
+        case .verbalMemory:
+            // Time per word decision: decreases with difficulty
+            return max(5.0 - Double(difficulty) * 0.3, 1.5)
         }
     }
 

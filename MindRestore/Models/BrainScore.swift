@@ -205,6 +205,17 @@ enum BrainScoring {
             // N=1 ~ level 3, N=2 ~ level 5, N=3 ~ level 7, N=4 ~ level 9
             return ("visual", visualMemoryScore(maxLevel: gameScore * 2 + 1))
 
+        // Chimp Test — tests working memory (visual domain)
+        case .chimpTest:
+            // gameScore = highest level (number count) reached
+            return ("visual", visualMemoryScore(maxLevel: gameScore))
+
+        // Verbal Memory — tests recognition memory (memory domain)
+        case .verbalMemory:
+            // gameScore = best streak
+            let equivalent = min(12, max(3, gameScore / 5 + 3))
+            return ("memory", digitSpanScore(maxDigits: equivalent))
+
         default:
             return nil
         }
