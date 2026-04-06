@@ -810,7 +810,7 @@ struct TrainingView: View {
         case .chimpTest:
             EmptyView() // TODO: ChimpTestView()
         case .verbalMemory:
-            EmptyView() // TODO: VerbalMemoryView()
+            VerbalMemoryView()
         }
     }
 
