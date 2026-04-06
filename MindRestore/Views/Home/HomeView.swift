@@ -15,6 +15,7 @@ struct HomeView: View {
     @Environment(WorkoutEngine.self) private var workoutEngine
 
     @Binding var selectedTab: Int
+    @Binding var decayPointsLost: Int
     @State private var viewModel = HomeViewModel()
     @State private var showingPaywall = false
     @State private var showingAssessment = false
@@ -163,6 +164,35 @@ struct HomeView: View {
                     // Brain Score actions (Retake + Share)
                     brainScoreCard
                         .staggeredEntrance(index: 3)
+
+                    // Score decay warning banner
+                    if decayPointsLost > 0 {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(AppColors.coral)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Your brain score dropped \(decayPointsLost) points")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(AppColors.textPrimary)
+                                Text("Play today to stop the decline!")
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.textSecondary)
+                            }
+                            Spacer()
+                            Button {
+                                withAnimation {
+                                    decayPointsLost = 0
+                                }
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.textSecondary)
+                            }
+                        }
+                        .padding(12)
+                        .background(AppColors.coral.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
 
                     // Smart Daily Workout
                     if let workout = workoutEngine.todaysWorkout {

@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(ReferralService.self) private var referralService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
@@ -19,6 +20,7 @@ struct SettingsView: View {
     @State private var editingName = false
     @State private var editedName = ""
     @State private var showingAgePicker = false
+    @State private var showingReferralEntry = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -161,12 +163,33 @@ struct SettingsView: View {
     // MARK: - 2.5 Referral Card
 
     private var referralCard: some View {
-        let service = ReferralService()
-        let count = service.referralCount
-        let daysLeft = service.trialDaysRemaining
+        let count = referralService.referralCount
+        let daysLeft = referralService.trialDaysRemaining
 
         return VStack(spacing: 8) {
             ReferralBannerView()
+
+            // Enter Referral Code button
+            Button {
+                showingReferralEntry = true
+            } label: {
+                HStack {
+                    Image(systemName: "ticket.fill")
+                        .foregroundStyle(AppColors.accent)
+                    Text("Enter Referral Code")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .sheet(isPresented: $showingReferralEntry) {
+                ReferralCodeEntryView()
+                    .presentationDetents([.medium])
+            }
 
             if count > 0 || daysLeft > 0 {
                 HStack {

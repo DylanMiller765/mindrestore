@@ -46,6 +46,9 @@ struct ContentView: View {
     @State private var showingBrainScoreMilestone = false
     @State private var milestoneBrainScore = 0
 
+    // Score decay warning
+    @State private var decayPointsLost: Int = 0
+
     private var user: User? { users.first }
 
     var body: some View {
@@ -87,6 +90,7 @@ struct ContentView: View {
             // Brain score decay — mascot ages if you don't train
             let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
             if decayed > 0 {
+                decayPointsLost = decayed
                 NotificationService.shared.scheduleDecayWarning(pointsLost: decayed)
             }
             // Sync widget data on app launch (off the main thread)
@@ -97,7 +101,7 @@ struct ContentView: View {
     private var mainTabView: some View {
         ZStack {
             TabView(selection: $selectedTab) {
-                HomeView(selectedTab: $selectedTab)
+                HomeView(selectedTab: $selectedTab, decayPointsLost: $decayPointsLost)
                     .tabItem {
                         Label("Home", systemImage: "brain.head.profile")
                     }
