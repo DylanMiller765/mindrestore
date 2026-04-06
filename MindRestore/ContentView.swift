@@ -276,8 +276,8 @@ struct ContentView: View {
             if let myCode = referralService.getReferralCode(modelContext: modelContext) {
                 referralService.checkForPendingRewards(myCode: myCode)
             }
-            // Register short referral code in CloudKit
-            _ = referralService.getOrCreateShortCode(modelContext: modelContext)
+            // Register short referral code in CloudKit (disabled until ReferralService updated)
+            // _ = referralService.getOrCreateShortCode(modelContext: modelContext)
         }
     }
 
