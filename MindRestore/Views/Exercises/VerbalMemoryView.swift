@@ -284,7 +284,6 @@ struct VerbalMemoryView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
@@ -293,7 +292,6 @@ struct VerbalMemoryView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .verbalMemory)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.verbalMemory.rawValue, score: viewModel.leaderboardScore)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 saveExercise()
                 generateShareCard()
@@ -447,124 +445,32 @@ struct VerbalMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "text.book.closed.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.violet, in: RoundedRectangle(cornerRadius: 14))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Verbal Memory")
-                            .font(.title2.weight(.bold))
-                        if isNewPersonalBest {
-                            Label("New Personal Best!", systemImage: "trophy.fill")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(AppColors.amber)
-                        } else {
-                            let pb = PersonalBestTracker.shared.best(for: .verbalMemory)
-                            if pb > 0 {
-                                Text("Personal best: \(pb) streak")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-                .padding(.top, 20)
-                .staggeredEntrance(index: 0)
-
-                // Big score
-                VStack(spacing: 4) {
-                    Text("\(viewModel.bestStreak)")
-                        .font(.system(size: 64, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.violet)
-                        .contentTransition(.numericText())
-                    Text(viewModel.ratingText)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .staggeredEntrance(index: 1)
-
-                // Stats card
-                VStack(spacing: 12) {
-                    resultRow(label: "Words Seen", value: "\(viewModel.totalSeen)")
-                    resultRow(label: "Accuracy", value: String(format: "%.0f%%", viewModel.accuracy * 100))
-                    resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
-                }
-                .glowingCard(color: AppColors.violet, intensity: 0.08)
-                .padding(.horizontal)
-                .staggeredEntrance(index: 2)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Why Verbal Memory?")
-                        .font(.subheadline.weight(.bold))
-                    Text("Verbal memory training strengthens your ability to encode and recall words, improving vocabulary retention and everyday recall.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .appCard()
-                .padding(.horizontal, 20)
-
-                LeaderboardRankCard(
-                    exerciseType: .verbalMemory,
-                    userScore: viewModel.bestStreak
-                )
-                .padding(.horizontal)
-                .staggeredEntrance(index: 3)
-
-                // Buttons
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Verbal Memory: \(viewModel.bestStreak) streak", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue) })
-                    }
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        viewModel.startGame()
-                    } label: {
-                        Text("Play Again")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .staggeredEntrance(index: 4)
-            }
-        }
-    }
-
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-        }
+        GameResultView(
+            gameTitle: "Verbal Memory",
+            gameIcon: "text.book.closed.fill",
+            accentColor: AppColors.violet,
+            mainScore: viewModel.bestStreak,
+            scoreLabel: "BEST STREAK",
+            ratingText: viewModel.ratingText,
+            stats: [
+                (label: "Words Seen", value: "\(viewModel.totalSeen)"),
+                (label: "Accuracy", value: String(format: "%.0f%%", viewModel.accuracy * 100)),
+                (label: "Time", value: viewModel.durationSeconds.durationString)
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .verbalMemory),
+            exerciseType: .verbalMemory,
+            leaderboardScore: viewModel.bestStreak,
+            onShare: {
+                generateShareCard()
+                Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue)
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.reset()
+            },
+            onDone: { dismiss() }
+        )
     }
 
     // MARK: - Save

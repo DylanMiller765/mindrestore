@@ -227,7 +227,6 @@ struct ChimpTestView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Chimp Test")
         .navigationBarTitleDisplayMode(.inline)
@@ -237,7 +236,6 @@ struct ChimpTestView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .chimpTest)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.chimpTest.rawValue, score: viewModel.leaderboardScore)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .chimpTest, correct: viewModel.bestLevel - 4, total: viewModel.bestLevel)
                 saveExercise()
@@ -414,122 +412,34 @@ struct ChimpTestView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                // Emoji + title
-                Text(viewModel.bestLevel >= 7 ? "\u{1F435}" : "\u{1F435}")
-                    .font(.system(size: 64))
-                    .padding(.top, 20)
-                    .staggeredEntrance(index: 0)
-
-                VStack(spacing: 4) {
-                    Text(viewModel.bestLevel >= 7 ? "You beat the chimp!" : "The chimp wins this time!")
-                        .font(.title2.weight(.bold))
-
-                    if isNewPersonalBest {
-                        Label("New Personal Best!", systemImage: "trophy.fill")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(AppColors.amber)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(AppColors.amber.opacity(0.12), in: Capsule())
-                    } else {
-                        let pb = PersonalBestTracker.shared.best(for: .chimpTest)
-                        if pb > 0 {
-                            Text("Personal best: Level \(pb)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .staggeredEntrance(index: 1)
-
-                // Big score number
-                VStack(spacing: 4) {
-                    Text("\(viewModel.bestLevel)")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.amber)
-                        .contentTransition(.numericText())
-                    Text("NUMBERS REMEMBERED")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .tracking(1.5)
-                }
-                .staggeredEntrance(index: 2)
-
-                Text(viewModel.ratingText)
-                    .font(.headline)
-                    .foregroundStyle(AppColors.amber)
-                    .staggeredEntrance(index: 3)
-
-                // Stats card
-                VStack(spacing: 12) {
-                    resultRow(label: "Best Level", value: "\(viewModel.bestLevel)")
-                    resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
-                    resultRow(label: "Score", value: "\(Int(viewModel.score * 100))%")
-                }
-                .glowingCard(color: AppColors.amber, intensity: 0.08)
-                .padding(.horizontal)
-                .staggeredEntrance(index: 4)
-
-                LeaderboardRankCard(
-                    exerciseType: .chimpTest,
-                    userScore: viewModel.bestLevel
-                )
-                .padding(.horizontal)
-                .staggeredEntrance(index: 5)
-
-                // Buttons
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Chimp Test: Level \(viewModel.bestLevel)", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.chimpTest.rawValue) })
-                    }
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        viewModel.startGame()
-                    } label: {
-                        Text("Play Again")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .staggeredEntrance(index: 6)
-            }
-        }
-    }
-
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-        }
+        GameResultView(
+            gameTitle: "Chimp Test",
+            gameIcon: "pawprint.fill",
+            accentColor: AppColors.amber,
+            mainScore: viewModel.bestLevel,
+            scoreLabel: "NUMBERS REMEMBERED",
+            ratingText: viewModel.ratingText,
+            stats: [
+                (label: "Best Level", value: "\(viewModel.bestLevel)"),
+                (label: "Time", value: viewModel.durationSeconds.durationString),
+                (label: "Score", value: "\(Int(viewModel.score * 100))%")
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .chimpTest),
+            exerciseType: .chimpTest,
+            leaderboardScore: viewModel.bestLevel,
+            emoji: "🐵",
+            subtitleText: viewModel.bestLevel > 7 ? "You beat the chimp!" : viewModel.bestLevel == 7 ? "Tied with the chimp!" : "The chimp wins this time!",
+            onShare: {
+                generateShareCard()
+                Analytics.shareTapped(game: ExerciseType.chimpTest.rawValue)
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.reset()
+            },
+            onDone: { dismiss() }
+        )
     }
 
     // MARK: - Share Card

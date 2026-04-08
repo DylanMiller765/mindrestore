@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import GameKit
-import ConfettiSwiftUI
 
 // MARK: - Game Phase
 
@@ -163,12 +162,10 @@ struct SequentialMemoryView: View {
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
     @State private var showCountdown = false
-    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -205,7 +202,6 @@ struct SequentialMemoryView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -247,7 +243,6 @@ struct SequentialMemoryView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
                 // Auto-save so GC gets the score even if user doesn't tap Done
@@ -508,158 +503,44 @@ struct SequentialMemoryView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "number.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.teal, in: RoundedRectangle(cornerRadius: 14))
-                    Text("Session Complete!")
-                        .font(.title2.weight(.bold))
-                }
-                .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
-
-                if isNewPersonalBest {
-                    Label("New Personal Best!", systemImage: "trophy.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.amber)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(AppColors.amber.opacity(0.12), in: Capsule())
-                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
-                } else {
-                    let pb = PersonalBestTracker.shared.best(for: .sequentialMemory)
-                    if pb > 0 {
-                        Text("Personal best: \(pb) digits")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                VStack(spacing: 12) {
-                    resultRow(label: "Max Digit Span", value: "\(viewModel.maxCorrectLength)")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Rounds Passed", value: "\(viewModel.roundResults.filter(\.correct).count)")
-                        .accessibilityElement(children: .combine)
-                    Divider()
-                    resultRow(label: "Score", value: viewModel.score.percentString)
-                        .accessibilityElement(children: .combine)
-
-                    HStack(spacing: 4) {
-                        ForEach(Array(viewModel.roundResults.enumerated()), id: \.offset) { index, result in
-                            VStack(spacing: 4) {
-                                Text("L\(result.length)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Image(systemName: result.correct ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(result.correct ? AppColors.teal : AppColors.coral)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-                .glowingCard(color: AppColors.teal, intensity: 0.08)
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
-
-                LeaderboardRankCard(
-                    exerciseType: .sequentialMemory,
-                    userScore: viewModel.maxCorrectLength,
-                )
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
-
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Number Memory: \(viewModel.maxCorrectLength) digits", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue) })
-                    }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .sequentialMemory,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.maxCorrectLength,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        viewModel.startGame()
-                    } label: {
-                        Text("Play Again")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+        GameResultView(
+            gameTitle: "Number Memory",
+            gameIcon: "number.circle.fill",
+            accentColor: AppColors.teal,
+            mainScore: viewModel.maxCorrectLength,
+            scoreLabel: "DIGITS",
+            ratingText: viewModel.maxCorrectLength >= 9 ? "Genius!" : viewModel.maxCorrectLength >= 7 ? "Excellent!" : viewModel.maxCorrectLength >= 5 ? "Good!" : "Keep Training!",
+            stats: [
+                (label: "Max Digit Span", value: "\(viewModel.maxCorrectLength)"),
+                (label: "Rounds Passed", value: "\(viewModel.roundResults.filter(\.correct).count)"),
+                (label: "Score", value: viewModel.score.percentString)
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),
+            exerciseType: .sequentialMemory,
+            leaderboardScore: viewModel.maxCorrectLength,
+            onShare: {
+                Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue)
+                generateShareCard()
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.reset()
+                viewModel.startGame()
+            },
+            onDone: {
+                saveExercise()
+                dismiss()
             }
-        }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
+        )
     }
 
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
+    private func generateShareCard() {
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
         }
     }
 

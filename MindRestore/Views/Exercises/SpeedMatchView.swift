@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import GameKit
-import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -237,13 +236,11 @@ struct SpeedMatchView: View {
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
     @State private var showCountdown = false
     @State private var isNewPersonalBest = false
-    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -274,7 +271,6 @@ struct SpeedMatchView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -305,7 +301,6 @@ struct SpeedMatchView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.speedMatch.rawValue, score: viewModel.correctCount)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -640,151 +635,46 @@ struct SpeedMatchView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "bolt.square.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.sky, in: RoundedRectangle(cornerRadius: 14))
-                    Text(viewModel.ratingText)
-                        .font(.title2.weight(.bold))
-                }
-                .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
-
-                if isNewPersonalBest {
-                    Label("New Personal Best!", systemImage: "trophy.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.amber)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(AppColors.amber.opacity(0.12), in: Capsule())
-                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
-                } else {
-                    let pb = PersonalBestTracker.shared.best(for: .speedMatch)
-                    if pb > 0 {
-                        Text("Personal best: \(pb) correct")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                VStack(spacing: 12) {
-                    resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Avg Response", value: "\(viewModel.averageResponseMs) ms")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Speed Rating", value: viewModel.speedRating)
-                        .accessibilityElement(children: .combine)
-
-                    Divider()
-
-                    resultRow(label: "Best Streak", value: "\(viewModel.bestStreak)")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalRounds)")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
-                        .accessibilityElement(children: .combine)
-                }
-                .glowingCard(color: AppColors.accent, intensity: 0.08)
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
-
-                LeaderboardRankCard(
-                    exerciseType: .speedMatch,
-                    userScore: viewModel.leaderboardScore,
-                )
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
-
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Speed Match: \(viewModel.accuracy.percentString)", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue) })
-                    }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .speedMatch,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.leaderboardScore,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        viewModel.startGame()
-                    } label: {
-                        Text("Play Again")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+        GameResultView(
+            gameTitle: "Speed Match",
+            gameIcon: "bolt.square.fill",
+            accentColor: AppColors.sky,
+            mainScore: viewModel.correctCount,
+            scoreLabel: "CORRECT",
+            ratingText: viewModel.ratingText,
+            stats: [
+                (label: "Accuracy", value: viewModel.accuracy.percentString),
+                (label: "Avg Response", value: "\(viewModel.averageResponseMs) ms"),
+                (label: "Best Streak", value: "\(viewModel.bestStreak)"),
+                (label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalRounds)"),
+                (label: "Time", value: viewModel.durationSeconds.durationString)
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .speedMatch),
+            exerciseType: .speedMatch,
+            leaderboardScore: viewModel.leaderboardScore,
+            onShare: {
+                Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue)
+                generateShareCard()
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.reset()
+                viewModel.startGame()
+            },
+            onDone: {
+                saveExercise()
+                dismiss()
             }
-        }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
+        )
     }
 
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
+    private func generateShareCard() {
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
         }
     }
 

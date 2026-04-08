@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import GameKit
-import ConfettiSwiftUI
 
 struct DualNBackView: View {
     @Environment(\.modelContext) private var modelContext
@@ -22,11 +21,9 @@ struct DualNBackView: View {
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var resultsAppeared = false
     @State private var showingInfo = false
     @State private var showCountdown = false
     @State private var isNewPersonalBest = false
-    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -57,7 +54,6 @@ struct DualNBackView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -93,7 +89,6 @@ struct DualNBackView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.dualNBack.rawValue, score: viewModel.currentN)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -375,181 +370,48 @@ struct DualNBackView: View {
     }
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "square.grid.3x3")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.sky, in: RoundedRectangle(cornerRadius: 14))
-                    Text("Round Complete!")
-                        .font(.title2.weight(.bold))
-                }
-                .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
-
-                if isNewPersonalBest {
-                    Label("New Personal Best!", systemImage: "trophy.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.amber)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(AppColors.amber.opacity(0.12), in: Capsule())
-                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
-                } else {
-                    let pb = PersonalBestTracker.shared.best(for: .dualNBack)
-                    if pb > 0 {
-                        Text("Personal best: N=\(pb)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                VStack(spacing: 12) {
-                    resultRow(label: "Position Accuracy", value: viewModel.positionScore.percentString)
-                        .accessibilityElement(children: .combine)
-                    if viewModel.isDual {
-                        resultRow(label: "Letter Accuracy", value: viewModel.soundScore.percentString)
-                            .accessibilityElement(children: .combine)
-                    }
-                    resultRow(label: "Overall Score", value: viewModel.overallScore.percentString)
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
-                        .accessibilityElement(children: .combine)
-
-                    Divider()
-
-                    HStack {
-                        Text("Next recommended N:")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(viewModel.nextN)")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                            .foregroundStyle(AppColors.accent)
-                            .contentTransition(.numericText())
-                    }
-                }
-                .glowingCard(color: AppColors.accent, intensity: 0.08)
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
-
-                if let tip = strategyTip {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "lightbulb.fill")
-                                .foregroundStyle(.yellow)
-                            Text(tip.title)
-                                .font(.subheadline.weight(.bold))
-                        }
-                        Text(tip.body)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(tip.researchNote)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .italic()
-                    }
-                    .appCard()
-                    .padding(.horizontal, 20)
-                }
-
-                LeaderboardRankCard(
-                    exerciseType: .dualNBack,
-                    userScore: viewModel.currentN,
-                )
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
-
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Dual N-Back: N=\(viewModel.currentN)", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue) })
-                    }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .dualNBack,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.currentN,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        selectedN = viewModel.nextN
-                        gameStarted = true
-                        viewModel.startGame(n: selectedN, dual: true)
-                    } label: {
-                        Text("Play Again (N=\(viewModel.nextN))")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+        GameResultView(
+            gameTitle: "Dual N-Back",
+            gameIcon: "square.grid.3x3",
+            accentColor: AppColors.sky,
+            mainScore: viewModel.currentN,
+            scoreLabel: "N-BACK LEVEL",
+            ratingText: viewModel.overallScore >= 0.9 ? "Master!" : viewModel.overallScore >= 0.7 ? "Great!" : "Keep Going!",
+            stats: [
+                (label: "Position Accuracy", value: viewModel.positionScore.percentString),
+                (label: "Letter Accuracy", value: viewModel.soundScore.percentString),
+                (label: "Overall Score", value: viewModel.overallScore.percentString),
+                (label: "Trials", value: "\(viewModel.totalTrials)"),
+                (label: "Time", value: viewModel.durationSeconds.durationString),
+                (label: "Next Recommended N", value: "\(viewModel.nextN)")
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .dualNBack),
+            exerciseType: .dualNBack,
+            leaderboardScore: viewModel.currentN,
+            onShare: {
+                Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue)
+                generateShareCard()
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                selectedN = viewModel.nextN
+                gameStarted = true
+                viewModel.startGame(n: selectedN, dual: true)
+            },
+            onDone: {
+                saveExercise()
+                dismiss()
             }
-        }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
+        )
     }
 
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
+    private func generateShareCard() {
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
         }
     }
 

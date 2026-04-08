@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import GameKit
-import ConfettiSwiftUI
 
 // MARK: - Chunking Phase
 
@@ -240,12 +239,10 @@ struct ChunkingTrainingView: View {
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var showingInfo = false
     @State private var showCountdown = false
     @State private var isNewPersonalBest = false
-    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -282,7 +279,6 @@ struct ChunkingTrainingView: View {
                 .transition(.opacity)
             }
         }
-        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -313,7 +309,6 @@ struct ChunkingTrainingView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining)
                 if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.chunkingTraining.rawValue, score: viewModel.correctDigits)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -594,178 +589,45 @@ struct ChunkingTrainingView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "rectangle.split.3x1.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.rose, in: RoundedRectangle(cornerRadius: 14))
-                    Text(viewModel.score >= 0.7 ? "Great Chunking!" : "Keep Practicing!")
-                        .font(.title2.weight(.bold))
-                }
-                .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
-
-                if isNewPersonalBest {
-                    Label("New Personal Best!", systemImage: "trophy.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.amber)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(AppColors.amber.opacity(0.12), in: Capsule())
-                }
-
-                Text("Score: \(viewModel.score.percentString)")
-                    .font(.title2)
-                    .foregroundStyle(AppColors.accent)
-                    .accessibilityLabel("Score: \(viewModel.score.percentString)")
-
-                Text("\(viewModel.correctDigits) / \(viewModel.totalDigits) digits correct")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                // Color-coded digit comparison
-                VStack(spacing: 12) {
-                    Text("Your Answer vs Correct")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-
-                    digitComparisonView
-
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Suggested Chunking:")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(ChunkingStyle.allCases, id: \.rawValue) { style in
-                            HStack(spacing: 8) {
-                                Text(style.chunk(viewModel.digitString))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .fontWeight(.medium)
-                                Spacer()
-                                Text(style.label)
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                }
-                .glowingCard(color: AppColors.teal, intensity: 0.08)
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
-
-                // Strategy Tip
-                if let tip = viewModel.strategyTip {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "lightbulb.fill")
-                                .foregroundStyle(AppColors.warning)
-                            Text(tip.title)
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        Text(tip.body)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .appCard()
-                    .padding(.horizontal)
-                }
-
-                // Difficulty info
-                if let adjustment = AdaptiveDifficultyEngine.shared.lastAdjustment[.digits] {
-                    Text(adjustment.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-                }
-
-                LeaderboardRankCard(
-                    exerciseType: .chunkingTraining,
-                    userScore: viewModel.correctDigits,
-                )
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
-
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Chunking: \(viewModel.score.percentString)", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue) })
-                    }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .chunkingTraining,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.correctDigits,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
-
-                    Button {
-                        resultsAppeared = false
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        exerciseSaved = false
-                        viewModel.startChallenge()
-                    } label: {
-                        Text("Next Challenge")
-                            .accentButton(color: AppColors.teal)
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+        GameResultView(
+            gameTitle: "Chunking",
+            gameIcon: "rectangle.split.3x1.fill",
+            accentColor: AppColors.rose,
+            mainScore: viewModel.correctDigits,
+            scoreLabel: "DIGITS RECALLED",
+            ratingText: viewModel.score >= 0.9 ? "Perfect Chunks!" : viewModel.score >= 0.7 ? "Great Chunking!" : "Keep Practicing!",
+            stats: [
+                (label: "Correct Digits", value: "\(viewModel.correctDigits) / \(viewModel.totalDigits)"),
+                (label: "Accuracy", value: viewModel.score.percentString),
+                (label: "Level", value: "\(viewModel.difficulty)"),
+                (label: "Time", value: "\(viewModel.durationSeconds)s")
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .chunkingTraining),
+            exerciseType: .chunkingTraining,
+            leaderboardScore: viewModel.correctDigits,
+            onShare: {
+                Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue)
+                generateShareCard()
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.startChallenge()
+            },
+            onDone: {
+                saveExercise()
+                dismiss()
             }
+        )
+    }
+
+    private func generateShareCard() {
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
         }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private var digitComparisonView: some View {

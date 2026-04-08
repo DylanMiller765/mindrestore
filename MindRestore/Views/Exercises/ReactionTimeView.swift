@@ -139,7 +139,6 @@ struct ReactionTimeView: View {
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
-    @State private var resultsAppeared = false
     @State private var showingInfo = false
     // @State private var showingChallengeResult = false
 
@@ -246,7 +245,6 @@ struct ReactionTimeView: View {
             Spacer()
 
             Button {
-                resultsAppeared = false
                 Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
                 viewModel.startGame()
             } label: {
@@ -400,160 +398,45 @@ struct ReactionTimeView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(AppColors.coral, in: RoundedRectangle(cornerRadius: 14))
-                    Text(viewModel.ratingText)
-                        .font(.title2.weight(.bold))
-                }
-                .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
-
-                if isNewPersonalBest {
-                    Label("New Personal Best!", systemImage: "trophy.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.amber)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(AppColors.amber.opacity(0.12), in: Capsule())
-                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
-                }
-
-                VStack(spacing: 12) {
-                    resultRow(label: "Average", value: "\(viewModel.averageMs) ms")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Best", value: "\(viewModel.bestMs) ms")
-                        .accessibilityElement(children: .combine)
-                    Divider()
-                    resultRow(label: "Score", value: viewModel.score.percentString)
-                        .accessibilityElement(children: .combine)
-
-                    HStack(spacing: 4) {
-                        ForEach(Array(viewModel.reactionTimes.enumerated()), id: \.offset) { index, ms in
-                            VStack(spacing: 4) {
-                                Text("R\(index + 1)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text("\(ms)")
-                                    .font(.caption.weight(.bold).monospacedDigit())
-                                    .foregroundStyle(ms == viewModel.bestMs ? AppColors.accent : .primary)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-                .glowingCard(color: AppColors.coral, intensity: 0.08)
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
-
-                LeaderboardRankCard(
-                    exerciseType: .reactionTime,
-                    userScore: viewModel.averageMs,
-                )
-                .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
-
-                VStack(spacing: 12) {
-                    if let shareImage {
-                        ShareLink(
-                            item: Image(uiImage: shareImage),
-                            preview: SharePreview("Reaction Time: \(viewModel.averageMs)ms", image: Image(uiImage: shareImage))
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
-                    } else {
-                        ShareLink(item: "My reaction time is \(viewModel.averageMs)ms — \(viewModel.ratingText)\n\nTest yours with Memori") {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Result")
-                            }
-                            .accentButton()
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
-                    }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .reactionTime,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.averageMs,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
-
-                    Button {
-                        resultsAppeared = false
-                        exerciseSaved = false
-                        viewModel.startGame()
-                    } label: {
-                        Text("Play Again")
-                            .gradientButton()
-                    }
-
-                    Button {
-                        saveExercise()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+        GameResultView(
+            gameTitle: "Reaction Time",
+            gameIcon: "bolt.fill",
+            accentColor: AppColors.coral,
+            mainScore: viewModel.averageMs,
+            scoreLabel: "MILLISECONDS",
+            ratingText: viewModel.ratingText,
+            stats: [
+                (label: "Average", value: "\(viewModel.averageMs) ms"),
+                (label: "Best", value: "\(viewModel.bestMs) ms"),
+                (label: "Rounds", value: "\(viewModel.reactionTimes.count)"),
+                (label: "Score", value: viewModel.score.percentString)
+            ],
+            isNewPersonalBest: isNewPersonalBest,
+            personalBest: PersonalBestTracker.shared.best(for: .reactionTime),
+            exerciseType: .reactionTime,
+            leaderboardScore: viewModel.averageMs,
+            onShare: {
+                Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue)
+                generateShareCard()
+            },
+            onPlayAgain: {
+                exerciseSaved = false
+                viewModel.reset()
+                viewModel.startGame()
+            },
+            onDone: {
+                saveExercise()
+                dismiss()
             }
-        }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
+        )
     }
 
-    private func resultRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.semibold))
+    private func generateShareCard() {
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
         }
     }
 
