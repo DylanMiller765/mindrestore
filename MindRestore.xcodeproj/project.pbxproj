@@ -29,8 +29,6 @@
 		625BD36C9F8047AD94213355 /* MathSpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9CCD2719774F76896FF46F /* MathSpeedView.swift */; };
 		6F33F73B24342351802ACB19 /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABD9792A0473A14E54F8F87 /* StoreService.swift */; };
 		6FA7676BFD4BDC702165B01C /* BrainAssessmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */; };
-		711F76182F620A2B005ABF8A /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76172F620A2B005ABF8A /* TelemetryClient */; };
-		711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76192F620A2B005ABF8A /* TelemetryDeck */; };
 		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */; };
 		71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 71A50A1C2F86EB9500C6CDC3 /* PostHog */; };
@@ -300,8 +298,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
-				711F76182F620A2B005ABF8A /* TelemetryClient in Frameworks */,
-				711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */,
 				71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -677,8 +673,6 @@
 			name = MindRestore;
 			packageProductDependencies = (
 				CONFETTI00000003 /* ConfettiSwiftUI */,
-				711F76172F620A2B005ABF8A /* TelemetryClient */,
-				711F76192F620A2B005ABF8A /* TelemetryDeck */,
 				71A50A1C2F86EB9500C6CDC3 /* PostHog */,
 			);
 			productName = MindRestore;
@@ -739,7 +733,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
-				711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */,
 				71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
@@ -1247,14 +1240,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.11.0;
-			};
-		};
 		71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
@@ -1282,16 +1267,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		711F76172F620A2B005ABF8A /* TelemetryClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryClient;
-		};
-		711F76192F620A2B005ABF8A /* TelemetryDeck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryDeck;
-		};
 		71A50A1C2F86EB9500C6CDC3 /* PostHog */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */;
