@@ -294,6 +294,11 @@ struct ChunkingTrainingView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .intro && viewModel.phase != .results {
+                Analytics.exerciseAbandoned(game: ExerciseType.chunkingTraining.rawValue, roundReached: viewModel.roundsCompleted)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining)

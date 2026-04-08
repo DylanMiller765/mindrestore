@@ -33,6 +33,7 @@
 		711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76192F620A2B005ABF8A /* TelemetryDeck */; };
 		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */; };
+		71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 71A50A1C2F86EB9500C6CDC3 /* PostHog */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
@@ -74,6 +75,7 @@
 		CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC05 /* ChallengeResultView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
+		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
 		D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */; };
@@ -82,9 +84,6 @@
 		DD000001000000000000DD03 /* MixedTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD03 /* MixedTrainingView.swift */; };
 		DD000001000000000000DD04 /* TrainingSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD04 /* TrainingSessionManager.swift */; };
 		DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD05 /* TrainingLimitBanner.swift */; };
-		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
-		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
-		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
 		DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD06 /* MemoryPalaceView.swift */; };
 		DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD07 /* ChunkingTrainingView.swift */; };
 		DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD08 /* ProspectiveMemoryView.swift */; };
@@ -107,7 +106,9 @@
 		FF00000100000000000000A4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A5 /* WidgetKit.framework */; };
 		FF00000100000000000000A6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A7 /* SwiftUI.framework */; };
 		FF00000100000000000000A8 /* MemoriWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A9 /* MemoriWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
 		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
+		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
 		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
 		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
@@ -123,14 +124,14 @@
 		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
 		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
 		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
+		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
+		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
 		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
 		WK000001000000000000WK02 /* WorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK02 /* WorkoutCard.swift */; };
 		WK000001000000000000WK03 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK03 /* WorkoutCompleteView.swift */; };
 		WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK04 /* WorkoutShareCard.swift */; };
 		WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WR01000200000000000000A1 /* WeeklyReportShareCard.swift */; };
 		WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WSCR0002000000000000WS01 /* WordScrambleView.swift */; };
-		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
-		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -231,6 +232,7 @@
 		CC000002000000000000CC04 /* ChallengeAcceptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeAcceptView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC05 /* ChallengeResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeResultView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
+		CHMP0002000000000000CH01 /* ChimpTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimpTestView.swift; sourceTree = "<group>"; };
 		CL00000001CL00000001CL00 /* ChallengeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLink.swift; sourceTree = "<group>"; };
 		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
@@ -239,9 +241,6 @@
 		DD000002000000000000DD03 /* MixedTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixedTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD04 /* TrainingSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingSessionManager.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD05 /* TrainingLimitBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingLimitBanner.swift; sourceTree = "<group>"; };
-		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
-		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
-		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD06 /* MemoryPalaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPalaceView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD07 /* ChunkingTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkingTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD08 /* ProspectiveMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectiveMemoryView.swift; sourceTree = "<group>"; };
@@ -266,7 +265,9 @@
 		FF00000200000000000000A7 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		FF00000200000000000000A9 /* MemoriWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF00000200000000000000AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
 		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
+		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
@@ -283,14 +284,14 @@
 		TEST0001000000000000TS01 /* SeededGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGeneratorTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
+		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK03 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK04 /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
 		WR01000200000000000000A1 /* WeeklyReportShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportShareCard.swift; sourceTree = "<group>"; };
 		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
-		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
-		CHMP0002000000000000CH01 /* ChimpTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimpTestView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -301,6 +302,7 @@
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
 				711F76182F620A2B005ABF8A /* TelemetryClient in Frameworks */,
 				711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */,
+				71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -677,6 +679,7 @@
 				CONFETTI00000003 /* ConfettiSwiftUI */,
 				711F76172F620A2B005ABF8A /* TelemetryClient */,
 				711F76192F620A2B005ABF8A /* TelemetryDeck */,
+				71A50A1C2F86EB9500C6CDC3 /* PostHog */,
 			);
 			productName = MindRestore;
 			productReference = A2AA6B711819E89512C58132 /* MindRestore.app */;
@@ -738,6 +741,7 @@
 				CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 				711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */,
+				71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 18FB5A40D6375556F647905B /* Products */;
@@ -1251,6 +1255,14 @@
 				minimumVersion = 2.11.0;
 			};
 		};
+		71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.50.0;
+			};
+		};
 		71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rive-app/rive-ios";
@@ -1279,6 +1291,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 711F76162F620A2B005ABF8A /* XCRemoteSwiftPackageReference "SwiftSDK" */;
 			productName = TelemetryDeck;
+		};
+		71A50A1C2F86EB9500C6CDC3 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 		CONFETTI00000003 /* ConfettiSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;

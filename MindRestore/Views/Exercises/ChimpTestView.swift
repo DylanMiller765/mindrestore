@@ -221,6 +221,11 @@ struct ChimpTestView: View {
         .navigationTitle("Chimp Test")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.phase == .playing)
+        .onDisappear {
+            if viewModel.phase == .playing {
+                Analytics.exerciseAbandoned(game: ExerciseType.chimpTest.rawValue, roundReached: viewModel.currentLevel)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .chimpTest)

@@ -196,6 +196,11 @@ struct ReactionTimeView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .setup && viewModel.phase != .finished {
+                Analytics.exerciseAbandoned(game: ExerciseType.reactionTime.rawValue, roundReached: viewModel.currentRound)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()

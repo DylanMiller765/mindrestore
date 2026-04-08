@@ -232,6 +232,11 @@ struct VisualMemoryView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .setup && viewModel.phase != .finished {
+                Analytics.exerciseAbandoned(game: ExerciseType.visualMemory.rawValue, roundReached: viewModel.level)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .correct {
                 correctPulse = true

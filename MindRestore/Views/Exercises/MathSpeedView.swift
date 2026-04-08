@@ -301,6 +301,11 @@ struct MathSpeedView: View {
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
         }
+        .onDisappear {
+            if viewModel.phase == .playing {
+                Analytics.exerciseAbandoned(game: ExerciseType.mathSpeed.rawValue, roundReached: viewModel.currentProblemIndex)
+            }
+        }
         .onAppear {
             let level = AdaptiveDifficultyEngine.shared.currentLevel(for: .mathSpeed)
             switch level {

@@ -303,6 +303,11 @@ struct ColorMatchView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase == .playing {
+                Analytics.exerciseAbandoned(game: ExerciseType.colorMatch.rawValue, roundReached: viewModel.currentRound)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch)

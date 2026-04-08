@@ -59,6 +59,7 @@ final class PaywallTriggerService {
     func triggerDailyLimit(isProUser: Bool) {
         guard !isProUser else { return }
         guard hasReachedDailyLimit else { return }
+        Analytics.dailyLimitReached(exercisesToday: exercisesToday)
         triggerContext = .dailyLimit
         shouldShowPaywall = true
     }

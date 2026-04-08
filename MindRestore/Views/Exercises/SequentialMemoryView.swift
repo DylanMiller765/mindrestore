@@ -217,6 +217,11 @@ struct SequentialMemoryView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .setup && viewModel.phase != .finished {
+                Analytics.exerciseAbandoned(game: ExerciseType.sequentialMemory.rawValue, roundReached: viewModel.round)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .roundResult {
                 if let last = viewModel.roundResults.last {

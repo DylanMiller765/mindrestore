@@ -99,6 +99,13 @@ struct OnboardingView: View {
                 }
             }
         }
+        .onDisappear {
+            if users.first?.hasCompletedOnboarding != true {
+                let stepNames = ["welcome", "name", "goals", "age", "appearance", "badNews", "goodNews", "assessment", "commitment", "notifications", "privacy"]
+                let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
+                Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
+            }
+        }
     }
 
     private var welcomePage: some View {

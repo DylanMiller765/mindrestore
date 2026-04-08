@@ -69,6 +69,9 @@ struct DualNBackView: View {
             }
         }
         .onDisappear {
+            if gameStarted && !viewModel.showResults {
+                Analytics.exerciseAbandoned(game: ExerciseType.dualNBack.rawValue, roundReached: viewModel.trialIndex)
+            }
             viewModel.cleanup()
         }
         .onChange(of: viewModel.showResults) { _, showingResults in

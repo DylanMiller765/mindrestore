@@ -277,6 +277,11 @@ struct VerbalMemoryView: View {
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            if viewModel.phase == .playing {
+                Analytics.exerciseAbandoned(game: ExerciseType.verbalMemory.rawValue, roundReached: viewModel.totalSeen)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .verbalMemory)

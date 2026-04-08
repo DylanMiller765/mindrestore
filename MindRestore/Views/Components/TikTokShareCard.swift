@@ -568,7 +568,7 @@ struct ReactionTimeShareCard: View {
     }
 }
 
-// MARK: - 5. Generic ExerciseShareCard
+// MARK: - 5. Generic ExerciseShareCard (Premium Redesign)
 
 struct ExerciseShareCard: View {
     let exerciseName: String
@@ -580,76 +580,238 @@ struct ExerciseShareCard: View {
     let stats: [(label: String, value: String)]
     let ctaText: String
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var isDark: Bool { colorScheme == .dark }
+
+    // Slightly desaturated accent for backgrounds
+    private var glowColor: Color { accentColor.opacity(isDark ? 0.35 : 0.18) }
+
     var body: some View {
         ZStack {
-            CardBackground()
+            // -- Full-bleed background with accent radial glow --
+            exerciseCardBackground
 
             VStack(spacing: 0) {
+                Spacer().frame(height: 36)
+
+                // -- Memori branding --
+                exerciseCardBrandingHeader
+
                 Spacer().frame(height: 32)
-                BrandingHeader()
+
+                // -- Game icon badge --
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(isDark ? 0.18 : 0.12))
+                        .frame(width: 56, height: 56)
+                    Circle()
+                        .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
+                        .frame(width: 56, height: 56)
+                    Image(systemName: exerciseIcon)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(accentColor)
+                }
+
+                Spacer().frame(height: 8)
+
+                // -- Game name --
+                Text(exerciseName.uppercased())
+                    .font(.system(size: 13, weight: .heavy))
+                    .tracking(4)
+                    .foregroundStyle(accentColor)
+
                 Spacer().frame(height: 28)
 
-                ShareCardSurface {
-                    VStack(spacing: 16) {
-                        // Exercise header
-                        HStack(spacing: 8) {
-                            Image(systemName: exerciseIcon)
-                                .font(.system(size: 16, weight: .bold))
-                            Text(exerciseName.uppercased())
-                                .font(.system(size: 13, weight: .heavy))
-                                .tracking(3)
-                        }
-                        .foregroundStyle(accentColor)
+                // -- Hero score with radial glow bloom --
+                ZStack {
+                    // Glow bloom behind the number
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    accentColor.opacity(isDark ? 0.30 : 0.15),
+                                    accentColor.opacity(isDark ? 0.08 : 0.03),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 20,
+                                endRadius: 120
+                            )
+                        )
+                        .frame(width: 240, height: 240)
 
-                        // Big stat
+                    VStack(spacing: 4) {
                         Text(mainValue)
-                            .font(.system(size: 64, weight: .bold, design: .rounded))
-                            .foregroundStyle(accentColor)
+                            .font(.system(size: 88, weight: .bold, design: .rounded))
+                            .foregroundStyle(isDark ? .white : Color(red: 0.12, green: 0.12, blue: 0.15))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.5)
+                            .minimumScaleFactor(0.4)
 
                         Text(mainLabel.uppercased())
-                            .font(.system(size: 13, weight: .heavy))
-                            .tracking(4)
-                            .foregroundStyle(.secondary)
-
-                        // Rating
-                        RatingPill(color: accentColor) {
-                            Text(ratingText.uppercased())
-                        }
-
-                        Divider()
-
-                        // Stats
-                        VStack(spacing: 10) {
-                            ForEach(Array(stats.enumerated()), id: \.offset) { _, stat in
-                                HStack {
-                                    Text(stat.label)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Text(stat.value)
-                                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-                        }
+                            .font(.system(size: 12, weight: .heavy))
+                            .tracking(3)
+                            .foregroundStyle(isDark ? Color.white.opacity(0.45) : Color(red: 0.45, green: 0.43, blue: 0.40))
                     }
                 }
-                .padding(.horizontal, 24)
+                .frame(height: 140)
+
+                Spacer().frame(height: 16)
+
+                // -- Rating pill --
+                HStack(spacing: 6) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(ratingText.uppercased())
+                        .font(.system(size: 13, weight: .bold))
+                        .tracking(1)
+                }
+                .foregroundStyle(accentColor)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(accentColor.opacity(isDark ? 0.15 : 0.10))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(accentColor.opacity(0.2), lineWidth: 1)
+                )
+
+                Spacer().frame(height: 28)
+
+                // -- Stats row (horizontal, compact) --
+                if !stats.isEmpty {
+                    HStack(spacing: 0) {
+                        ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
+                            if index > 0 {
+                                Rectangle()
+                                    .fill(isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08))
+                                    .frame(width: 1, height: 32)
+                            }
+
+                            VStack(spacing: 3) {
+                                Text(stat.value)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundStyle(isDark ? .white : Color(red: 0.12, green: 0.12, blue: 0.15))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                                Text(stat.label.uppercased())
+                                    .font(.system(size: 9, weight: .heavy))
+                                    .tracking(1.5)
+                                    .foregroundStyle(isDark ? Color.white.opacity(0.40) : Color(red: 0.50, green: 0.48, blue: 0.46))
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.03))
+                    )
+                    .padding(.horizontal, 24)
+                }
 
                 Spacer()
 
+                // -- CTA button --
                 Text(ctaText)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 13)
+                    .background(
+                        Capsule()
+                            .fill(accentColor)
+                    )
+                    .shadow(color: accentColor.opacity(0.4), radius: 12, y: 4)
 
-                Spacer().frame(height: 10)
-                BrandingFooter()
+                Spacer().frame(height: 16)
+
+                // -- Footer branding --
+                exerciseCardBrandingFooter
+
                 Spacer().frame(height: 28)
             }
         }
         .frame(width: 360, height: 640)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Sub-views
+
+    private var exerciseCardBackground: some View {
+        ZStack {
+            // Base gradient
+            if isDark {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.05, green: 0.05, blue: 0.08),
+                        Color(red: 0.07, green: 0.06, blue: 0.12),
+                        Color(red: 0.04, green: 0.04, blue: 0.06)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.98, green: 0.98, blue: 0.99),
+                        Color(red: 0.96, green: 0.96, blue: 0.97),
+                        Color(red: 0.98, green: 0.98, blue: 0.99)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+
+            // Accent color radial glow (upper-center bloom)
+            RadialGradient(
+                colors: [
+                    accentColor.opacity(isDark ? 0.12 : 0.06),
+                    accentColor.opacity(isDark ? 0.04 : 0.02),
+                    Color.clear
+                ],
+                center: UnitPoint(x: 0.5, y: 0.35),
+                startRadius: 40,
+                endRadius: 260
+            )
+
+            // Subtle noise/texture via thin border lines
+            VStack {
+                Rectangle()
+                    .fill(isDark ? Color.white.opacity(0.04) : Color.black.opacity(0.03))
+                    .frame(height: 0.5)
+                Spacer()
+                Rectangle()
+                    .fill(isDark ? Color.white.opacity(0.04) : Color.black.opacity(0.03))
+                    .frame(height: 0.5)
+            }
+        }
+    }
+
+    private var exerciseCardBrandingHeader: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "brain.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(accentColor)
+            Text("MEMORI")
+                .font(.system(size: 13, weight: .heavy))
+                .tracking(4)
+                .foregroundStyle(isDark ? Color.white.opacity(0.50) : Color(red: 0.40, green: 0.38, blue: 0.36))
+        }
+    }
+
+    private var exerciseCardBrandingFooter: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.down.app.fill")
+                .font(.system(size: 10, weight: .semibold))
+            Text("Free on the App Store")
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(isDark ? Color.white.opacity(0.30) : Color(red: 0.58, green: 0.56, blue: 0.54))
     }
 }
 
@@ -685,7 +847,7 @@ struct ExerciseShareCard: View {
     )
 }
 
-#Preview("Exercise Card") {
+#Preview("Exercise Card — Dark") {
     ExerciseShareCard(
         exerciseName: "Color Match",
         exerciseIcon: "paintpalette.fill",
@@ -694,10 +856,29 @@ struct ExerciseShareCard: View {
         mainLabel: "Accuracy",
         ratingText: "Stroop Master",
         stats: [
-            ("Correct", "19 / 20"),
-            ("Avg Response", "842 ms"),
+            ("Correct", "19/20"),
+            ("Avg Time", "842ms"),
             ("Score", "92%")
         ],
-        ctaText: "Think you're faster?"
+        ctaText: "Can you beat this?"
     )
+    .environment(\.colorScheme, .dark)
+}
+
+#Preview("Exercise Card — Light") {
+    ExerciseShareCard(
+        exerciseName: "Dual N-Back",
+        exerciseIcon: "square.grid.3x3.fill",
+        accentColor: AppColors.accent,
+        mainValue: "87%",
+        mainLabel: "Accuracy",
+        ratingText: "Elite Focus",
+        stats: [
+            ("Level", "N-3"),
+            ("Rounds", "20"),
+            ("Best", "92%")
+        ],
+        ctaText: "Can you beat this?"
+    )
+    .environment(\.colorScheme, .light)
 }
