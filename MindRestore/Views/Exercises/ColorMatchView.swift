@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -24,6 +25,8 @@ final class ColorMatchViewModel {
     var showFeedback = false
     var isTransitioning = false
     var lastWrongCorrectAnswer: String? = nil
+    var currentStreak = 0
+    var bestStreak = 0
     private var roundTimer: Timer?
 
     var challengeSeed: Int?
@@ -92,6 +95,8 @@ final class ColorMatchViewModel {
         phase = .playing
         currentRound = 0
         correctCount = 0
+        currentStreak = 0
+        bestStreak = 0
         responseTimes = []
         startTime = Date.now
         feedbackColor = nil
@@ -154,6 +159,7 @@ final class ColorMatchViewModel {
     private func timeExpired() {
         guard !showFeedback else { return }
         // Count as wrong — no response time recorded for timeout
+        currentStreak = 0
         responseTimes.append(timeLimit)
         feedbackColor = Color(red: 0.98, green: 0.42, blue: 0.35)
         HapticService.wrong()
@@ -185,10 +191,13 @@ final class ColorMatchViewModel {
         let isCorrect = answer == correctAnswer
         if isCorrect {
             correctCount += 1
+            currentStreak += 1
+            bestStreak = max(bestStreak, currentStreak)
             feedbackColor = Color(red: 0, green: 0.82, blue: 0.62)
             SoundService.shared.playTap()
             HapticService.correct()
         } else {
+            currentStreak = 0
             feedbackColor = Color(red: 0.98, green: 0.42, blue: 0.35)
             HapticService.wrong()
             lastWrongCorrectAnswer = correctAnswer
@@ -218,6 +227,8 @@ final class ColorMatchViewModel {
         phase = .setup
         currentRound = 0
         correctCount = 0
+        currentStreak = 0
+        bestStreak = 0
         responseTimes = []
         startTime = nil
         feedbackColor = nil
@@ -248,6 +259,9 @@ struct ColorMatchView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var isNewPersonalBest = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -268,6 +282,16 @@ struct ColorMatchView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -295,6 +319,11 @@ struct ColorMatchView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch)
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.colorMatch.rawValue, score: viewModel.correctCount)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
                 let card = ExerciseShareCard(
@@ -347,7 +376,7 @@ struct ColorMatchView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.colorMatch.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -464,16 +493,21 @@ struct ColorMatchView: View {
             .padding(.bottom, 8)
         }
         .padding(.vertical, 24)
+        .edgeGlow(
+            color: .green,
+            intensity: viewModel.currentStreak >= 3 ? min(Double(viewModel.currentStreak - 2) / 5.0, 1.0) : 0,
+            edge: .top
+        )
+        .edgeGlow(
+            color: .red,
+            intensity: Double(viewModel.currentRound) / Double(viewModel.totalRounds) >= 0.8 ? 1.0 : 0,
+            edge: .bottom
+        )
         .modifier(ShakeEffect(animatableData: shakeAmount))
-        .scaleEffect(correctPulse ? 1.03 : 1.0)
-        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
         .onChange(of: viewModel.showFeedback) { _, showing in
             if showing {
                 if viewModel.lastWrongCorrectAnswer != nil {
                     withAnimation(.default) { shakeAmount += 1 }
-                } else {
-                    correctPulse = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { correctPulse = false }
                 }
             }
         }
@@ -528,6 +562,24 @@ struct ColorMatchView: View {
                 .padding(.top, 20)
                 .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
+
+                if isNewPersonalBest {
+                    Label("New Personal Best!", systemImage: "trophy.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppColors.amber)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                } else {
+                    let pb = PersonalBestTracker.shared.best(for: .colorMatch)
+                    if pb > 0 {
+                        Text("Personal best: \(pb) correct")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 VStack(spacing: 12) {
                     resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
@@ -660,9 +712,6 @@ struct ColorMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch) {
-            Analytics.personalBest(game: ExerciseType.colorMatch.rawValue, score: viewModel.correctCount)
-        }
 
         let exercise = Exercise(
             type: .colorMatch,

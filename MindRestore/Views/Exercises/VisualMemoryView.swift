@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -177,6 +178,8 @@ struct VisualMemoryView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -208,6 +211,16 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -242,7 +255,10 @@ struct VisualMemoryView: View {
             }
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
-                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached) }
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .visualMemory, correct: viewModel.maxLevelReached, total: viewModel.level)
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -295,7 +311,7 @@ struct VisualMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -520,6 +536,13 @@ struct VisualMemoryView: View {
                         .background(AppColors.amber.opacity(0.12), in: Capsule())
                         .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                         .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                } else {
+                    let pb = PersonalBestTracker.shared.best(for: .visualMemory)
+                    if pb > 0 {
+                        Text("Personal best: Level \(pb)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 VStack(spacing: 12) {

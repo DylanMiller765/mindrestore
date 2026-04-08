@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -240,6 +241,9 @@ struct SpeedMatchView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var isNewPersonalBest = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -261,6 +265,16 @@ struct SpeedMatchView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -288,6 +302,11 @@ struct SpeedMatchView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch)
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.speedMatch.rawValue, score: viewModel.correctCount)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
                 let card = ExerciseShareCard(
@@ -378,7 +397,7 @@ struct SpeedMatchView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -593,6 +612,16 @@ struct SpeedMatchView: View {
             Spacer().frame(height: 16)
         }
         .padding(.vertical, 24)
+        .edgeGlow(
+            color: .green,
+            intensity: viewModel.currentStreak >= 3 ? min(Double(viewModel.currentStreak - 2) / 5.0, 1.0) : 0,
+            edge: .top
+        )
+        .edgeGlow(
+            color: .red,
+            intensity: Double(viewModel.currentRound) / Double(viewModel.totalRounds) >= 0.8 ? 1.0 : 0,
+            edge: .bottom
+        )
         .modifier(ShakeEffect(animatableData: shakeAmount))
         .scaleEffect(correctPulse ? 1.03 : 1.0)
         .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
@@ -625,6 +654,24 @@ struct SpeedMatchView: View {
                 .padding(.top, 20)
                 .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
+
+                if isNewPersonalBest {
+                    Label("New Personal Best!", systemImage: "trophy.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppColors.amber)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                } else {
+                    let pb = PersonalBestTracker.shared.best(for: .speedMatch)
+                    if pb > 0 {
+                        Text("Personal best: \(pb) correct")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 VStack(spacing: 12) {
                     resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
@@ -750,9 +797,6 @@ struct SpeedMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch) {
-            Analytics.personalBest(game: ExerciseType.speedMatch.rawValue, score: viewModel.correctCount)
-        }
 
         let exercise = Exercise(
             type: .speedMatch,

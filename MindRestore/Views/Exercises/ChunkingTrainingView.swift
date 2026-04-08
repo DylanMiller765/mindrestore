@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 // MARK: - Chunking Phase
 
@@ -242,6 +243,9 @@ struct ChunkingTrainingView: View {
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var isNewPersonalBest = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -269,6 +273,16 @@ struct ChunkingTrainingView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startFromIntro()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -296,6 +310,11 @@ struct ChunkingTrainingView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining)
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.chunkingTraining.rawValue, score: viewModel.correctDigits)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
                 if viewModel.score < 0.7 {
@@ -378,7 +397,7 @@ struct ChunkingTrainingView: View {
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.startFromIntro()
+                showCountdown = true
             } label: {
                 Text("I'm Ready")
                     .accentButton(color: AppColors.teal)
@@ -590,6 +609,15 @@ struct ChunkingTrainingView: View {
                 .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
 
+                if isNewPersonalBest {
+                    Label("New Personal Best!", systemImage: "trophy.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppColors.amber)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(AppColors.amber.opacity(0.12), in: Capsule())
+                }
+
                 Text("Score: \(viewModel.score.percentString)")
                     .font(.title2)
                     .foregroundStyle(AppColors.accent)
@@ -786,10 +814,6 @@ struct ChunkingTrainingView: View {
         exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
-
-        if PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining) {
-            Analytics.personalBest(game: ExerciseType.chunkingTraining.rawValue, score: viewModel.correctDigits)
-        }
 
         let exercise = Exercise(
             type: .chunkingTraining,

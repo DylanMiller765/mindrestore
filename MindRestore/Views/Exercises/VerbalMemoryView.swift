@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -253,6 +254,8 @@ struct VerbalMemoryView: View {
     @State private var wordOffset: CGFloat = 0
     @State private var resultsAppeared = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var confettiCounter = 0
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -272,11 +275,26 @@ struct VerbalMemoryView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .verbalMemory)
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.verbalMemory.rawValue, score: viewModel.leaderboardScore)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 saveExercise()
                 generateShareCard()
             }
@@ -314,7 +332,7 @@ struct VerbalMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.verbalMemory.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -441,9 +459,16 @@ struct VerbalMemoryView: View {
                         Text("Verbal Memory")
                             .font(.title2.weight(.bold))
                         if isNewPersonalBest {
-                            Text("New Personal Best!")
+                            Label("New Personal Best!", systemImage: "trophy.fill")
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(AppColors.amber)
+                        } else {
+                            let pb = PersonalBestTracker.shared.best(for: .verbalMemory)
+                            if pb > 0 {
+                                Text("Personal best: \(pb) streak")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -570,8 +595,6 @@ struct VerbalMemoryView: View {
         session.addExercise(exercise)
         user?.updateStreak()
 
-        isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .verbalMemory)
-        if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.verbalMemory.rawValue, score: viewModel.leaderboardScore) }
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .verbalMemory, correct: viewModel.totalCorrect, total: viewModel.totalSeen)
 
         if let user {

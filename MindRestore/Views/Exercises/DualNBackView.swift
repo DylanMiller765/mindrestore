@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 struct DualNBackView: View {
     @Environment(\.modelContext) private var modelContext
@@ -23,6 +24,9 @@ struct DualNBackView: View {
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var isNewPersonalBest = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -43,6 +47,17 @@ struct DualNBackView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    gameStarted = true
+                    viewModel.startGame(n: selectedN, dual: true)
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -75,8 +90,10 @@ struct DualNBackView: View {
             if showingResults {
                 let correctCount = Int(round(viewModel.overallScore * Double(viewModel.totalTrials)))
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .nBack, correct: correctCount, total: viewModel.totalTrials)
-                if PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack) {
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack)
+                if isNewPersonalBest {
                     Analytics.personalBest(game: ExerciseType.dualNBack.rawValue, score: viewModel.currentN)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
                 }
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -179,8 +196,7 @@ struct DualNBackView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
-                gameStarted = true
-                viewModel.startGame(n: selectedN, dual: true)
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -373,6 +389,24 @@ struct DualNBackView: View {
                 .padding(.top, 20)
                 .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
+
+                if isNewPersonalBest {
+                    Label("New Personal Best!", systemImage: "trophy.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppColors.amber)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(AppColors.amber.opacity(0.12), in: Capsule())
+                        .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                } else {
+                    let pb = PersonalBestTracker.shared.best(for: .dualNBack)
+                    if pb > 0 {
+                        Text("Personal best: N=\(pb)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 VStack(spacing: 12) {
                     resultRow(label: "Position Accuracy", value: viewModel.positionScore.percentString)

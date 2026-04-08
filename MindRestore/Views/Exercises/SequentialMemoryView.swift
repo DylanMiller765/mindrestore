@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import ConfettiSwiftUI
 
 // MARK: - Game Phase
 
@@ -166,6 +167,8 @@ struct SequentialMemoryView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var confettiCounter = 0
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -193,6 +196,16 @@ struct SequentialMemoryView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -232,7 +245,10 @@ struct SequentialMemoryView: View {
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
-                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength) }
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
                 // Auto-save so GC gets the score even if user doesn't tap Done
                 saveExercise()
@@ -284,7 +300,7 @@ struct SequentialMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -516,6 +532,13 @@ struct SequentialMemoryView: View {
                         .background(AppColors.amber.opacity(0.12), in: Capsule())
                         .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
                         .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                } else {
+                    let pb = PersonalBestTracker.shared.best(for: .sequentialMemory)
+                    if pb > 0 {
+                        Text("Personal best: \(pb) digits")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 VStack(spacing: 12) {

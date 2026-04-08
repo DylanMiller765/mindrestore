@@ -34,6 +34,8 @@ struct HomeView: View {
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
     @AppStorage("lastWeeklyReportDismissed") private var lastWeeklyReportDismissed: String = ""
     @State private var weeklyReportShareImage: UIImage?
+    @State private var streakAnimating = false
+    @State private var streakBounce = false
 
     private var hasDoneDailyChallenge: Bool {
         let formatter = DateFormatter()
@@ -849,15 +851,43 @@ struct HomeView: View {
 
     // MARK: - Streak Week Calendar Card
 
+    private var streakGradient: AnyShapeStyle {
+        let streak = viewModel.currentStreak
+        if streak >= 30 {
+            return AnyShapeStyle(LinearGradient(colors: [.blue, .white], startPoint: .bottom, endPoint: .top))
+        } else if streak >= 14 {
+            return AnyShapeStyle(LinearGradient(colors: [.red, .purple], startPoint: .bottom, endPoint: .top))
+        } else if streak >= 7 {
+            return AnyShapeStyle(LinearGradient(colors: [.orange, .red], startPoint: .bottom, endPoint: .top))
+        } else {
+            return AnyShapeStyle(.orange)
+        }
+    }
+
     private var streakWeekCard: some View {
         VStack(spacing: 12) {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "flame.fill")
-                        .foregroundStyle(viewModel.currentStreak > 0 ? AppColors.coral : .secondary)
+                        .symbolEffect(.variableColor.iterative, options: .repeating, value: streakAnimating)
+                        .foregroundStyle(viewModel.currentStreak > 0 ? streakGradient : AnyShapeStyle(.secondary))
                     Text("\(viewModel.currentStreak) day streak")
                         .font(.headline.weight(.bold))
                         .contentTransition(.numericText())
+                        .scaleEffect(streakBounce ? 1.15 : 1.0)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.5), value: streakBounce)
+                }
+                .onAppear {
+                    streakAnimating = true
+                    // Bounce if streak is active (user trained today)
+                    if user?.isStreakActive == true {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            streakBounce = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                streakBounce = false
+                            }
+                        }
+                    }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(viewModel.currentStreak) day streak")

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import ConfettiSwiftUI
 
 // MARK: - ViewModel
 
@@ -195,6 +196,8 @@ struct ChimpTestView: View {
     @State private var exerciseSaved = false
     @State private var resultsAppeared = false
     @State private var showingInfo = false
+    @State private var showCountdown = false
+    @State private var confettiCounter = 0
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -215,6 +218,16 @@ struct ChimpTestView: View {
         }
         .background(AppColors.pageBg)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .overlay {
+            if showCountdown {
+                GameCountdown {
+                    showCountdown = false
+                    viewModel.startGame()
+                }
+                .transition(.opacity)
+            }
+        }
+        .confettiCannon(counter: $confettiCounter, num: 50, colors: [.blue, .white, .yellow, .purple, .pink], rainHeight: 600, radius: 400)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Chimp Test")
         .navigationBarTitleDisplayMode(.inline)
@@ -222,7 +235,10 @@ struct ChimpTestView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .chimpTest)
-                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.chimpTest.rawValue, score: viewModel.leaderboardScore) }
+                if isNewPersonalBest {
+                    Analytics.personalBest(game: ExerciseType.chimpTest.rawValue, score: viewModel.leaderboardScore)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { confettiCounter += 1 }
+                }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .chimpTest, correct: viewModel.bestLevel - 4, total: viewModel.bestLevel)
                 saveExercise()
                 generateShareCard()
@@ -262,7 +278,7 @@ struct ChimpTestView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.chimpTest.rawValue)
-                viewModel.startGame()
+                showCountdown = true
             } label: {
                 Text("Start")
                     .accentButton()
@@ -411,9 +427,19 @@ struct ChimpTestView: View {
                         .font(.title2.weight(.bold))
 
                     if isNewPersonalBest {
-                        Text("New Personal Best!")
-                            .font(.caption.weight(.bold))
+                        Label("New Personal Best!", systemImage: "trophy.fill")
+                            .font(.subheadline.weight(.bold))
                             .foregroundStyle(AppColors.amber)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(AppColors.amber.opacity(0.12), in: Capsule())
+                    } else {
+                        let pb = PersonalBestTracker.shared.best(for: .chimpTest)
+                        if pb > 0 {
+                            Text("Personal best: Level \(pb)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .staggeredEntrance(index: 1)
@@ -552,8 +578,6 @@ struct ChimpTestView: View {
         }
         session.addExercise(exercise)
         user?.updateStreak()
-
-        isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .chimpTest)
 
         if let user {
             _ = ContentView.awardXP(

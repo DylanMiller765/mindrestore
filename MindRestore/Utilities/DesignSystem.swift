@@ -530,6 +530,33 @@ extension View {
     }
 }
 
+// MARK: - Edge Glow (gameplay state feedback)
+
+struct EdgeGlow: ViewModifier {
+    let color: Color
+    let intensity: Double // 0.0 to 1.0
+    let edge: Edge
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: edge == .top ? .top : .bottom) {
+            LinearGradient(
+                colors: [color.opacity(0.15 * intensity), .clear],
+                startPoint: edge == .top ? .top : .bottom,
+                endPoint: edge == .top ? .bottom : .top
+            )
+            .frame(height: 60)
+            .allowsHitTesting(false)
+            .animation(.easeInOut(duration: 0.5), value: intensity)
+        }
+    }
+}
+
+extension View {
+    func edgeGlow(color: Color, intensity: Double, edge: Edge = .top) -> some View {
+        modifier(EdgeGlow(color: color, intensity: intensity, edge: edge))
+    }
+}
+
 // MARK: - Shake Effect (for wrong answers)
 
 struct ShakeEffect: GeometryEffect {
