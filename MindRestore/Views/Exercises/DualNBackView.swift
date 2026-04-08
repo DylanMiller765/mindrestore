@@ -22,7 +22,6 @@ struct DualNBackView: View {
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var isNewPersonalBest = false
     // @State private var showingChallengeResult = false
 
@@ -39,21 +38,11 @@ struct DualNBackView: View {
                     .transition(.opacity)
             } else {
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    gameStarted = true
-                    viewModel.startGame(n: selectedN, dual: true)
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -191,7 +180,8 @@ struct DualNBackView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
-                showCountdown = true
+                gameStarted = true
+                viewModel.startGame(n: selectedN, dual: true)
             } label: {
                 Text("Start")
                     .accentButton()

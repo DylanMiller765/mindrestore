@@ -239,7 +239,6 @@ struct SpeedMatchView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var isNewPersonalBest = false
     // @State private var showingChallengeResult = false
 
@@ -251,7 +250,7 @@ struct SpeedMatchView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .answering, .showing, .feedback:
                 gameView
                     .transition(.opacity)
@@ -262,15 +261,6 @@ struct SpeedMatchView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -392,7 +382,7 @@ struct SpeedMatchView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()

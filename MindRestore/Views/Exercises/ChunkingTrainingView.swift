@@ -241,7 +241,6 @@ struct ChunkingTrainingView: View {
     @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var isNewPersonalBest = false
     // @State private var showingChallengeResult = false
 
@@ -253,7 +252,7 @@ struct ChunkingTrainingView: View {
             switch viewModel.phase {
             case .intro:
                 introView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .memorize:
                 memorizeView
                     .transition(.opacity)
@@ -270,15 +269,6 @@ struct ChunkingTrainingView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startFromIntro()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -392,7 +382,7 @@ struct ChunkingTrainingView: View {
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                showCountdown = true
+                viewModel.startFromIntro()
             } label: {
                 Text("I'm Ready")
                     .accentButton(color: AppColors.teal)

@@ -254,7 +254,6 @@ struct VerbalMemoryView: View {
     @State private var wordOffset: CGFloat = 0
     @State private var resultsAppeared = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var confettiCounter = 0
 
     private var user: User? { users.first }
@@ -265,7 +264,7 @@ struct VerbalMemoryView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .playing:
                 playingView
                     .transition(.opacity)
@@ -275,15 +274,6 @@ struct VerbalMemoryView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
@@ -330,7 +320,7 @@ struct VerbalMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.verbalMemory.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()

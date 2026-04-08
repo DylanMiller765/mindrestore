@@ -229,7 +229,6 @@ struct MathSpeedView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -241,7 +240,7 @@ struct MathSpeedView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .playing:
                 playingView
                     .transition(.opacity)
@@ -251,15 +250,6 @@ struct MathSpeedView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -304,8 +294,7 @@ struct MathSpeedView: View {
                     ratingText: viewModel.score >= 0.9 ? "Math Genius" : viewModel.score >= 0.7 ? "Quick Thinker" : "Keep Practicing",
                     stats: [
                         ("Time", String(format: "%.1fs", viewModel.elapsedSeconds)),
-                        ("Avg/Problem", String(format: "%.1fs", viewModel.averageTimePerProblem)),
-                        ("Score", viewModel.score.percentString)
+                        ("Avg/Problem", String(format: "%.1fs", viewModel.averageTimePerProblem))
                     ],
                     ctaText: "Think you're faster?"
                 )
@@ -388,7 +377,7 @@ struct MathSpeedView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()
@@ -544,8 +533,7 @@ struct MathSpeedView: View {
             stats: [
                 (label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalProblems)"),
                 (label: "Time", value: String(format: "%.1fs", viewModel.elapsedSeconds)),
-                (label: "Avg per Problem", value: String(format: "%.1fs", viewModel.averageTimePerProblem)),
-                (label: "Score", value: viewModel.score.percentString)
+                (label: "Avg per Problem", value: String(format: "%.1fs", viewModel.averageTimePerProblem))
             ],
             isNewPersonalBest: isNewPersonalBest,
             personalBest: PersonalBestTracker.shared.best(for: .mathSpeed),

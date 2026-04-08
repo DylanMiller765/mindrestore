@@ -150,7 +150,7 @@ struct ReactionTimeView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .waiting:
                 waitingView
                     .transition(.opacity)
@@ -162,7 +162,7 @@ struct ReactionTimeView: View {
                     .transition(.opacity)
             case .result:
                 roundResultView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .finished:
                 resultsView
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
@@ -408,8 +408,7 @@ struct ReactionTimeView: View {
             stats: [
                 (label: "Average", value: "\(viewModel.averageMs) ms"),
                 (label: "Best", value: "\(viewModel.bestMs) ms"),
-                (label: "Rounds", value: "\(viewModel.reactionTimes.count)"),
-                (label: "Score", value: viewModel.score.percentString)
+                (label: "Rounds", value: "\(viewModel.reactionTimes.count)")
             ],
             isNewPersonalBest: isNewPersonalBest,
             personalBest: PersonalBestTracker.shared.best(for: .reactionTime),

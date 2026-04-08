@@ -332,7 +332,7 @@ struct WordScrambleView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .playing:
                 playingView
                     .transition(.opacity)
@@ -691,7 +691,6 @@ struct WordScrambleView: View {
                         resultRow(label: "Longest Word", value: viewModel.longestWordSolved)
                     }
                     Divider()
-                    resultRow(label: "Score", value: "\(Int(viewModel.score * 100))%")
                     resultRow(label: "Time", value: viewModel.durationSeconds.durationString)
                 }
                 .glowingCard(color: AppColors.rose, intensity: 0.08)

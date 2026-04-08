@@ -196,7 +196,6 @@ struct ChimpTestView: View {
     @State private var exerciseSaved = false
     @State private var resultsAppeared = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var confettiCounter = 0
 
     private var user: User? { users.first }
@@ -207,7 +206,7 @@ struct ChimpTestView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .playing:
                 playingView
                     .transition(.opacity)
@@ -218,15 +217,6 @@ struct ChimpTestView: View {
         }
         .background(AppColors.pageBg)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Chimp Test")
         .navigationBarTitleDisplayMode(.inline)
@@ -276,7 +266,7 @@ struct ChimpTestView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.chimpTest.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()
@@ -421,8 +411,7 @@ struct ChimpTestView: View {
             ratingText: viewModel.ratingText,
             stats: [
                 (label: "Best Level", value: "\(viewModel.bestLevel)"),
-                (label: "Time", value: viewModel.durationSeconds.durationString),
-                (label: "Score", value: "\(Int(viewModel.score * 100))%")
+                (label: "Time", value: viewModel.durationSeconds.durationString)
             ],
             isNewPersonalBest: isNewPersonalBest,
             personalBest: PersonalBestTracker.shared.best(for: .chimpTest),
@@ -453,8 +442,7 @@ struct ChimpTestView: View {
             mainLabel: "NUMBERS REMEMBERED",
             ratingText: viewModel.ratingText,
             stats: [
-                ("Time", "\(viewModel.durationSeconds)s"),
-                ("Score", String(format: "%.0f%%", viewModel.score * 100))
+                ("Time", "\(viewModel.durationSeconds)s")
             ],
             ctaText: "Can you beat the chimp?"
         )

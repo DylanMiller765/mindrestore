@@ -176,7 +176,6 @@ struct VisualMemoryView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -187,7 +186,7 @@ struct VisualMemoryView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .showing:
                 gameView(interactable: false)
                     .transition(.opacity)
@@ -196,7 +195,7 @@ struct VisualMemoryView: View {
                     .transition(.opacity)
             case .correct:
                 correctView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .wrongReveal:
                 wrongRevealView
                     .transition(.opacity)
@@ -208,15 +207,6 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -266,7 +256,6 @@ struct VisualMemoryView: View {
                     ratingText: viewModel.ratingText,
                     stats: [
                         ("Levels Cleared", "\(viewModel.levelsCompleted)"),
-                        ("Score", viewModel.score.percentString),
                         ("Time", viewModel.durationSeconds.durationString)
                     ],
                     ctaText: "How far can you get?"
@@ -306,7 +295,7 @@ struct VisualMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()
@@ -515,7 +504,6 @@ struct VisualMemoryView: View {
             ratingText: viewModel.ratingText,
             stats: [
                 (label: "Levels Cleared", value: "\(viewModel.levelsCompleted)"),
-                (label: "Score", value: viewModel.score.percentString),
                 (label: "Time", value: viewModel.durationSeconds.durationString)
             ],
             isNewPersonalBest: isNewPersonalBest,

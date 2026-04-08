@@ -165,7 +165,6 @@ struct SequentialMemoryView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -177,7 +176,7 @@ struct SequentialMemoryView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .showing:
                 showingView
                     .transition(.opacity)
@@ -193,15 +192,6 @@ struct SequentialMemoryView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -255,8 +245,7 @@ struct SequentialMemoryView: View {
                     mainLabel: "Digit Span",
                     ratingText: viewModel.maxCorrectLength >= 9 ? "Genius" : viewModel.maxCorrectLength >= 7 ? "Excellent" : viewModel.maxCorrectLength >= 5 ? "Good" : "Keep Training",
                     stats: [
-                        ("Rounds Passed", "\(viewModel.roundResults.filter(\.correct).count)"),
-                        ("Score", viewModel.score.percentString)
+                        ("Rounds Passed", "\(viewModel.roundResults.filter(\.correct).count)")
                     ],
                     ctaText: "Beat my memory"
                 )
@@ -295,7 +284,7 @@ struct SequentialMemoryView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()
@@ -512,8 +501,7 @@ struct SequentialMemoryView: View {
             ratingText: viewModel.maxCorrectLength >= 9 ? "Genius!" : viewModel.maxCorrectLength >= 7 ? "Excellent!" : viewModel.maxCorrectLength >= 5 ? "Good!" : "Keep Training!",
             stats: [
                 (label: "Max Digit Span", value: "\(viewModel.maxCorrectLength)"),
-                (label: "Rounds Passed", value: "\(viewModel.roundResults.filter(\.correct).count)"),
-                (label: "Score", value: viewModel.score.percentString)
+                (label: "Rounds Passed", value: "\(viewModel.roundResults.filter(\.correct).count)")
             ],
             isNewPersonalBest: isNewPersonalBest,
             personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),

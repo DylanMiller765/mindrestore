@@ -257,7 +257,6 @@ struct ColorMatchView: View {
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    @State private var showCountdown = false
     @State private var isNewPersonalBest = false
     // @State private var showingChallengeResult = false
 
@@ -269,7 +268,7 @@ struct ColorMatchView: View {
             switch viewModel.phase {
             case .setup:
                 setupView
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .transition(.opacity)
             case .playing:
                 playingView
                     .transition(.opacity)
@@ -279,15 +278,6 @@ struct ColorMatchView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .overlay {
-            if showCountdown {
-                GameCountdown {
-                    showCountdown = false
-                    viewModel.startGame()
-                }
-                .transition(.opacity)
-            }
-        }
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         /*
         .sheet(isPresented: $showingChallengeResult) {
@@ -330,8 +320,7 @@ struct ColorMatchView: View {
                     ratingText: viewModel.ratingText,
                     stats: [
                         ("Correct", "\(viewModel.correctCount) / \(viewModel.totalRounds)"),
-                        ("Avg Response", "\(viewModel.averageResponseMs) ms"),
-                        ("Score", viewModel.score.percentString)
+                        ("Avg Response", "\(viewModel.averageResponseMs) ms")
                     ],
                     ctaText: "Think you're faster?"
                 )
@@ -371,7 +360,7 @@ struct ColorMatchView: View {
 
             Button {
                 Analytics.exerciseStarted(game: ExerciseType.colorMatch.rawValue)
-                showCountdown = true
+                viewModel.startGame()
             } label: {
                 Text("Start")
                     .accentButton()
@@ -554,7 +543,6 @@ struct ColorMatchView: View {
                 (label: "Accuracy", value: viewModel.accuracy.percentString),
                 (label: "Correct", value: "\(viewModel.correctCount) / \(viewModel.totalRounds)"),
                 (label: "Avg Response", value: "\(viewModel.averageResponseMs) ms"),
-                (label: "Score", value: viewModel.score.percentString),
                 (label: "Time", value: viewModel.durationSeconds.durationString)
             ],
             isNewPersonalBest: isNewPersonalBest,
