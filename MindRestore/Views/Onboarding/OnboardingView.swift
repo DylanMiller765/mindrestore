@@ -176,7 +176,7 @@ struct OnboardingView: View {
                     TypewriterText(fullText: "What should we\ncall you?")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
-                    Text("Used for greetings and leaderboards")
+                    Text("So Memo knows what to call you")
                         .font(.subheadline)
                         .foregroundStyle(AppColors.textTertiary)
                         .multilineTextAlignment(.center)

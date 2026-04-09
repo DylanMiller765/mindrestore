@@ -396,8 +396,9 @@ struct ScoreRevealView: View {
 
         return GeometryReader { geo in
             ZStack {
-                // FULL SCREEN GRADIENT — the gradient IS the design
-                revealGradient(for: finalAge).ignoresSafeArea()
+                // FULL SCREEN GRADIENT — covers everything including safe areas
+                revealGradient(for: finalAge)
+                    .ignoresSafeArea(.all)
 
                 // Floating orbs for depth
                 if countUpFinished {
@@ -419,20 +420,13 @@ struct ScoreRevealView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
 
-                    // Mascot + emoji reaction
+                    // Rive mascot — animated reaction
                     if countUpFinished {
-                        ZStack {
-                            Image(finalAge <= 30 ? "mascot-crown" : finalAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 85)
-
-                            // Big emoji reaction — offset to top-right
-                            Text(brainAgeEmoji(finalAge))
-                                .font(.system(size: 36))
-                                .offset(x: 50, y: -30)
-                                .transition(.scale(scale: 0.1).combined(with: .opacity))
-                        }
+                        RiveMascotView(
+                            mood: mascotRevealMood,
+                            size: 120
+                        )
+                        .frame(height: 100)
                         .transition(.scale(scale: 0.3).combined(with: .opacity))
                         .padding(.bottom, 2)
                     }
@@ -548,16 +542,6 @@ struct ScoreRevealView: View {
                                     .foregroundStyle(.white.opacity(0.35))
                             }
 
-                            // Branding
-                            HStack(spacing: 5) {
-                                Text("🧠")
-                                    .font(.system(size: 10))
-                                Text("MEMORI")
-                                    .font(.system(size: 9, weight: .heavy))
-                                    .foregroundStyle(.white.opacity(0.15))
-                                    .tracking(4)
-                            }
-                            .padding(.top, 4)
                         }
                         .padding(.horizontal, 36)
                         .padding(.bottom, geo.safeAreaInsets.bottom + 12)
