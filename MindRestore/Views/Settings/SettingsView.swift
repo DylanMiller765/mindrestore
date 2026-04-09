@@ -24,6 +24,17 @@ struct SettingsView: View {
     private var isProUser: Bool { storeService.isProUser }
     private var latestScore: BrainScoreResult? { brainScores.first }
 
+    private var profileMascotMood: MascotRiveMood {
+        guard let lastSession = user?.lastSessionDate else { return .neutral }
+        if Calendar.current.isDateInToday(lastSession) {
+            return .happy
+        } else if Calendar.current.isDateInYesterday(lastSession) {
+            return .neutral
+        } else {
+            return .sad
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -86,12 +97,11 @@ struct SettingsView: View {
     private var playerCardHero: some View {
         VStack(spacing: 8) {
             // Compact mascot
-            MascotStateView(
-                brainScore: latestScore?.brainScore ?? 0,
-                brainAge: latestScore?.brainAge ?? 50,
-                size: 90
+            RiveMascotView(
+                mood: profileMascotMood,
+                size: 100
             )
-            .frame(height: 85)
+            .frame(height: 90)
             .clipped()
 
             // Name + level

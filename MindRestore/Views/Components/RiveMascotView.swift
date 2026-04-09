@@ -1,58 +1,55 @@
 import SwiftUI
 import RiveRuntime
 
-struct RiveMascotView: View {
-    let brainScore: Int
-    let brainAge: Int
-    let size: CGFloat
+enum MascotRiveMood: String {
+    case sad = "sad"
+    case happy = "happy"
+    case neutral = "neutral"
+}
 
-    @State private var riveFailed = false
-    @State private var debugText = "loading..."
+private class MascotRiveVM: RiveViewModel {
+    private(set) var dataBindingInstance: RiveDataBindingViewModel.Instance?
 
-    @StateObject private var viewModel: RiveViewModel = {
-        let vm = RiveViewModel(fileName: "memori_mascot", stateMachineName: "BrainHealth")
-        return vm
-    }()
-
-    private var healthValue: Double {
-        Double(max(0, min(1000, brainScore))) / 10.0
+    var enumProperty: RiveDataBindingViewModel.Instance.EnumProperty? {
+        dataBindingInstance?.enumProperty(fromPath: "posesEnum")
     }
 
-    var body: some View {
-        Group {
-            if riveFailed {
-                MascotStateView(brainScore: brainScore, brainAge: brainAge, size: size)
-            } else {
-                VStack(spacing: 2) {
-                    viewModel.view()
-                        .frame(width: size, height: size)
-                        .background(Color.red.opacity(0.1)) // debug: see the actual frame
-                        .onAppear {
-                            debugText = "appeared, health=\(healthValue)"
-                            do {
-                                try viewModel.setInput("health", value: healthValue)
-                                debugText = "health set OK"
-                            } catch {
-                                debugText = "ERR: \(error.localizedDescription)"
-                                riveFailed = true
-                            }
-                        }
-                        .onChange(of: brainScore) { _, newScore in
-                            try? viewModel.setInput("health", value: Double(max(0, min(1000, newScore))) / 10.0)
-                        }
-
-                    // Debug overlay — remove after fixing
-                    Text(debugText)
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(.yellow)
-                }
-            }
+    init() {
+        super.init(fileName: "memori (1)", stateMachineName: "State Machine 1", artboardName: "Memori")
+        riveModel?.enableAutoBind { [weak self] instance in
+            self?.dataBindingInstance = instance
         }
+    }
+
+    func setPose(_ mood: MascotRiveMood) {
+        enumProperty?.value = mood.rawValue
     }
 }
 
-#Preview {
-    VStack(spacing: 20) {
-        RiveMascotView(brainScore: 900, brainAge: 20, size: 200)
+struct RiveMascotView: View {
+    let mood: MascotRiveMood
+    let size: CGFloat
+
+    @StateObject private var viewModel = MascotRiveVM()
+
+    var body: some View {
+        viewModel.view()
+            .frame(width: size, height: size)
+            .task(id: mood) {
+                try? await Task.sleep(for: .milliseconds(150))
+                viewModel.setPose(mood)
+            }
     }
+}
+
+#Preview("Happy") {
+    RiveMascotView(mood: .happy, size: 200)
+}
+
+#Preview("Neutral") {
+    RiveMascotView(mood: .neutral, size: 200)
+}
+
+#Preview("Sad") {
+    RiveMascotView(mood: .sad, size: 200)
 }

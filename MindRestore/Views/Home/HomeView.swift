@@ -158,10 +158,8 @@ struct HomeView: View {
                     }
 
                     // Mascot Hero — the emotional center of the app
-                    if let score = latestBrainScore {
-                        mascotHeroSection(score: score)
-                            .staggeredEntrance(index: 2)
-                    }
+                    mascotHeroSection
+                        .staggeredEntrance(index: 2)
 
                     // Brain Score actions (Retake + Share)
                     brainScoreCard
@@ -758,78 +756,66 @@ struct HomeView: View {
 
     // MARK: - Mascot Hero Section
 
-    private func mascotHeroSection(score: BrainScoreResult) -> some View {
-        VStack(spacing: -4) {
-            // Big animated mascot
-            MascotStateView(
-                brainScore: score.brainScore,
-                brainAge: score.brainAge,
-                size: 110
+    private var todayExerciseCount: Int {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        return exercises.filter { $0.completedAt >= startOfDay }.count
+    }
+
+    private var mascotMood: MascotRiveMood {
+        // 3+ games today = happy
+        if todayExerciseCount >= 3 {
+            return .happy
+        }
+        // Haven't played recently = sad
+        if let lastSession = user?.lastSessionDate,
+           !Calendar.current.isDateInToday(lastSession),
+           !Calendar.current.isDateInYesterday(lastSession) {
+            return .sad
+        }
+        // Default: neutral (start of day, or <3 games)
+        return .neutral
+    }
+
+    private var mascotMoodText: String {
+        switch mascotMood {
+        case .happy:
+            return ["My brain cells are thriving rn", "We're locked in today", "Neurons firing on all cylinders"][todayExerciseCount % 3]
+        case .neutral:
+            let remaining = 3 - todayExerciseCount
+            if remaining == 1 {
+                return "One more... don't leave me hanging"
+            } else if remaining == 2 {
+                return "Good start, keep going tho"
+            }
+            return "I'm bored... entertain my neurons"
+        case .sad:
+            return ["Hello?? I'm losing brain cells", "TikTok won again huh", "My neurons are collecting dust"][Int.random(in: 0...2)]
+        }
+    }
+
+    private var mascotMoodColor: Color {
+        switch mascotMood {
+        case .happy: return AppColors.teal
+        case .neutral: return AppColors.amber
+        case .sad: return AppColors.coral
+        }
+    }
+
+    private var mascotHeroSection: some View {
+        VStack(spacing: 4) {
+            RiveMascotView(
+                mood: mascotMood,
+                size: 130
             )
-            .frame(height: 100)
-            .clipped()
+            .frame(height: 120)
 
-            // Mood label
-            Text(MascotMood.from(brainScore: score.brainScore).statusText)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(MascotMood.from(brainScore: score.brainScore).statusColor)
-
-            // Brain Score number — big and bold
-            VStack(spacing: 2) {
-                Text("\(score.brainScore)")
-                    .font(.system(size: 48, weight: .black, design: .rounded))
-                    .foregroundStyle(AppColors.accent)
-                    .contentTransition(.numericText(value: Double(score.brainScore)))
-
-                Text("Brain Score")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            // Brain Age + Percentile side by side
-            HStack(spacing: 24) {
-                VStack(spacing: 2) {
-                    Text("\(score.brainAge)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
-                    Text("Brain Age")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-
-                Rectangle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 1, height: 36)
-
-                VStack(spacing: 2) {
-                    Text("Top \(score.percentile)%")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.accent)
-                    Text("Percentile")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.top, 4)
-
-            // Domain scores inline
-            HStack(spacing: 8) {
-                domainPill(label: "MEM", score: Int(score.digitSpanScore), color: AppColors.violet)
-                domainPill(label: "SPD", score: Int(score.reactionTimeScore), color: AppColors.coral)
-                domainPill(label: "VIS", score: Int(score.visualMemoryScore), color: AppColors.sky)
-            }
-            .padding(.top, 4)
+            Text(mascotMoodText)
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(mascotMoodColor)
+                .multilineTextAlignment(.center)
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(AppColors.cardSurface)
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(AppColors.cardBorder, lineWidth: 1)
-        )
     }
 
     private func domainPill(label: String, score: Int, color: Color) -> some View {

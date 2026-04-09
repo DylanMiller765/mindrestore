@@ -32,6 +32,9 @@
 		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */; };
 		71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 71A50A1C2F86EB9500C6CDC3 /* PostHog */; };
+		71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
+		71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
+		71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
@@ -191,6 +194,8 @@
 		711F761B2F620B8B005ABF8A /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreExplainerSheet.swift; sourceTree = "<group>"; };
 		717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MemoriWidgetExtension.entitlements; sourceTree = "<group>"; };
+		71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiveMascotView.swift; sourceTree = "<group>"; };
+		71D9D0C32F87CD4C001C0433 /* memori (1).riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = "memori (1).riv"; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedMatchView.swift; sourceTree = "<group>"; };
 		85498D53922848A7B7E5000B /* ReactionTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionTimeView.swift; sourceTree = "<group>"; };
@@ -299,6 +304,7 @@
 			files = (
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
 				71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */,
+				71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -324,6 +330,7 @@
 		0285AB95C99394B065850C8E /* MindRestore */ = {
 			isa = PBXGroup;
 			children = (
+				71D9D0C32F87CD4C001C0433 /* memori (1).riv */,
 				0C755FB45F2C7F2138DB6779 /* Assets.xcassets */,
 				D8DB75C7343DFB9C66001701 /* Configuration.storekit */,
 				B7BB27F7C6F96E795347504A /* ContentView.swift */,
@@ -535,6 +542,7 @@
 		B57CC3DB666874F9DD66355F /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */,
 				711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */,
 				AA000002000000000000AA05 /* AchievementToast.swift */,
 				GG000002000000000000GG01 /* BrainScoreChart.swift */,
@@ -674,6 +682,7 @@
 			packageProductDependencies = (
 				CONFETTI00000003 /* ConfettiSwiftUI */,
 				71A50A1C2F86EB9500C6CDC3 /* PostHog */,
+				71D9D0C52F87CDFF001C0433 /* RiveRuntime */,
 			);
 			productName = MindRestore;
 			productReference = A2AA6B711819E89512C58132 /* MindRestore.app */;
@@ -753,6 +762,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */,
 				098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */,
 				8ED3241E521BC34D514C4623 /* Configuration.storekit in Resources */,
 			);
@@ -781,6 +791,7 @@
 				AA000001000000000000AA03 /* AchievementService.swift in Sources */,
 				AA000001000000000000AA07 /* AchievementsView.swift in Sources */,
 				DD000001000000000000DD10 /* AchievementDetailView.swift in Sources */,
+				71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */,
 				AA000001000000000000AA05 /* AchievementToast.swift in Sources */,
 				95D37AFEE22F63192D4DD339 /* ActiveRecallContent.swift in Sources */,
 				D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */,
@@ -1271,6 +1282,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */;
 			productName = PostHog;
+		};
+		71D9D0C52F87CDFF001C0433 /* RiveRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */;
+			productName = RiveRuntime;
 		};
 		CONFETTI00000003 /* ConfettiSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
