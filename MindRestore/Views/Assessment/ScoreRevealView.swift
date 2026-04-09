@@ -415,24 +415,32 @@ struct ScoreRevealView: View {
                         .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: pulseGlow)
                 }
 
-                // Content — vertically centered, no dead space
+                // Content
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
 
-                    // Mascot
+                    // Mascot + emoji reaction
                     if countUpFinished {
-                        Image(finalAge <= 30 ? "mascot-crown" : finalAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 90)
-                            .transition(.scale(scale: 0.3).combined(with: .opacity))
-                            .padding(.bottom, 4)
+                        ZStack {
+                            Image(finalAge <= 30 ? "mascot-crown" : finalAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 85)
+
+                            // Big emoji reaction — offset to top-right
+                            Text(brainAgeEmoji(finalAge))
+                                .font(.system(size: 36))
+                                .offset(x: 50, y: -30)
+                                .transition(.scale(scale: 0.1).combined(with: .opacity))
+                        }
+                        .transition(.scale(scale: 0.3).combined(with: .opacity))
+                        .padding(.bottom, 2)
                     }
 
                     // "YOUR BRAIN AGE"
                     if showBrainAgeLabel {
                         Text("YOUR BRAIN AGE")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.system(size: 11, weight: .heavy))
                             .foregroundStyle(.white.opacity(0.5))
                             .tracking(6)
                     }
@@ -440,14 +448,14 @@ struct ScoreRevealView: View {
                     // THE MASSIVE NUMBER
                     if isCountingUp || countUpFinished {
                         Text("\(displayedBrainAge)")
-                            .font(.system(size: geo.size.height * 0.17, weight: .black, design: .rounded))
+                            .font(.system(size: geo.size.height * 0.16, weight: .black, design: .rounded))
                             .foregroundStyle(.white)
                             .shadow(color: ageColor.opacity(0.8), radius: 40, y: 0)
                             .shadow(color: ageColor.opacity(0.4), radius: 80, y: 0)
                             .contentTransition(.numericText(value: Double(displayedBrainAge)))
                             .scaleEffect(countUpFinished ? 1.0 : 0.8)
                             .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
-                            .padding(.vertical, -8)
+                            .padding(.vertical, -4)
                     }
 
                     // VERDICT
@@ -456,101 +464,103 @@ struct ScoreRevealView: View {
                             .font(.system(size: 22, weight: .black, design: .rounded))
                             .foregroundStyle(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
-                            .padding(.top, 4)
+                            .padding(.top, 2)
                             .transition(.scale(scale: 0.7).combined(with: .opacity))
 
                         if let comparison = ageComparisonText {
                             Text(comparison)
                                 .font(.system(size: 18, weight: .black, design: .rounded))
                                 .foregroundStyle(ageColor)
-                                .padding(.top, 6)
+                                .padding(.top, 4)
                         }
                     }
 
-                    // Domain scores
+                    // Thin separator
                     if showDomainBars {
-                        HStack(spacing: 20) {
-                            Text("MEM \(Int(viewModel.digitScore))")
-                                .foregroundStyle(AppColors.violet)
-                            Text("·").foregroundStyle(.white.opacity(0.2))
-                            Text("SPD \(Int(viewModel.reactionScore))")
-                                .foregroundStyle(AppColors.coral)
-                            Text("·").foregroundStyle(.white.opacity(0.2))
-                            Text("VIS \(Int(viewModel.visualScore))")
-                                .foregroundStyle(AppColors.sky)
+                        Rectangle()
+                            .fill(.white.opacity(0.08))
+                            .frame(width: 60, height: 2)
+                            .clipShape(Capsule())
+                            .padding(.vertical, 14)
+                    }
+
+                    // Domain scores — pill cards
+                    if showDomainBars {
+                        HStack(spacing: 8) {
+                            domainPillReveal(label: "MEM", value: Int(viewModel.digitScore), color: AppColors.violet)
+                            domainPillReveal(label: "SPD", value: Int(viewModel.reactionScore), color: AppColors.coral)
+                            domainPillReveal(label: "VIS", value: Int(viewModel.visualScore), color: AppColors.sky)
                         }
-                        .font(.system(size: 15, weight: .heavy, design: .rounded))
-                        .padding(.top, 16)
-                        .transition(.opacity)
+                        .padding(.horizontal, 32)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
 
                     // Percentile
                     if showBrainAgePercentile {
                         Text(percentileRoast)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.45))
                             .multilineTextAlignment(.center)
-                            .padding(.top, 10)
+                            .padding(.top, 12)
                     }
 
-                    // Brain type badge + fun fact
+                    // Brain type + fact
                     if showBrainAgePercentile {
-                        VStack(spacing: 16) {
-                            // Brain type
+                        VStack(spacing: 10) {
                             HStack(spacing: 8) {
                                 Image(systemName: viewModel.brainType.icon)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.system(size: 13, weight: .bold))
                                 Text(viewModel.brainType.displayName)
-                                    .font(.system(size: 14, weight: .black, design: .rounded))
+                                    .font(.system(size: 13, weight: .black, design: .rounded))
                             }
-                            .foregroundStyle(.white.opacity(0.7))
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 9)
-                            .background(.white.opacity(0.08), in: Capsule())
-                            .padding(.top, 16)
+                            .foregroundStyle(.white.opacity(0.6))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 7)
+                            .background(.white.opacity(0.07), in: Capsule())
 
-                            // Fun brain fact based on result
                             Text(brainAgeFunFact)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.35))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.3))
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                                .lineSpacing(3)
-
-                            // Branding
-                            HStack(spacing: 6) {
-                                Text("🧠")
-                                    .font(.system(size: 11))
-                                Text("MEMORI")
-                                    .font(.system(size: 10, weight: .heavy))
-                                    .foregroundStyle(.white.opacity(0.2))
-                                    .tracking(4)
-                            }
+                                .padding(.horizontal, 44)
+                                .lineSpacing(2)
                         }
+                        .padding(.top, 12)
                     }
 
                     Spacer(minLength: 0)
 
-                    // Share + Continue
+                    // Share — uses result color, not generic blue
                     if showBrainAgeShare {
                         VStack(spacing: 10) {
                             if let shareImage {
                                 ShareLink(
                                     item: Image(uiImage: shareImage),
                                     preview: SharePreview("Brain Age: \(finalAge)", image: Image(uiImage: shareImage))
-                                ) { brainAgeShareButton }
+                                ) { revealShareButton(color: ageColor) }
                             } else {
-                                ShareLink(item: brainAgeShareText) { brainAgeShareButton }
+                                ShareLink(item: brainAgeShareText) { revealShareButton(color: ageColor) }
                             }
 
                             Button { dismissBrainAgeOverlay() } label: {
                                 Text("See Brain Score →")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white.opacity(0.4))
+                                    .foregroundStyle(.white.opacity(0.35))
                             }
+
+                            // Branding
+                            HStack(spacing: 5) {
+                                Text("🧠")
+                                    .font(.system(size: 10))
+                                Text("MEMORI")
+                                    .font(.system(size: 9, weight: .heavy))
+                                    .foregroundStyle(.white.opacity(0.15))
+                                    .tracking(4)
+                            }
+                            .padding(.top, 4)
                         }
-                        .padding(.horizontal, 40)
-                        .padding(.bottom, geo.safeAreaInsets.bottom + 16)
+                        .padding(.horizontal, 36)
+                        .padding(.bottom, geo.safeAreaInsets.bottom + 12)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
@@ -591,6 +601,48 @@ struct ScoreRevealView: View {
         case 46...55: return "😭"
         default: return "💀"
         }
+    }
+
+    // Domain score pill for reveal screen
+    private func domainPillReveal(label: String, value: Int, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text("\(value)")
+                .font(.system(size: 22, weight: .black, design: .rounded))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.system(size: 10, weight: .heavy))
+                .foregroundStyle(.white.opacity(0.35))
+                .tracking(1.5)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(color.opacity(0.15), lineWidth: 1)
+        )
+    }
+
+    // Share button that matches result color
+    private func revealShareButton(color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.headline)
+            Text("Share Your Brain Age")
+                .font(.headline.weight(.bold))
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            LinearGradient(
+                colors: [color, color.opacity(0.7)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .clipShape(Capsule())
+        .shadow(color: color.opacity(0.4), radius: 16, y: 6)
     }
 
     private var brainAgeShareButton: some View {
