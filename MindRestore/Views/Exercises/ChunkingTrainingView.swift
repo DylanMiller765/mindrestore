@@ -587,7 +587,13 @@ struct ChunkingTrainingView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .chunkingTraining,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.correctDigits,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Chunking",
             gameIcon: "rectangle.split.3x1.fill",
             accentColor: AppColors.rose,
@@ -604,6 +610,8 @@ struct ChunkingTrainingView: View {
             personalBest: PersonalBestTracker.shared.best(for: .chunkingTraining),
             exerciseType: .chunkingTraining,
             leaderboardScore: viewModel.correctDigits,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue)
                 generateShareCard()
@@ -672,7 +680,7 @@ struct ChunkingTrainingView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .chunkingTraining)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

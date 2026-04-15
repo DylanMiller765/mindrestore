@@ -758,7 +758,7 @@ struct TrainingView: View {
                                 HStack(spacing: 12) {
                                     ForEach(Array(category.games.enumerated()), id: \.element.type) { offset, game in
                                         Button {
-                                            if hasReachedLimit {
+                                            if hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type) {
                                                 showingPaywall = true
                                             } else {
                                                 selectedExercise = game.type
@@ -768,7 +768,7 @@ struct TrainingView: View {
                                                 title: game.title,
                                                 type: game.type,
                                                 color: game.color,
-                                                isLocked: hasReachedLimit,
+                                                isLocked: hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type),
                                                 lastPlayedText: lastPlayedText(for: game.type)
                                             )
                                         }

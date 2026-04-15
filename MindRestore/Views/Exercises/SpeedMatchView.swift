@@ -630,7 +630,13 @@ struct SpeedMatchView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .speedMatch,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.leaderboardScore,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Speed Match",
             gameIcon: "bolt.square.fill",
             accentColor: AppColors.sky,
@@ -648,6 +654,8 @@ struct SpeedMatchView: View {
             personalBest: PersonalBestTracker.shared.best(for: .speedMatch),
             exerciseType: .speedMatch,
             leaderboardScore: viewModel.leaderboardScore,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue)
                 generateShareCard()
@@ -678,7 +686,7 @@ struct SpeedMatchView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .speedMatch)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)

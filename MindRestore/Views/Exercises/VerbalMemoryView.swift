@@ -243,6 +243,7 @@ struct VerbalMemoryView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = VerbalMemoryViewModel()
@@ -251,6 +252,7 @@ struct VerbalMemoryView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
+    @State private var activeChallenge: ChallengeLink?
     @State private var wordOffset: CGFloat = 0
     @State private var resultsAppeared = false
     @State private var showingInfo = false
@@ -277,6 +279,12 @@ struct VerbalMemoryView: View {
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onDisappear {
             if viewModel.phase == .playing {
                 Analytics.exerciseAbandoned(game: ExerciseType.verbalMemory.rawValue, roundReached: viewModel.totalSeen)
@@ -440,7 +448,13 @@ struct VerbalMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .verbalMemory,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.leaderboardScore,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Verbal Memory",
             gameIcon: "text.book.closed.fill",
             accentColor: AppColors.violet,
@@ -456,6 +470,8 @@ struct VerbalMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .verbalMemory),
             exerciseType: .verbalMemory,
             leaderboardScore: viewModel.bestStreak,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 generateShareCard()
                 Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue)
@@ -473,7 +489,7 @@ struct VerbalMemoryView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .verbalMemory)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

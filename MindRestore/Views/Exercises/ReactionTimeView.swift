@@ -403,7 +403,13 @@ struct ReactionTimeView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .reactionTime,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.averageMs,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Reaction Time",
             gameIcon: "bolt.fill",
             accentColor: AppColors.coral,
@@ -419,6 +425,8 @@ struct ReactionTimeView: View {
             personalBest: PersonalBestTracker.shared.best(for: .reactionTime),
             exerciseType: .reactionTime,
             leaderboardScore: viewModel.averageMs,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue)
                 generateShareCard()
@@ -449,7 +457,7 @@ struct ReactionTimeView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .reactionTime)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

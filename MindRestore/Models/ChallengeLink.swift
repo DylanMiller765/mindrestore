@@ -19,6 +19,27 @@ struct ChallengeLink: Equatable {
         return components.url
     }
 
+    var vercelURL: URL? {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "memori-website-sooty.vercel.app"
+        components.path = "/challenge"
+        components.queryItems = [
+            URLQueryItem(name: "game", value: game.rawValue),
+            URLQueryItem(name: "seed", value: "\(seed)"),
+            URLQueryItem(name: "score", value: "\(score)"),
+            URLQueryItem(name: "name", value: challengerName),
+        ]
+        return components.url
+    }
+
+    func shareMessage() -> String {
+        let display = game.challengeDisplayText(score: score)
+        let emoji = game.challengeEmoji
+        let urlString = vercelURL?.absoluteString ?? ""
+        return "I got \(display) on \(game.displayName) \(emoji) Think you can beat me? \(urlString)"
+    }
+
     init?(url: URL) {
         guard url.scheme == "memori", url.host == "duel" else { return nil }
         let params = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems

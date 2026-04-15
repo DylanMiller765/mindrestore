@@ -187,6 +187,7 @@ struct ChimpTestView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ChimpTestViewModel()
@@ -194,6 +195,7 @@ struct ChimpTestView: View {
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
+    @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var showingInfo = false
     @State private var confettiCounter = 0
@@ -221,6 +223,12 @@ struct ChimpTestView: View {
         .navigationTitle("Chimp Test")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.phase == .playing)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onDisappear {
             if viewModel.phase == .playing {
                 Analytics.exerciseAbandoned(game: ExerciseType.chimpTest.rawValue, roundReached: viewModel.currentLevel)
@@ -407,7 +415,13 @@ struct ChimpTestView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .chimpTest,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.leaderboardScore,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Chimp Test",
             gameIcon: "pawprint.fill",
             accentColor: AppColors.amber,
@@ -424,6 +438,8 @@ struct ChimpTestView: View {
             leaderboardScore: viewModel.bestLevel,
             emoji: "🐵",
             subtitleText: viewModel.bestLevel > 7 ? "You beat the chimp!" : viewModel.bestLevel == 7 ? "Tied with the chimp!" : "The chimp wins this time!",
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 generateShareCard()
                 Analytics.shareTapped(game: ExerciseType.chimpTest.rawValue)
@@ -467,7 +483,7 @@ struct ChimpTestView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .chimpTest)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

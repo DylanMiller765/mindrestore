@@ -537,7 +537,13 @@ struct ColorMatchView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .colorMatch,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.leaderboardScore,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Color Match",
             gameIcon: "paintpalette.fill",
             accentColor: AppColors.violet,
@@ -554,6 +560,8 @@ struct ColorMatchView: View {
             personalBest: PersonalBestTracker.shared.best(for: .colorMatch),
             exerciseType: .colorMatch,
             leaderboardScore: viewModel.leaderboardScore,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.colorMatch.rawValue)
                 generateShareCard()
@@ -584,7 +592,7 @@ struct ColorMatchView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .colorMatch)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)

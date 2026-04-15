@@ -497,7 +497,13 @@ struct SequentialMemoryView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .sequentialMemory,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.maxCorrectLength,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Number Memory",
             gameIcon: "number.circle.fill",
             accentColor: AppColors.teal,
@@ -512,6 +518,8 @@ struct SequentialMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),
             exerciseType: .sequentialMemory,
             leaderboardScore: viewModel.maxCorrectLength,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue)
                 generateShareCard()
@@ -542,7 +550,7 @@ struct SequentialMemoryView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .sequentialMemory)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

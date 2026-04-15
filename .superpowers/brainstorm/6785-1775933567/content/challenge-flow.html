@@ -1,0 +1,68 @@
+<h2>Friend Challenge — End-to-End Flow</h2>
+<p class="subtitle">The complete user journey from challenging to comparison</p>
+
+<div style="display:flex;flex-direction:column;gap:24px;max-width:800px;margin:0 auto;">
+
+  <!-- SENDER FLOW -->
+  <div style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid rgba(74,127,229,0.3);">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#4A7FE5;margin-bottom:12px;">Sender (Challenger)</div>
+
+    <div style="display:flex;gap:12px;align-items:stretch;">
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">🎮</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Plays Game</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">Any of 10 games</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#4A7FE5;font-size:20px;">→</div>
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">🏆</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Sees Results</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">GameResultView + new "Challenge a Friend" button</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#4A7FE5;font-size:20px;">→</div>
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">📤</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Shares Link</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">iOS share sheet → text + Vercel URL</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:#0f0f23;border-radius:10px;padding:14px;border:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:11px;font-weight:600;color:#94A3B8;margin-bottom:6px;">SHARE MESSAGE</div>
+      <div style="font-size:14px;color:white;">"I got Level 8 on Chimp Test 🐵 Think you can beat me?"</div>
+      <div style="font-size:12px;color:#4A7FE5;margin-top:4px;">memori-website-sooty.vercel.app/challenge?game=chimpTest&seed=34521&score=8&name=Dylan</div>
+    </div>
+  </div>
+
+  <!-- RECEIVER FLOW -->
+  <div style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid rgba(248,113,113,0.3);">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#F87171;margin-bottom:12px;">Receiver (Friend)</div>
+
+    <div style="display:flex;gap:12px;align-items:stretch;">
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">🔗</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Taps Link</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">Opens Vercel page → App Store or opens app</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#F87171;font-size:20px;">→</div>
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">⚔️</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Accepts Challenge</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">ChallengeAcceptView → same game, same seed</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#F87171;font-size:20px;">→</div>
+      <div style="background:#0f0f23;border-radius:12px;padding:16px;flex:1;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">📊</div>
+        <div style="font-size:13px;font-weight:700;color:white;">Sees Comparison</div>
+        <div style="font-size:11px;color:#94A3B8;margin-top:4px;">GameResultView with challenger banner + "Challenge Back"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIRAL LOOP -->
+  <div style="background:linear-gradient(135deg, rgba(74,127,229,0.15), rgba(248,113,113,0.15));border-radius:16px;padding:20px;text-align:center;border:1px solid rgba(255,255,255,0.1);">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#2DD4BF;margin-bottom:8px;">Viral Loop</div>
+    <div style="font-size:14px;color:white;">Friend taps <strong>"Challenge Back"</strong> → generates new link → sends back → repeat ♻️</div>
+  </div>
+
+</div>

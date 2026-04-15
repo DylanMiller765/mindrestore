@@ -363,7 +363,13 @@ struct DualNBackView: View {
     }
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .dualNBack,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.currentN,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Dual N-Back",
             gameIcon: "square.grid.3x3",
             accentColor: AppColors.sky,
@@ -382,6 +388,8 @@ struct DualNBackView: View {
             personalBest: PersonalBestTracker.shared.best(for: .dualNBack),
             exerciseType: .dualNBack,
             leaderboardScore: viewModel.currentN,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue)
                 generateShareCard()
@@ -423,7 +431,7 @@ struct DualNBackView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .dualNBack)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

@@ -500,7 +500,13 @@ struct VisualMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .visualMemory,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.maxLevelReached,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Visual Memory",
             gameIcon: "square.grid.3x3.fill",
             accentColor: AppColors.indigo,
@@ -515,6 +521,8 @@ struct VisualMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .visualMemory),
             exerciseType: .visualMemory,
             leaderboardScore: viewModel.maxLevelReached,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue)
                 generateShareCard()
@@ -545,7 +553,7 @@ struct VisualMemoryView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .visualMemory)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

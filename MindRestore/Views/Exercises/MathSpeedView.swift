@@ -528,7 +528,13 @@ struct MathSpeedView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        GameResultView(
+        let challengeLink = ChallengeLink(
+            game: .mathSpeed,
+            seed: ChallengeLink.randomSeed(),
+            score: viewModel.leaderboardScore,
+            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
+        )
+        return GameResultView(
             gameTitle: "Math Speed",
             gameIcon: "multiply.circle.fill",
             accentColor: AppColors.amber,
@@ -544,6 +550,8 @@ struct MathSpeedView: View {
             personalBest: PersonalBestTracker.shared.best(for: .mathSpeed),
             exerciseType: .mathSpeed,
             leaderboardScore: viewModel.leaderboardScore,
+            activeChallenge: activeChallenge,
+            challengeLink: challengeLink,
             onShare: {
                 Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue)
                 generateShareCard()
@@ -574,7 +582,7 @@ struct MathSpeedView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .mathSpeed)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(
