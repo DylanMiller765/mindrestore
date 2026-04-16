@@ -491,6 +491,8 @@ extension ContentView {
                         userInfo: ["delta": delta, "newScore": newBrainScore]
                     )
                     NotificationService.shared.scheduleBrainScoreFollowUp(currentScore: newBrainScore)
+                    // Report improved brain score to Game Center leaderboard
+                    gameCenterService?.reportScore(newBrainScore, leaderboardID: GameCenterService.brainScoreLeaderboard)
                 }
             }
         }
