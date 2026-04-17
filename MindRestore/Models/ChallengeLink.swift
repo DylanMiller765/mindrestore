@@ -22,7 +22,7 @@ struct ChallengeLink: Equatable {
     var vercelURL: URL? {
         var components = URLComponents()
         components.scheme = "https"
-        components.host = "memori-website-sooty.vercel.app"
+        components.host = "getmemoriapp.com"
         components.path = "/challenge"
         components.queryItems = [
             URLQueryItem(name: "game", value: game.rawValue),
@@ -40,8 +40,12 @@ struct ChallengeLink: Equatable {
         return "I got \(display) on \(game.displayName) \(emoji) Think you can beat me? \(urlString)"
     }
 
+    private static let universalLinkHost = "getmemoriapp.com"
+
     init?(url: URL) {
-        guard url.scheme == "memori", url.host == "duel" else { return nil }
+        let isCustomScheme = url.scheme == "memori" && url.host == "duel"
+        let isUniversalLink = url.host == Self.universalLinkHost && url.path == "/challenge"
+        guard isCustomScheme || isUniversalLink else { return nil }
         let params = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
         guard let gameRaw = params?.first(where: { $0.name == "game" })?.value,
               let game = ExerciseType(rawValue: gameRaw),

@@ -17,7 +17,18 @@ final class DeepLinkRouter {
     var pendingDestination: DeepLinkDestination?
     var pendingChallenge: ChallengeLink?
 
+    private static let universalLinkHost = "getmemoriapp.com"
+
     func handle(_ url: URL) {
+        // Handle Universal Links from Vercel domain
+        if url.host == Self.universalLinkHost && url.path == "/challenge" {
+            if let link = ChallengeLink(url: url) {
+                pendingChallenge = link
+                pendingDestination = .challenge(link)
+            }
+            return
+        }
+
         guard url.scheme == "memori" else { return }
 
         switch url.host {
