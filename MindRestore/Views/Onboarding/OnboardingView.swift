@@ -27,10 +27,11 @@ struct OnboardingView: View {
     @State private var commitmentBullet3Visible = false
     @State private var commitmentBullet4Visible = false
     @FocusState private var nameFieldFocused: Bool
+    @State private var showingFocusModeSetup = false
 
     var onComplete: () -> Void
 
-    private let totalPages = 11
+    private let totalPages = 12
 
     var body: some View {
         ZStack {
@@ -48,7 +49,8 @@ struct OnboardingView: View {
                     assessmentPage.tag(7)
                     commitmentPage.tag(8)
                     notificationsPage.tag(9)
-                    privacyPage.tag(10)
+                    focusModePage.tag(10)
+                    privacyPage.tag(11)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -101,7 +103,7 @@ struct OnboardingView: View {
         }
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "goals", "age", "appearance", "badNews", "goodNews", "assessment", "commitment", "notifications", "privacy"]
+                let stepNames = ["welcome", "name", "goals", "age", "appearance", "badNews", "goodNews", "assessment", "commitment", "notifications", "focusMode", "privacy"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -825,6 +827,63 @@ struct OnboardingView: View {
         default: .system
         }
         UserDefaults.standard.set(theme.rawValue, forKey: "appTheme")
+    }
+
+    // MARK: - Focus Mode Page
+
+    private var focusModePage: some View {
+        VStack(spacing: 24) {
+            Spacer().frame(height: 60)
+
+            Image("mascot-goal")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
+
+            VStack(spacing: 8) {
+                Text("One more thing...")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+
+                Text("Want to block distracting apps\nand replace them with brain games?")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                Button {
+                    showingFocusModeSetup = true
+                } label: {
+                    Text("Set up Focus Mode")
+                        .gradientButton()
+                }
+
+                Button {
+                    Analytics.onboardingStep(step: "focusModeSkipped")
+                    withAnimation { currentPage = 11 }
+                } label: {
+                    Text("Not now")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
+            }
+            .padding(.horizontal, 32)
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+        .sheet(isPresented: $showingFocusModeSetup) {
+            FocusModeSetupView()
+                .onDisappear {
+                    Analytics.onboardingStep(step: "focusModeCompleted")
+                    withAnimation { currentPage = 11 }
+                }
+        }
     }
 
     // MARK: - Privacy Page
