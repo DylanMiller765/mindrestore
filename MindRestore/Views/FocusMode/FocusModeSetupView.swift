@@ -24,6 +24,7 @@ struct FocusModeSetupView: View {
     @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 9)) ?? Date()
     @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 17)) ?? Date()
     @State private var unlockDuration = 15
+    @State private var showingUltraPaywall = false
 
     private let totalSteps = 4
     private let durationOptions = [5, 15, 30, 60]
@@ -148,11 +149,22 @@ struct FocusModeSetupView: View {
 
             Spacer()
 
-            continueButton { currentStep = 2 }
+            continueButton {
+                let totalSelected = focusModeService.activitySelection.applicationTokens.count
+                    + focusModeService.activitySelection.categoryTokens.count
+                if !storeService.isUltraUser && totalSelected > 1 {
+                    showingUltraPaywall = true
+                } else {
+                    currentStep = 2
+                }
+            }
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+        .sheet(isPresented: $showingUltraPaywall) {
+            PaywallView(triggerSource: "focus_mode_limit")
+        }
     }
 
     // MARK: - Step 2: Schedule
