@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMCD0002000000000000FC01 /* FocusModeCard.swift */; };
 		FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSU0002000000000000FS01 /* FocusModeSetupView.swift */; };
+		FMST0001000000000000FS01 /* FocusModeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMST0002000000000000FS01 /* FocusModeSettingsView.swift */; };
 		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
 		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
@@ -229,6 +230,7 @@
 		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
 		FMCD0002000000000000FC01 /* FocusModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeCard.swift; sourceTree = "<group>"; };
 		FMSU0002000000000000FS01 /* FocusModeSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSetupView.swift; sourceTree = "<group>"; };
+		FMST0002000000000000FS01 /* FocusModeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSettingsView.swift; sourceTree = "<group>"; };
 		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
@@ -607,6 +609,7 @@
 			children = (
 				FMCD0002000000000000FC01 /* FocusModeCard.swift */,
 				FMSU0002000000000000FS01 /* FocusModeSetupView.swift */,
+				FMST0002000000000000FS01 /* FocusModeSettingsView.swift */,
 				QGVW0002000000000000QG01 /* QuickGameView.swift */,
 			);
 			path = FocusMode;
@@ -919,6 +922,7 @@
 				QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */,
 				FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */,
 				FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */,
+				FMST0001000000000000FS01 /* FocusModeSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

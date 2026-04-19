@@ -61,7 +61,11 @@ struct FocusModeCard: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingSettings) {
-            FocusModeSetupView()
+            if focusModeService.isEnabled {
+                FocusModeSettingsView()
+            } else {
+                FocusModeSetupView()
+            }
         }
         .padding(.horizontal)
     }
