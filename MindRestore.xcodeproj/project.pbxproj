@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
 		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
 		0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */; };
@@ -224,6 +225,7 @@
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
+		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
@@ -367,6 +369,7 @@
 				DA1E588532939B18105271E6 /* Progress */,
 				247526B0BB2604045C8FA8E6 /* Settings */,
 				CC000003000000000000CC01 /* Social */,
+			QGVW0003000000000000QG01 /* FocusMode */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -593,6 +596,14 @@
 				CC000002000000000000CC05 /* ChallengeResultView.swift */,
 			);
 			path = Social;
+			sourceTree = "<group>";
+		};
+		QGVW0003000000000000QG01 /* FocusMode */ = {
+			isa = PBXGroup;
+			children = (
+				QGVW0002000000000000QG01 /* QuickGameView.swift */,
+			);
+			path = FocusMode;
 			sourceTree = "<group>";
 		};
 		D061A8715749FD8BC50ADFAD /* ViewModels */ = {
@@ -899,6 +910,7 @@
 				MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */,
 				VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */,
 				CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */,
+				QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
