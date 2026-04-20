@@ -1,35 +1,45 @@
-//
-//  ShieldActionExtension.swift
-//  MemoriShieldAction
-//
-//  Created by Dylan Miller on 4/19/26.
-//
-
 import ManagedSettings
+import Foundation
 
-// Override the functions below to customize the shield actions used in various situations.
-// The system provides a default response for any functions that your subclass doesn't override.
-// Make sure that your class name matches the NSExtensionPrincipalClass in your Info.plist.
 class ShieldActionExtension: ShieldActionDelegate {
+    private let sharedDefaults = UserDefaults(suiteName: "group.com.memori.shared")!
+
     override func handle(action: ShieldAction, for application: ApplicationToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
-        // Handle the action as needed.
+        handleAction(action, completionHandler: completionHandler)
+    }
+
+    override func handle(action: ShieldAction, for webDomain: WebDomainToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        handleAction(action, completionHandler: completionHandler)
+    }
+
+    override func handle(action: ShieldAction, for category: ActivityCategoryToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        handleAction(action, completionHandler: completionHandler)
+    }
+
+    private func handleAction(_ action: ShieldAction, completionHandler: @escaping (ShieldActionResponse) -> Void) {
         switch action {
         case .primaryButtonPressed:
-            completionHandler(.close)
-        case .secondaryButtonPressed:
+            // Increment daily attempt count
+            let count = dailyAttemptCount
+            sharedDefaults.set(count + 1, forKey: "focus_daily_attempt_count")
+            sharedDefaults.set(Date(), forKey: "focus_daily_attempt_date")
+
+            // Defer — opens the app via URL scheme
             completionHandler(.defer)
+
+        case .secondaryButtonPressed:
+            completionHandler(.close)
+
         @unknown default:
-            fatalError()
+            completionHandler(.close)
         }
     }
-    
-    override func handle(action: ShieldAction, for webDomain: WebDomainToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
-        // Handle the action as needed.
-        completionHandler(.close)
-    }
-    
-    override func handle(action: ShieldAction, for category: ActivityCategoryToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
-        // Handle the action as needed.
-        completionHandler(.close)
+
+    private var dailyAttemptCount: Int {
+        let savedDate = sharedDefaults.object(forKey: "focus_daily_attempt_date") as? Date
+        if let savedDate, Calendar.current.isDateInToday(savedDate) {
+            return sharedDefaults.integer(forKey: "focus_daily_attempt_count")
+        }
+        return 0
     }
 }

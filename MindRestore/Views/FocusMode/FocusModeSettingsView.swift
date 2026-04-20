@@ -3,8 +3,10 @@ import FamilyControls
 
 struct FocusModeSettingsView: View {
     @Environment(FocusModeService.self) private var focusModeService
+    @Environment(StoreService.self) private var storeService
     @Environment(\.dismiss) private var dismiss
     @State private var showingAppPicker = false
+    @State private var showingUltraPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -128,8 +130,20 @@ struct FocusModeSettingsView: View {
             }
             .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
                 get: { focusModeService.activitySelection },
-                set: { focusModeService.updateActivitySelection($0) }
+                set: { newSelection in
+                    let appCount = newSelection.applicationTokens.count
+                    let catCount = newSelection.categoryTokens.count
+                    let exceedsLimit = appCount > 1 || catCount > 0
+                    if !storeService.isUltraUser && exceedsLimit {
+                        showingUltraPaywall = true
+                    } else {
+                        focusModeService.updateActivitySelection(newSelection)
+                    }
+                }
             ))
+            .sheet(isPresented: $showingUltraPaywall) {
+                PaywallView(triggerSource: "focus_mode_limit")
+            }
         }
     }
 
