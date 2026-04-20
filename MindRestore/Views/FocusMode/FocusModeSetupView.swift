@@ -148,9 +148,11 @@ struct FocusModeSetupView: View {
             Spacer()
 
             continueButton {
-                let totalSelected = focusModeService.activitySelection.applicationTokens.count
-                    + focusModeService.activitySelection.categoryTokens.count
-                if !storeService.isUltraUser && totalSelected > 1 {
+                let appCount = focusModeService.activitySelection.applicationTokens.count
+                let catCount = focusModeService.activitySelection.categoryTokens.count
+                // Categories contain multiple apps — treat any category as exceeding the free limit
+                let exceedsLimit = appCount > 1 || catCount > 0
+                if !storeService.isUltraUser && exceedsLimit {
                     showingUltraPaywall = true
                 } else {
                     currentStep = 2
@@ -289,74 +291,108 @@ struct FocusModeSetupView: View {
     // MARK: - Step 3: Duration + Enable
 
     private var durationStep: some View {
-        VStack(spacing: 20) {
-            Spacer().frame(height: 20)
+        VStack(spacing: 16) {
+            Spacer().frame(height: 10)
 
             // Mascot
             Image("mascot-goal")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 120)
+                .frame(height: 140)
 
             VStack(spacing: 6) {
                 Text("Almost there!")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
-                Text("How long should apps unlock\nafter a brain game?")
+                Text("Pick how long apps stay unlocked\nafter completing a brain game")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            // Duration button row
-            HStack(spacing: 10) {
+            // Duration selector — pill style
+            HStack(spacing: 8) {
                 ForEach(durationOptions, id: \.self) { minutes in
                     let isSelected = unlockDuration == minutes
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            unlockDuration = minutes
-                        }
-                    } label: {
-                        VStack(spacing: 4) {
-                            Text("\(minutes)")
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
-                                .foregroundStyle(isSelected ? .white : .primary)
-                            Text("min")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
-                        }
+                    Text("\(minutes) min")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(isSelected ? .white : .primary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(isSelected ? AnyShapeStyle(AppColors.accentGradient) : AnyShapeStyle(AppColors.cardSurface))
+                            isSelected
+                                ? AnyShapeStyle(AppColors.accentGradient)
+                                : AnyShapeStyle(AppColors.cardSurface)
                         )
+                        .clipShape(Capsule())
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(isSelected ? Color.clear : AppColors.cardBorder, lineWidth: 1.5)
+                            Capsule()
+                                .stroke(isSelected ? Color.clear : AppColors.cardBorder, lineWidth: 1)
                         )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(minutes) minutes\(isSelected ? ", selected" : "")")
+                        .contentShape(Capsule())
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                unlockDuration = minutes
+                            }
+                        }
+                        .accessibilityLabel("\(minutes) minutes\(isSelected ? ", selected" : "")")
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
-            // Summary card
-            VStack(alignment: .leading, spacing: 12) {
-                summaryRow(icon: "app.badge.fill", label: "\(focusModeService.blockedAppCount) app\(focusModeService.blockedAppCount == 1 ? "" : "s") selected")
-                summaryRow(icon: "clock.fill", label: scheduleEnabled ? "Scheduled (\(formattedTime(scheduleStart)) – \(formattedTime(scheduleEnd)))" : "Always on")
-                summaryRow(icon: "bolt.fill", label: "Unlock: \(unlockDuration) min per game")
+            // What you're setting up — visual summary
+            VStack(spacing: 0) {
+                // Blocked apps row
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppColors.coral)
+                        .frame(width: 24)
+                    Text("\(focusModeService.blockedAppCount) app\(focusModeService.blockedAppCount == 1 ? "" : "s") will be blocked")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+
+                Divider().padding(.horizontal, 16)
+
+                // Schedule row
+                HStack(spacing: 10) {
+                    Image(systemName: scheduleEnabled ? "clock.fill" : "infinity")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppColors.accent)
+                        .frame(width: 24)
+                    Text(scheduleEnabled ? "\(formattedTime(scheduleStart)) – \(formattedTime(scheduleEnd))" : "Active all day")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+
+                Divider().padding(.horizontal, 16)
+
+                // Unlock row
+                HStack(spacing: 10) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppColors.violet)
+                        .frame(width: 24)
+                    Text("Play a game → unlock \(unlockDuration) min")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
             }
-            .padding(16)
-            .background(AppColors.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
+                    .stroke(AppColors.cardBorder, lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             Spacer()
 
