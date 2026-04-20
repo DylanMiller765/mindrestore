@@ -30,22 +30,51 @@ struct PaywallView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Tier selector — at the very top
-                HStack(spacing: 0) {
-                    tierTab("Pro", isSelected: selectedTier == .pro) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTier = .pro
-                            selectedPlan = StoreService.annualProductID
+                VStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        tierSegment(
+                            title: "Pro",
+                            subtitle: "Train more",
+                            isSelected: selectedTier == .pro,
+                            accentGradient: AppColors.accentGradient
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                selectedTier = .pro
+                                selectedPlan = StoreService.annualProductID
+                            }
+                        }
+
+                        tierSegment(
+                            title: "Ultra",
+                            subtitle: "Protect focus",
+                            isSelected: selectedTier == .ultra,
+                            accentGradient: LinearGradient(
+                                colors: [AppColors.violet, AppColors.indigo],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                selectedTier = .ultra
+                                selectedPlan = StoreService.annualUltraProductID
+                            }
                         }
                     }
-                    tierTab("Ultra", isSelected: selectedTier == .ultra) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTier = .ultra
-                            selectedPlan = StoreService.annualUltraProductID
-                        }
-                    }
+
+                    Text(selectedTier == .ultra ? "Ultra includes everything in Pro, plus Focus Mode and Screen Time insights." : "Pro unlocks unlimited training, insights, and competitive progress tracking.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(3)
-                .background(AppColors.cardElevated, in: RoundedRectangle(cornerRadius: 12))
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(AppColors.cardElevated)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(selectedTier == .ultra ? AppColors.violet.opacity(0.35) : AppColors.cardBorder, lineWidth: 1)
+                )
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
@@ -83,9 +112,9 @@ struct PaywallView: View {
                         benefitCard(icon: "chart.line.uptrend.xyaxis", title: "Insights", subtitle: "Track progress", color: AppColors.violet)
                         benefitCard(icon: "trophy.fill", title: "Compete", subtitle: "Leaderboards", color: AppColors.amber)
                     } else {
-                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "No daily cap", color: AppColors.accent)
+                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "Everything in Pro", color: AppColors.accent)
                         benefitCard(icon: "shield.fill", title: "Focus Mode", subtitle: "Block apps", color: AppColors.violet)
-                        benefitCard(icon: "chart.bar.fill", title: "Screen Time", subtitle: "Stats & insights", color: AppColors.teal)
+                        benefitCard(icon: "chart.bar.fill", title: "Screen Time", subtitle: "Focus stats & insights", color: AppColors.teal)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -103,7 +132,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.annualProduct),
                             badge: "Best Value",
                             isSelected: selectedPlan == StoreService.annualProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.annualProductID
@@ -117,7 +146,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.monthlyProduct),
                             badge: nil,
                             isSelected: selectedPlan == StoreService.monthlyProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.monthlyProductID
@@ -131,7 +160,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.weeklyProduct),
                             badge: nil,
                             isSelected: selectedPlan == StoreService.weeklyProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.weeklyProductID
@@ -145,7 +174,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.annualUltraProduct),
                             badge: "Best Value",
                             isSelected: selectedPlan == StoreService.annualUltraProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.annualUltraProductID
@@ -159,7 +188,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.monthlyUltraProduct),
                             badge: nil,
                             isSelected: selectedPlan == StoreService.monthlyUltraProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.monthlyUltraProductID
@@ -173,7 +202,7 @@ struct PaywallView: View {
                             trialText: trialLabel(for: storeService.weeklyUltraProduct),
                             badge: nil,
                             isSelected: selectedPlan == StoreService.weeklyUltraProductID,
-                            accentColor: AppColors.violet
+                            accentColor: selectedAccentColor
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedPlan = StoreService.weeklyUltraProductID
@@ -243,7 +272,10 @@ struct PaywallView: View {
                 Spacer()
             }
             .background(
-                paywallBackground
+                ZStack {
+                    paywallBackground
+                    tierAtmosphere
+                }
                     .ignoresSafeArea()
             )
             .toolbar {
@@ -325,24 +357,66 @@ struct PaywallView: View {
         }
     }
 
+    @ViewBuilder
+    private var tierAtmosphere: some View {
+        if selectedTier == .ultra {
+            LinearGradient(
+                colors: [
+                    AppColors.violet.opacity(0.18),
+                    AppColors.indigo.opacity(0.10),
+                    .clear
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    AppColors.accent.opacity(0.04),
+                    .clear
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    private var selectedAccentColor: Color {
+        selectedTier == .ultra ? AppColors.violet : AppColors.accent
+    }
+
     // MARK: - Benefit Card
 
-    private func tierTab(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func tierSegment(
+        title: String,
+        subtitle: String,
+        isSelected: Bool,
+        accentGradient: LinearGradient,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(isSelected ? .white : .secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(
-                    isSelected
-                        ? AnyShapeStyle(title == "Ultra"
-                            ? LinearGradient(colors: [AppColors.violet, AppColors.indigo], startPoint: .leading, endPoint: .trailing)
-                            : AppColors.accentGradient)
-                        : AnyShapeStyle(Color.clear)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(isSelected ? Color.white : .primary)
+
+                Text(subtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.82) : .secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isSelected ? AnyShapeStyle(accentGradient) : AnyShapeStyle(Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? selectedAccentColor.opacity(0.18) : AppColors.cardBorder, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
 
     private func benefitCard(icon: String, title: String, subtitle: String, color: Color) -> some View {

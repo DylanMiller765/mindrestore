@@ -232,7 +232,7 @@ struct ProgressDashboardView: View {
         }
         .chartYScale(domain: minScore...maxScore)
         .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+            AxisMarks(values: .automatic(desiredCount: 3)) { value in
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
                         Text(date, format: .dateTime.month(.abbreviated).day())
@@ -256,8 +256,10 @@ struct ProgressDashboardView: View {
         .chartPlotStyle { plotArea in
             plotArea
                 .padding(.top, 8)
+                .padding(.trailing, 8)
                 .padding(.bottom, 4)
         }
+        .clipped()
     }
 
     // MARK: - 2. Stats Table
