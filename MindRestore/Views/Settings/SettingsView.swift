@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showingDebugBrainAge = false
     @State private var showingDebugAssessment = false
     @State private var showingDebugGoodBrainAge = false
+    @State private var showingDebugFocusSetup = false
     @State private var showingDebugBadBrainAge = false
     @State private var editingName = false
     @State private var editedName = ""
@@ -136,6 +137,9 @@ struct SettingsView: View {
                             }
                         }
                 }
+            }
+            .sheet(isPresented: $showingDebugFocusSetup) {
+                FocusModeSetupView()
             }
             .alert("Reset All Data", isPresented: $showingResetConfirmation) {
                 Button("Reset Everything", role: .destructive) { resetAllData() }
@@ -832,6 +836,32 @@ struct SettingsView: View {
                 let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.completedAt >= startOfDay })
                 if let todayExercises = try? modelContext.fetch(descriptor) {
                     for ex in todayExercises { modelContext.delete(ex) }
+                }
+            }
+
+            // Focus Mode — reset setup
+            debugRow(icon: "shield.fill", color: AppColors.violet, title: "Reset Focus Mode", subtitle: "Clear Focus Mode setup + onboarding flag") {
+                UserDefaults.standard.removeObject(forKey: "has_seen_free_play_popup")
+                let shared = UserDefaults(suiteName: "group.com.memori.shared")
+                shared?.removeObject(forKey: "focus_mode_enabled")
+                shared?.removeObject(forKey: "focus_activity_selection")
+                shared?.removeObject(forKey: "focus_unlock_duration")
+                shared?.removeObject(forKey: "focus_schedule_enabled")
+                shared?.removeObject(forKey: "focus_daily_attempt_count")
+                shared?.removeObject(forKey: "focus_cooldown_until")
+                shared?.removeObject(forKey: "focus_unlock_until")
+            }
+
+            // Focus Mode — show setup flow
+            debugRow(icon: "shield.lefthalf.filled", color: AppColors.violet, title: "Focus Mode Setup", subtitle: "Open Focus Mode setup flow") {
+                showingDebugFocusSetup = true
+            }
+
+            // Ultra toggle
+            debugRow(icon: "bolt.shield.fill", color: AppColors.violet, title: "Toggle Ultra", subtitle: storeService.isUltraUser ? "Ultra ON — tap to disable" : "Ultra OFF — tap to enable") {
+                storeService.isUltraUser.toggle()
+                if storeService.isUltraUser {
+                    storeService.isProUser = true
                 }
             }
 
