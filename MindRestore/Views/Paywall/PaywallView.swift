@@ -56,85 +56,138 @@ struct PaywallView: View {
                     .padding(.bottom, 6)
 
                 // Tier selector
-                HStack(spacing: 0) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTier = .pro
-                            selectedPlan = StoreService.annualProductID
-                        }
-                    } label: {
-                        Text("Pro")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(selectedTier == .pro ? .white : .secondary)
+                ZStack(alignment: .top) {
+                    // Outer border container
+                    HStack(spacing: 0) {
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                selectedTier = .pro
+                                selectedPlan = StoreService.annualProductID
+                            }
+                        } label: {
+                            ZStack {
+                                if selectedTier == .pro {
+                                    AppColors.accentGradient
+                                        .clipShape(Capsule())
+                                } else {
+                                    Color.clear
+                                }
+                                Text("Pro")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(selectedTier == .pro ? .white : .secondary)
+                            }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(selectedTier == .pro ? AppColors.accent : Color.clear, in: Capsule())
-                    }
-
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTier = .ultra
-                            selectedPlan = StoreService.annualUltraProductID
+                            .padding(.vertical, 11)
                         }
-                    } label: {
-                        Text("Ultra")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(selectedTier == .ultra ? .white : .secondary)
+
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                selectedTier = .ultra
+                                selectedPlan = StoreService.annualUltraProductID
+                            }
+                        } label: {
+                            ZStack {
+                                if selectedTier == .ultra {
+                                    LinearGradient(
+                                        colors: [AppColors.violet, AppColors.indigo],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    .clipShape(Capsule())
+                                } else {
+                                    Color.clear
+                                }
+                                Text("Ultra")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(selectedTier == .ultra ? .white : .secondary)
+                            }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(selectedTier == .ultra ? AppColors.violet : Color.clear, in: Capsule())
-                    }
-                }
-                .padding(3)
-                .background(AppColors.cardElevated, in: Capsule())
-                .padding(.horizontal, 20)
-                .padding(.bottom, 10)
-
-                // Tier feature summary
-                Group {
-                    if selectedTier == .pro {
-                        Text("Unlimited brain training")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        HStack(spacing: 6) {
-                            Text("Unlimited training + Focus Mode")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.secondary)
-                            Text("RECOMMENDED")
-                                .font(.system(size: 9, weight: .bold))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
-                                .background(AppColors.violet, in: Capsule())
-                                .foregroundStyle(.white)
+                            .padding(.vertical, 11)
                         }
                     }
-                }
-                .padding(.bottom, 14)
+                    .padding(3)
+                    .background(AppColors.cardElevated, in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                selectedTier == .ultra
+                                    ? AppColors.violet.opacity(0.45)
+                                    : AppColors.accent.opacity(0.30),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .padding(.horizontal, 20)
 
-                // Benefits
+                    // "BEST VALUE" badge floats above the Ultra segment
+                    GeometryReader { geo in
+                        let badgeX = geo.size.width * 0.75
+                        Text("BEST VALUE")
+                            .font(.system(size: 8, weight: .black))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(
+                                LinearGradient(
+                                    colors: [AppColors.violet, AppColors.indigo],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                in: Capsule()
+                            )
+                            .shadow(color: AppColors.violet.opacity(0.5), radius: 4, y: 1)
+                            .position(x: badgeX, y: 0)
+                    }
+                    .frame(height: 0)
+                }
+                .padding(.bottom, 16)
+
+                // Benefits — animated swap between Pro and Ultra
                 HStack(spacing: 8) {
-                    benefitCard(
-                        icon: "infinity",
-                        title: "Unlimited",
-                        subtitle: "No daily cap",
-                        color: AppColors.accent
-                    )
-                    benefitCard(
-                        icon: "chart.line.uptrend.xyaxis",
-                        title: "Track Progress",
-                        subtitle: "Detailed insights",
-                        color: AppColors.violet
-                    )
-                    benefitCard(
-                        icon: "trophy.fill",
-                        title: "Compete",
-                        subtitle: "Climb even higher",
-                        color: AppColors.amber
-                    )
+                    if selectedTier == .pro {
+                        benefitCard(
+                            icon: "infinity",
+                            title: "Unlimited",
+                            subtitle: "Brain training",
+                            color: AppColors.accent
+                        )
+                        benefitCard(
+                            icon: "chart.line.uptrend.xyaxis",
+                            title: "Track Progress",
+                            subtitle: "Detailed insights",
+                            color: AppColors.violet
+                        )
+                        benefitCard(
+                            icon: "trophy.fill",
+                            title: "Compete",
+                            subtitle: "Climb even higher",
+                            color: AppColors.amber
+                        )
+                    } else {
+                        benefitCard(
+                            icon: "brain.head.profile",
+                            title: "Unlimited",
+                            subtitle: "Brain training",
+                            color: AppColors.violet
+                        )
+                        benefitCard(
+                            icon: "shield.fill",
+                            title: "Focus Mode",
+                            subtitle: "Block distracting apps",
+                            color: AppColors.indigo
+                        )
+                        benefitCard(
+                            icon: "chart.bar.fill",
+                            title: "Insights",
+                            subtitle: "Screen time stats",
+                            color: AppColors.teal
+                        )
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 18)
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .id(selectedTier == .pro ? "pro-benefits" : "ultra-benefits")
+                .animation(.easeInOut(duration: 0.25), value: selectedTier)
 
                 // Plans
                 VStack(spacing: 8) {
