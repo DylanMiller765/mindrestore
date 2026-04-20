@@ -171,25 +171,30 @@ struct FocusModeSetupView: View {
 
     private var scheduleStep: some View {
         VStack(spacing: 24) {
-            Spacer().frame(height: 32)
+            Spacer().frame(height: 20)
 
-            VStack(spacing: 8) {
-                Text("Set a schedule")
+            Image("mascot-thinking")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 110)
+
+            VStack(spacing: 6) {
+                Text("When to block?")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
-                Text("Automatically turn Focus Mode on at set times")
+                Text("Choose when Focus Mode is active")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
             }
 
             // Always on / Scheduled toggle
             VStack(spacing: 0) {
                 scheduleOptionRow(
                     title: "Always on",
-                    subtitle: "Focus Mode stays active at all times",
+                    subtitle: "Block apps 24/7",
                     icon: "infinity",
                     isSelected: !scheduleEnabled,
                     action: { withAnimation(.spring(response: 0.3)) { scheduleEnabled = false } }
@@ -200,7 +205,7 @@ struct FocusModeSetupView: View {
 
                 scheduleOptionRow(
                     title: "Set a schedule",
-                    subtitle: "Active only during specific hours",
+                    subtitle: "Only during certain hours",
                     icon: "clock.fill",
                     isSelected: scheduleEnabled,
                     action: { withAnimation(.spring(response: 0.3)) { scheduleEnabled = true } }
@@ -211,39 +216,31 @@ struct FocusModeSetupView: View {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(AppColors.cardBorder, lineWidth: 1)
             )
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
 
-            // Time pickers — shown only when schedule is enabled
+            // Time pickers — compact style
             if scheduleEnabled {
-                HStack(spacing: 0) {
-                    VStack(spacing: 6) {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Start")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        DatePicker("Start", selection: $scheduleStart, displayedComponents: .hourAndMinute)
-                            .datePickerStyle(.wheel)
+                        DatePicker("", selection: $scheduleStart, displayedComponents: .hourAndMinute)
                             .labelsHidden()
-                            .frame(maxWidth: .infinity)
                     }
 
-                    Divider()
-                        .padding(.vertical, 8)
+                    Spacer()
 
-                    VStack(spacing: 6) {
+                    VStack(alignment: .trailing, spacing: 6) {
                         Text("End")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        DatePicker("End", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
-                            .datePickerStyle(.wheel)
+                        DatePicker("", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
                             .labelsHidden()
-                            .frame(maxWidth: .infinity)
                     }
                 }
-                .frame(height: 160)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(AppColors.cardSurface)
-                )
+                .padding(16)
+                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(AppColors.cardBorder, lineWidth: 1)
