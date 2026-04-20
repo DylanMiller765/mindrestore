@@ -8,11 +8,9 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
     @State private var assessmentResult: BrainScoreResult?
-    @State private var assessmentBgColor: Color = AppColors.pageBg
     @State private var notificationsEnabled = false
     @State private var enteredName: String = ""
     @State private var selectedAge: Int = 25
-    @State private var selectedAppearance: Int = 0 // 0=system, 1=light, 2=dark
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     @State private var commitmentCompleted = false
@@ -28,14 +26,16 @@ struct OnboardingView: View {
     @State private var commitmentBullet4Visible = false
     @FocusState private var nameFieldFocused: Bool
     @State private var showingFocusModeSetup = false
+    @State private var focusModeWasSetUp = false
+    @State private var quickAssessmentBgColor: Color = AppColors.pageBg
 
     var onComplete: () -> Void
 
-    private let totalPages = 12
+    private let totalPages = 10
 
     var body: some View {
         ZStack {
-            (currentPage == 7 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            (currentPage == 5 ? quickAssessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
@@ -43,14 +43,12 @@ struct OnboardingView: View {
                     namePage.tag(1)
                     goalsPage.tag(2)
                     agePage.tag(3)
-                    appearancePage.tag(4)
-                    badNewsPage.tag(5)
-                    goodNewsPage.tag(6)
-                    assessmentPage.tag(7)
-                    commitmentPage.tag(8)
-                    notificationsPage.tag(9)
-                    focusModePage.tag(10)
-                    privacyPage.tag(11)
+                    scarePage.tag(4)
+                    quickAssessmentPage.tag(5)
+                    revealAndHopePage.tag(6)
+                    onboardingPaywallPage.tag(7)
+                    focusModePage.tag(8)
+                    commitmentPage.tag(9)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -67,7 +65,7 @@ struct OnboardingView: View {
                         }
                     }
                     // Reset typewriter animation states when navigating away
-                    if newPage != 5 {
+                    if newPage != 4 {
                         badNewsTypingDone = false
                         badNewsSubtitleVisible = false
                     }
@@ -75,7 +73,7 @@ struct OnboardingView: View {
                         goodNewsTypingDone = false
                         goodNewsSubtitleVisible = false
                     }
-                    if newPage != 8 {
+                    if newPage != 9 {
                         commitmentBullet1Visible = false
                         commitmentBullet2Visible = false
                         commitmentBullet3Visible = false
@@ -83,7 +81,7 @@ struct OnboardingView: View {
                     }
                 }
 
-                if currentPage != 7 {
+                if currentPage != 5 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
                             Capsule()
@@ -103,7 +101,7 @@ struct OnboardingView: View {
         }
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "goals", "age", "appearance", "badNews", "goodNews", "assessment", "commitment", "notifications", "focusMode", "privacy"]
+                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "reveal", "paywall", "focusMode", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -124,10 +122,10 @@ struct OnboardingView: View {
                 .onAppear { mascotBob = true }
 
             VStack(spacing: 10) {
-                TypewriterText(fullText: "Welcome to Memori")
+                TypewriterText(fullText: "Train your brain.\nBlock the noise.")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
 
-                Text("Brain games that actually\nmake you competitive.")
+                Text("The app that blocks distractions\nand sharpens your mind.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -142,9 +140,9 @@ struct OnboardingView: View {
             }
 
             VStack(alignment: .leading, spacing: 14) {
-                FeatureRow(icon: "trophy.fill", color: AppColors.amber, title: "Compete Globally", subtitle: "Climb leaderboards & challenge friends")
-                FeatureRow(icon: "brain.head.profile", color: CognitiveDomain.memory.color, title: "10 Brain Games", subtitle: "Memory, speed, focus & problem solving")
-                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.accent, title: "Track Your Brain Score", subtitle: "See how you stack up against everyone")
+                FeatureRow(icon: "shield.fill", color: AppColors.coral, title: "Block Distracting Apps", subtitle: "Shield yourself from doomscrolling")
+                FeatureRow(icon: "brain.head.profile", color: CognitiveDomain.memory.color, title: "10 Brain Games", subtitle: "Play to earn your screen time back")
+                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.accent, title: "Track Your Brain Age", subtitle: "See how your brain stacks up")
             }
             .padding(.horizontal, 36)
             .opacity(welcomeSubtitleVisible ? 1 : 0)
@@ -370,9 +368,9 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Bad News Page
+    // MARK: - Scare Page
 
-    private var badNewsPage: some View {
+    private var scarePage: some View {
         VStack(spacing: 24) {
             Spacer().frame(height: 60)
 
@@ -418,27 +416,52 @@ struct OnboardingView: View {
 
             Spacer()
 
-            continueButton {
-                Analytics.onboardingStep(step: "badNews")
-                currentPage = 6
+            Button {
+                Analytics.onboardingStep(step: "scare")
+                withAnimation { currentPage = 5 }
+            } label: {
+                Text("Don't believe us? Let's test it.")
+                    .gradientButton()
             }
+            .padding(.horizontal, 32)
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Good News Page
+    // MARK: - Quick Assessment Page
 
-    private var goodNewsPage: some View {
+    private var quickAssessmentPage: some View {
+        QuickAssessmentView(backgroundColor: $quickAssessmentBgColor) { result in
+            assessmentResult = result
+            Analytics.onboardingStep(step: "quickAssessment")
+            withAnimation { currentPage = 6 }
+        }
+    }
+
+    // MARK: - Reveal and Hope Page
+
+    private var revealAndHopePage: some View {
         VStack(spacing: 24) {
             Spacer().frame(height: 60)
+
+            if let result = assessmentResult {
+                VStack(spacing: 4) {
+                    Text("Your Brain Age")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("\(result.brainAge)")
+                        .font(.system(size: 72, weight: .black, design: .rounded))
+                        .foregroundStyle(result.brainAge > (selectedAge > 0 ? selectedAge : 25) ? AppColors.coral : AppColors.teal)
+                }
+            }
 
             Image("mascot-working-out")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 180)
+                .frame(height: 140)
 
             VStack(spacing: 8) {
                 VStack(spacing: 4) {
@@ -458,7 +481,7 @@ struct OnboardingView: View {
                         .animation(.spring(response: 0.4, dampingFraction: 0.6), value: goodNewsTypingDone)
                 }
 
-                Text("Just 5 minutes a day of brain training\ncan improve memory, focus, and reaction time.")
+                Text("5 minutes of daily brain training\ncan reverse the damage.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -473,21 +496,21 @@ struct OnboardingView: View {
                         }
                     }
 
-                Text("Let's see where you stand.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, 4)
+                Text("And we can block the apps that caused it.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.accent)
+                    .multilineTextAlignment(.center)
                     .opacity(goodNewsSubtitleVisible ? 1 : 0)
-                    .animation(.easeOut(duration: 0.5).delay(0.2), value: goodNewsSubtitleVisible)
+                    .animation(.easeOut(duration: 0.5).delay(0.3), value: goodNewsSubtitleVisible)
             }
 
             Spacer()
 
             Button {
-                Analytics.onboardingStep(step: "goodNews")
+                Analytics.onboardingStep(step: "reveal")
                 withAnimation { currentPage = 7 }
             } label: {
-                Text("Take the Brain Age Test")
+                Text("Let's fix it")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -497,21 +520,17 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Brain Assessment Page
+    // MARK: - Onboarding Paywall Page
 
-    private var assessmentPage: some View {
-        OnboardingAssessmentView(backgroundColor: $assessmentBgColor) { result in
-            assessmentResult = result
-            Analytics.onboardingStep(step: "assessment")
-            // Brain score result is saved in completeOnboarding() along with the User,
-            // so both are persisted in a single transaction before the view transition.
-            withAnimation {
-                currentPage = 8 // → commitment
+    private var onboardingPaywallPage: some View {
+        OnboardingPaywallView(
+            brainAge: assessmentResult?.brainAge,
+            onContinue: {
+                Analytics.onboardingStep(step: "paywall")
+                withAnimation { currentPage = 8 }
             }
-        }
+        )
     }
-
-    // Note: OnboardingAssessmentView's onComplete now passes nil when skipped
 
     // MARK: - Commitment Page
 
@@ -546,12 +565,14 @@ struct OnboardingView: View {
                         .transition(.opacity)
                 }
                 if commitmentBullet3Visible {
-                    TypewriterText(fullText: "• I'll put down the scroll and pick up the games")
+                    TypewriterText(fullText: focusModeWasSetUp
+                        ? "• I'll let Memori block my distracting apps"
+                        : "• I'll put down the scroll and pick up the games")
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet4Visible {
-                    TypewriterText(fullText: "• I'll sharpen my mind every single day")
+                    TypewriterText(fullText: "• I'll take back my screen time")
                         .font(.subheadline)
                         .transition(.opacity)
                 }
@@ -635,6 +656,15 @@ struct OnboardingView: View {
                 }
             }
             .padding(.bottom, 32)
+
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                Text("All data stays on your device. No tracking. No cloud uploads.")
+                    .font(.caption)
+            }
+            .foregroundStyle(.tertiary)
+            .padding(.top, 8)
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
@@ -668,7 +698,7 @@ struct OnboardingView: View {
                     }
                     Analytics.onboardingStep(step: "commitment")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        withAnimation { currentPage = 9 }
+                        completeOnboarding()
                     }
                 }
             }
@@ -679,154 +709,6 @@ struct OnboardingView: View {
         holdTimer?.invalidate()
         holdTimer = nil
         // Don't reset progress — let users resume from where they stopped
-    }
-
-    // MARK: - Notifications Page
-
-    private var notificationsPage: some View {
-        VStack(spacing: 32) {
-            Spacer()
-
-            Image("mascot-celebrate")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 150)
-
-            VStack(spacing: 8) {
-                Text("Stay on track")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                Text("Get gentle reminders to train daily\nand keep your streak alive.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                Button {
-                    Task {
-                        let granted = await NotificationService.shared.requestPermission()
-                        notificationsEnabled = granted
-                        Analytics.onboardingStep(step: "notifications")
-                        withAnimation { currentPage = 10 }
-                    }
-                } label: {
-                    Text("Enable Notifications")
-                        .gradientButton()
-                }
-
-                Button {
-                    Analytics.onboardingStep(step: "notifications")
-                    withAnimation { currentPage = 7 }
-                } label: {
-                    Text("Maybe Later")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                }
-            }
-            .padding(.horizontal, 32)
-        }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Appearance Page
-
-    private var appearancePage: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 60)
-
-            Text(selectedAppearance == 2 ? "🌙" : selectedAppearance == 1 ? "☀️" : "🌗")
-                .font(.system(size: 80))
-                .contentTransition(.symbolEffect(.replace))
-
-            VStack(spacing: 8) {
-                Text("Choose your look")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                Text("You can change this anytime in Settings.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            VStack(spacing: 10) {
-                appearanceOption(value: 0, label: "System", emoji: "📱", description: "Match device")
-                appearanceOption(value: 1, label: "Light", emoji: "☀️", description: "Always light")
-                appearanceOption(value: 2, label: "Dark", emoji: "🌙", description: "Always dark")
-            }
-            .padding(.horizontal, 24)
-
-            Spacer()
-
-            Button {
-                Analytics.onboardingStep(step: "appearance")
-                withAnimation { currentPage = 5 } // → bad news
-            } label: {
-                Text("Continue")
-                    .gradientButton()
-            }
-            .padding(.horizontal, 32)
-        }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
-    }
-
-    private func appearanceOption(value: Int, label: String, emoji: String, description: String) -> some View {
-        let isSelected = selectedAppearance == value
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                selectedAppearance = value
-                applyAppearance(value)
-            }
-        } label: {
-            HStack(spacing: 14) {
-                Text(emoji)
-                    .font(.system(size: 28))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 18)
-            .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isSelected ? AppColors.accent.opacity(0.4) : AppColors.cardBorder)
-                        .offset(y: 3)
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isSelected ? AppColors.accent.opacity(0.08) : AppColors.cardSurface)
-                }
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? AppColors.accent : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1.5)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func applyAppearance(_ value: Int) {
-        let theme: AppTheme = switch value {
-        case 1: .light
-        case 2: .dark
-        default: .system
-        }
-        UserDefaults.standard.set(theme.rawValue, forKey: "appTheme")
     }
 
     // MARK: - Focus Mode Page
@@ -842,11 +724,11 @@ struct OnboardingView: View {
                 .frame(height: 160)
 
             VStack(spacing: 8) {
-                Text("One more thing...")
+                Text("Block the noise")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
-                Text("Want to block distracting apps\nand replace them with brain games?")
+                Text("Pick distracting apps to block.\nPlay a brain game to unlock them.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -864,7 +746,7 @@ struct OnboardingView: View {
 
                 Button {
                     Analytics.onboardingStep(step: "focusModeSkipped")
-                    withAnimation { currentPage = 11 }
+                    withAnimation { currentPage = 9 }
                 } label: {
                     Text("Not now")
                         .font(.subheadline.weight(.medium))
@@ -880,59 +762,11 @@ struct OnboardingView: View {
         .sheet(isPresented: $showingFocusModeSetup) {
             FocusModeSetupView()
                 .onDisappear {
+                    focusModeWasSetUp = true
                     Analytics.onboardingStep(step: "focusModeCompleted")
-                    withAnimation { currentPage = 11 }
+                    withAnimation { currentPage = 9 }
                 }
         }
-    }
-
-    // MARK: - Privacy Page
-
-    private var privacyPage: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 60)
-
-            Image("mascot-streak-fire")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 180)
-
-            VStack(spacing: 10) {
-                Text("You're ready!")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-
-                Text("Start training and climb\nthe leaderboards.")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            // Privacy note - subtle, not the focus
-            HStack(spacing: 8) {
-                Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Text("Your data stays on your device. Always.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.top, 8)
-
-            Spacer()
-
-            Button {
-                Analytics.onboardingStep(step: "privacy")
-                completeOnboarding()
-            } label: {
-                Text("Let's Go")
-                    .gradientButton()
-            }
-            .padding(.horizontal, 32)
-        }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
     }
 
     private func continueButton(action: @escaping () -> Void) -> some View {
@@ -968,6 +802,7 @@ struct OnboardingView: View {
 
         Analytics.onboardingCompleted(goals: Array(selectedGoals).map(\.rawValue))
 
+        UserDefaults.standard.set(AppTheme.dark.rawValue, forKey: "appTheme")
         try? modelContext.save()
         onComplete()
     }

@@ -70,6 +70,8 @@
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
 		BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB01 /* PaywallTriggerService.swift */; };
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
+		BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB03 /* QuickAssessmentView.swift */; };
+		BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB04 /* OnboardingPaywallView.swift */; };
 		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
@@ -83,6 +85,7 @@
 		CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC05 /* ChallengeResultView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
+		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
 		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
@@ -211,6 +214,7 @@
 		1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallEngine.swift; sourceTree = "<group>"; };
 		1BAED08649D48D8892E649EC /* DailyChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeView.swift; sourceTree = "<group>"; };
 		1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressDashboardView.swift; sourceTree = "<group>"; };
+		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		28F2956C980BEE531AF763D7 /* DailySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySession.swift; sourceTree = "<group>"; };
 		2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallViewModel.swift; sourceTree = "<group>"; };
 		2DC8E99CC02B442CECAD45D0 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -267,6 +271,8 @@
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
+		BB000002000000000000BB03 /* QuickAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAssessmentView.swift; sourceTree = "<group>"; };
+		BB000002000000000000BB04 /* OnboardingPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallView.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
 		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
@@ -489,6 +495,7 @@
 				AA000003000000000000AA02 /* Leaderboard */,
 				DAC9DD5A3195858D3E23B420 /* Onboarding */,
 				7C931884ACF860DD4B9838D8 /* Paywall */,
+				PROF0003000000000000PF01 /* Profile */,
 				DA1E588532939B18105271E6 /* Progress */,
 				247526B0BB2604045C8FA8E6 /* Settings */,
 				CC000003000000000000CC01 /* Social */,
@@ -532,6 +539,14 @@
 				71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		PROF0003000000000000PF01 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				PROF0002000000000000PF01 /* ProfileView.swift */,
+			);
+			path = Profile;
 			sourceTree = "<group>";
 		};
 		247526B0BB2604045C8FA8E6 /* Settings */ = {
@@ -755,7 +770,9 @@
 			isa = PBXGroup;
 			children = (
 				BB000002000000000000BB02 /* OnboardingAssessmentView.swift */,
+				BB000002000000000000BB04 /* OnboardingPaywallView.swift */,
 				73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */,
+				BB000002000000000000BB03 /* QuickAssessmentView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1110,11 +1127,14 @@
 				FA8567C797B41B4B41197836 /* MindRestoreApp.swift in Sources */,
 				8574E446C920D58FEE0C30CF /* NotificationService.swift in Sources */,
 				BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */,
+				BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */,
 				E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */,
+				BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */,
 				BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */,
 				FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */,
 				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
+				PROF0001000000000000PF01 /* ProfileView.swift in Sources */,
 				CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */,
 				15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */,
 				FC65303B02F0B4EA9D897243 /* ProgressViewModel.swift in Sources */,
