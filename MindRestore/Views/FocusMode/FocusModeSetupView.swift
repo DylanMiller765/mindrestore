@@ -144,7 +144,6 @@ struct FocusModeSetupView: View {
                 set: { focusModeService.updateActivitySelection($0) }
             ))
             .frame(maxHeight: 400)
-            .padding(.horizontal, 16)
 
             Spacer()
 
