@@ -219,6 +219,31 @@ final class TrainingSessionManager {
                     destination: .exercise(.speedMatch)
                 ),
             ]
+
+        case .doomscrolling:
+            return [
+                ExerciseRecommendation(
+                    title: "Dual N-Back",
+                    subtitle: "Rebuild attention damaged by scrolling",
+                    icon: "square.grid.3x3",
+                    color: AppColors.sky,
+                    destination: .dualNBack
+                ),
+                ExerciseRecommendation(
+                    title: "Reaction Time",
+                    subtitle: "Sharpen sluggish processing speed",
+                    icon: "bolt.fill",
+                    color: AppColors.coral,
+                    destination: .exercise(.reactionTime)
+                ),
+                ExerciseRecommendation(
+                    title: "Color Match",
+                    subtitle: "Fight distraction with Stroop effect",
+                    icon: "paintpalette.fill",
+                    color: AppColors.violet,
+                    destination: .exercise(.colorMatch)
+                ),
+            ]
         }
     }
 
