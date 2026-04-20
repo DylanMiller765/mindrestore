@@ -2,31 +2,76 @@ import SwiftUI
 import SwiftData
 import Charts
 
+// MARK: - Time Range
+
+private enum TimeRange: String, CaseIterable {
+    case week = "7D"
+    case month = "30D"
+    case year = "1Y"
+
+    var days: Int {
+        switch self {
+        case .week: return 7
+        case .month: return 30
+        case .year: return 365
+        }
+    }
+}
+
+// MARK: - Insights Dashboard
+
 struct ProgressDashboardView: View {
     @Environment(StoreService.self) private var storeService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
-
-    @State private var viewModel = ProgressViewModel()
-    @State private var showingPaywall = false
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
+    @State private var selectedRange: TimeRange = .month
+    @State private var showingPaywall = false
+
     private var user: User? { users.first }
-    private var isProUser: Bool { storeService.isProUser }
 
-    /// The 10 games available on the Train tab
-    private static let availableGames: [ExerciseType] = [
-        .reactionTime, .colorMatch, .speedMatch, .visualMemory,
-        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining
-        // v1.2: uncomment when ready to ship new games
-        // , .wordScramble, .memoryChain
-    ]
+    // MARK: - Filtered Data
 
-    private var triedExerciseTypes: Set<ExerciseType> {
-        Set(exercises.map(\.type)).intersection(Self.availableGames)
+    private var cutoffDate: Date {
+        Calendar.current.date(byAdding: .day, value: -selectedRange.days, to: Date()) ?? Date()
     }
+
+    private var filteredScores: [BrainScoreResult] {
+        brainScores.filter { $0.date >= cutoffDate }
+    }
+
+    private var filteredExercises: [Exercise] {
+        exercises.filter { $0.completedAt >= cutoffDate }
+    }
+
+    /// Current (latest) brain score
+    private var currentScore: BrainScoreResult? {
+        brainScores.first
+    }
+
+    /// Brain score at the start of the selected period (or earliest in range)
+    private var periodStartScore: BrainScoreResult? {
+        filteredScores.last
+    }
+
+    /// Delta: current brain score minus score at start of period
+    private var scoreDelta: Int {
+        guard let current = currentScore, let start = periodStartScore,
+              current.id != start.id else { return 0 }
+        return current.brainScore - start.brainScore
+    }
+
+    /// Delta for brain age (lower is better)
+    private var brainAgeDelta: Int {
+        guard let current = currentScore, let start = periodStartScore,
+              current.id != start.id else { return 0 }
+        return current.brainAge - start.brainAge
+    }
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -34,40 +79,10 @@ struct ProgressDashboardView: View {
                 if sessions.isEmpty && brainScores.isEmpty {
                     emptyState
                 } else {
-                    VStack(spacing: 24) {
-                        // 1. Brain Score Overview (hero)
-                        if let latestScore = brainScores.first {
-                            brainScoreOverview(latestScore)
-                        }
-
-                        // 2. Brain Score History Chart
-                        if brainScores.count >= 2 {
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "Score History")
-                                BrainScoreChart(scores: brainScores, height: 200, showHeader: false)
-                            }
-                            .appCard()
-                        }
-
-                        // 3. This Week Summary
-                        thisWeekSummary
-
-                        // 4. Personal Records
-                        personalRecordsSection
-
-                        // 5. Training Consistency (heatmap only)
-                        calendarHeatmap
-
-                        // 6. Achievements summary
-                        achievementsSummary
-
-                        // 7. Pro Analytics or Upsell
-                        if isProUser {
-                            exerciseScoreTrends
-                            scoreChart
-                        } else {
-                            proUpsell
-                        }
+                    VStack(spacing: 28) {
+                        trendlineSection
+                        statsTableSection
+                        cognitiveDomainsSection
                     }
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -78,7 +93,6 @@ struct ProgressDashboardView: View {
             }
             .pageBackground()
             .navigationTitle("Insights")
-            .onAppear { viewModel.refresh(sessions: sessions) }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -117,191 +131,339 @@ struct ProgressDashboardView: View {
         .padding(.top, 8)
     }
 
-    // MARK: - Brain Score Overview (Hero)
+    // MARK: - 1. Brain Score Trendline
 
-    private func brainScoreOverview(_ score: BrainScoreResult) -> some View {
-        VStack(spacing: 12) {
+    private var trendlineSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header: label + segmented toggle
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Brain Score")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .tracking(1)
-                    Text("\(score.brainScore)")
-                        .font(.system(size: 44, weight: .black, design: .rounded))
-                        .foregroundStyle(AppColors.accent)
-                }
+                Text("BRAIN SCORE \u{00B7} \(selectedRange.rawValue)")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Brain Age")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .tracking(1)
-                    Text("\(score.brainAge)")
-                        .font(.system(size: 44, weight: .black, design: .rounded))
-                        .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
+
+                timeRangePicker
+            }
+
+            // Large score + delta
+            if let score = currentScore {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(score.brainScore)")
+                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .foregroundStyle(.primary)
+
+                    if scoreDelta != 0 {
+                        deltaLabel(value: scoreDelta, inverted: false)
+                    }
                 }
             }
 
-            // Domain bars
-            VStack(spacing: 8) {
-                domainBar(label: "Memory", score: score.digitSpanScore, color: AppColors.violet)
-                domainBar(label: "Speed", score: score.reactionTimeScore, color: AppColors.coral)
-                domainBar(label: "Visual", score: score.visualMemoryScore, color: AppColors.sky)
+            // Chart
+            if filteredScores.count >= 2 {
+                trendlineChart
+                    .frame(height: 160)
+            } else {
+                Text("Not enough data for this period")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, minHeight: 80)
             }
         }
-        .appCard()
+    }
+
+    private var timeRangePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(TimeRange.allCases, id: \.self) { range in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedRange = range
+                    }
+                } label: {
+                    Text(range.rawValue)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(selectedRange == range ? .white : .secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background {
+                            if selectedRange == range {
+                                Capsule()
+                                    .fill(AppColors.accent)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(AppColors.cardSurface, in: Capsule())
+    }
+
+    private var trendlineChart: some View {
+        let chartData = filteredScores.sorted { $0.date < $1.date }
+        let scores = chartData.map(\.brainScore)
+        let minScore = max(0, (scores.min() ?? 0) - 30)
+        let maxScore = min(1000, (scores.max() ?? 1000) + 30)
+
+        return Chart {
+            ForEach(chartData, id: \.id) { item in
+                AreaMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.brainScore)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [AppColors.accent.opacity(0.25), AppColors.accent.opacity(0.02)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .interpolationMethod(.catmullRom)
+
+                LineMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.brainScore)
+                )
+                .foregroundStyle(AppColors.accent)
+                .interpolationMethod(.catmullRom)
+                .lineStyle(StrokeStyle(lineWidth: 2.5))
+            }
+        }
+        .chartYScale(domain: minScore...maxScore)
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                AxisValueLabel {
+                    if let date = value.as(Date.self) {
+                        Text(date, format: .dateTime.month(.abbreviated).day())
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
+                AxisValueLabel {
+                    if let v = value.as(Int.self) {
+                        Text("\(v)")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 2. Stats Table
+
+    private var statsTableSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Column headers
+            HStack {
+                Text("METRIC")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                Text("VALUE \u{00B7} \u{0394}\(selectedRange.rawValue)")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+            }
+
+            Divider().opacity(0.3)
+
+            // Rows
+            VStack(spacing: 0) {
+                // Brain Score
+                if let score = currentScore {
+                    statsRow(
+                        label: "Brain Score",
+                        value: "\(score.brainScore) / 1000",
+                        delta: scoreDelta,
+                        inverted: false
+                    )
+                    thinDivider
+                }
+
+                // Brain Age
+                if let score = currentScore {
+                    statsRow(
+                        label: "Brain Age",
+                        value: "\(score.brainAge) yrs",
+                        delta: brainAgeDelta,
+                        inverted: true
+                    )
+                    thinDivider
+                }
+
+                // Best Rank
+                if let bestRank = bestPersonalRecord {
+                    statsRow(
+                        label: "Best Rank",
+                        value: "\(bestRank.type.displayName) \u{00B7} \(personalBestDisplay(type: bestRank.type, value: bestRank.best))",
+                        delta: nil,
+                        inverted: false
+                    )
+                    thinDivider
+                }
+
+                // Streak
+                if let user = user {
+                    statsRow(
+                        label: "Streak",
+                        value: "\(user.currentStreak) days",
+                        delta: nil,
+                        inverted: false,
+                        suffix: "best \(user.longestStreak)"
+                    )
+                    thinDivider
+                }
+
+                // Games Played
+                statsRow(
+                    label: "Games Played",
+                    value: "\(user?.totalExercises ?? exercises.count)",
+                    delta: nil,
+                    inverted: false
+                )
+                thinDivider
+
+                // Time Trained
+                statsRow(
+                    label: "Time Trained",
+                    value: formatTotalTime(),
+                    delta: nil,
+                    inverted: false
+                )
+            }
+        }
+    }
+
+    private func statsRow(label: String, value: String, delta: Int? = nil, inverted: Bool, suffix: String? = nil) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Text(value)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+
+                if let delta = delta, delta != 0 {
+                    deltaLabel(value: delta, inverted: inverted)
+                }
+
+                if let suffix = suffix {
+                    Text(suffix)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .padding(.vertical, 10)
+    }
+
+    private var thinDivider: some View {
+        Divider().opacity(0.15)
+    }
+
+    // MARK: - 3. Cognitive Domains
+
+    private var cognitiveDomainsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("COGNITIVE DOMAINS")
+                .font(.system(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            if let score = currentScore {
+                VStack(spacing: 12) {
+                    domainBar(label: "Memory", score: score.digitSpanScore, color: AppColors.violet)
+                    domainBar(label: "Speed", score: score.reactionTimeScore, color: AppColors.coral)
+                    domainBar(label: "Visual", score: score.visualMemoryScore, color: AppColors.sky)
+                }
+            } else {
+                Text("Complete a brain assessment to see your domain scores")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, minHeight: 60)
+            }
+        }
     }
 
     private func domainBar(label: String, score: Double, color: Color) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Text(label)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 55, alignment: .leading)
+                .frame(width: 60, alignment: .leading)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color.opacity(0.15))
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(color.opacity(0.12))
+
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(color)
                         .frame(width: geo.size.width * min(1, score / 100))
                 }
             }
-            .frame(height: 8)
+            .frame(height: 10)
 
             Text("\(Int(score))")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
-                .frame(width: 30, alignment: .trailing)
+                .frame(width: 28, alignment: .trailing)
+
+            Text("/ 100")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.tertiary)
         }
     }
 
-    // MARK: - This Week Summary
+    // MARK: - Helpers
 
-    private var thisWeekSummary: some View {
-        VStack(spacing: 14) {
-            SectionHeader(title: "This Week")
+    private func deltaLabel(value: Int, inverted: Bool) -> some View {
+        let isPositive = value > 0
+        // For inverted metrics (brain age), negative = good
+        let isGood = inverted ? !isPositive : isPositive
+        let color = isGood
+            ? Color(red: 0.13, green: 0.80, blue: 0.0)
+            : AppColors.coral
+        let prefix = isPositive ? "+" : ""
+        let suffix = inverted ? "y" : ""
 
-            HStack(spacing: 12) {
-                weekStat(value: "\(exercisesThisWeek)", label: "Games", icon: "gamecontroller.fill", color: AppColors.accent)
-                weekStat(value: formatTrainingTime(minutesThisWeek), label: "Trained", icon: "clock.fill", color: AppColors.teal)
-                weekStat(value: "\(user?.currentStreak ?? 0)", label: "Streak", icon: "flame.fill", color: AppColors.coral)
-            }
+        return Text("\(prefix)\(value)\(suffix)")
+            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .foregroundStyle(color)
+    }
+
+    private static let availableGames: [ExerciseType] = [
+        .reactionTime, .colorMatch, .speedMatch, .visualMemory,
+        .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
+        .chimpTest, .verbalMemory
+    ]
+
+    private var bestPersonalRecord: (type: ExerciseType, best: Int)? {
+        // Find the game with the highest personal best (normalized by checking all)
+        let records: [(type: ExerciseType, best: Int)] = Self.availableGames.compactMap { type in
+            let best = PersonalBestTracker.shared.best(for: type)
+            guard best > 0 else { return nil }
+            return (type: type, best: best)
         }
-    }
-
-    private func weekStat(value: String, label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(color)
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(color.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.12), lineWidth: 1))
-    }
-
-    private var exercisesThisWeek: Int {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return exercises.filter { $0.completedAt >= weekAgo }.count
-    }
-
-    private var minutesThisWeek: Int {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let seconds = exercises.filter { $0.completedAt >= weekAgo }.reduce(0) { $0 + $1.durationSeconds }
-        return seconds / 60
-    }
-
-    private func formatTrainingTime(_ minutes: Int) -> String {
-        if minutes < 60 { return "\(minutes)m" }
-        return "\(minutes / 60)h \(minutes % 60)m"
-    }
-
-    // MARK: - Calendar Heatmap
-
-    private var calendarHeatmap: some View {
-        HeatmapCalendarView(trainingDays: viewModel.trainingDays)
-            .appCard()
-    }
-
-    // MARK: - Personal Records
-
-    private var personalRecordsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Personal Records")
-
-            let records = Self.availableGames.compactMap { type -> (type: ExerciseType, best: Int)? in
-                let best = PersonalBestTracker.shared.best(for: type)
-                guard best > 0 else { return nil }
-                return (type: type, best: best)
-            }
-
-            if records.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "trophy")
-                        .font(.system(size: 32))
-                        .foregroundStyle(AppColors.amber.opacity(0.4))
-                    Text("No records yet")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Play some games to set your first records!")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-                .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(AppColors.cardSurface)
-                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-                }
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(records.enumerated()), id: \.offset) { index, record in
-                        HStack(spacing: 12) {
-                            Image(systemName: record.type.icon)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 32, height: 32)
-                                .background(exerciseColor(record.type), in: RoundedRectangle(cornerRadius: 8))
-
-                            Text(record.type.displayName)
-                                .font(.subheadline.weight(.medium))
-
-                            Spacer()
-
-                            Text(personalBestDisplay(type: record.type, value: record.best))
-                                .font(.subheadline.weight(.bold).monospacedDigit())
-                                .foregroundStyle(exerciseColor(record.type))
-
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 10))
-                                .foregroundStyle(AppColors.amber)
-                        }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 14)
-
-                        if index < records.count - 1 {
-                            Divider().padding(.leading, 58)
-                        }
-                    }
-                }
-                .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(AppColors.cardSurface)
-                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-                }
-            }
-        }
+        // Just return the first non-zero record (most recently set tends to be top)
+        return records.first
     }
 
     private func personalBestDisplay(type: ExerciseType, value: Int) -> String {
@@ -313,304 +475,21 @@ struct ProgressDashboardView: View {
         case .mathSpeed: return "\(value) solved"
         case .colorMatch, .speedMatch: return "\(value)%"
         case .chunkingTraining: return "\(value)"
+        case .chimpTest: return "Level \(value)"
+        case .verbalMemory: return "\(value) words"
         case .wordScramble: return "\(value)/10 words"
         case .memoryChain: return "Chain \(value)"
         default: return "\(value)"
         }
     }
 
-    private func exerciseColor(_ type: ExerciseType) -> Color {
-        switch type {
-        case .reactionTime: return AppColors.coral
-        case .colorMatch: return AppColors.violet
-        case .speedMatch: return AppColors.sky
-        case .visualMemory: return AppColors.indigo
-        case .sequentialMemory: return AppColors.teal
-        case .mathSpeed: return AppColors.amber
-        case .dualNBack: return AppColors.sky
-        case .chunkingTraining: return AppColors.teal
-        case .wordScramble: return AppColors.rose
-        case .memoryChain: return AppColors.mint
-        default: return AppColors.accent
+    private func formatTotalTime() -> String {
+        let totalSeconds = exercises.reduce(0) { $0 + $1.durationSeconds }
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
         }
-    }
-
-    // MARK: - Achievements Summary
-
-    private var achievementsSummary: some View {
-        NavigationLink {
-            AchievementsView()
-        } label: {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "medal.fill", color: AppColors.violet, size: 40)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Achievements")
-                        .font(.subheadline.weight(.semibold))
-                    Text("\(achievements.count) of \(AchievementType.allCases.count) unlocked")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                // Mini progress
-                Text("\(Int(Double(achievements.count) / Double(AchievementType.allCases.count) * 100))%")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(AppColors.violet)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .appCard()
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Exercise Score Trends (Pro)
-
-    private var exerciseScoreTrends: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Performance by Exercise")
-
-            let recentExercises = exercises.prefix(100)
-            let grouped = Dictionary(grouping: recentExercises) { $0.type }
-            let matchedGames = Self.availableGames.filter { grouped[$0] != nil }
-
-            if matchedGames.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 32))
-                        .foregroundStyle(AppColors.indigo.opacity(0.4))
-                    Text("No performance data yet")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Complete some exercises to track your performance")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-                .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(AppColors.cardSurface)
-                        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-                }
-            } else {
-
-            VStack(spacing: 0) {
-                ForEach(Array(matchedGames.enumerated()), id: \.element) { index, type in
-                    let typeExercises = grouped[type]!.sorted(by: { $0.completedAt < $1.completedAt }).suffix(7)
-                    let scores = Array(typeExercises.map(\.score))
-                    let avg = scores.isEmpty ? 0.0 : scores.reduce(0, +) / Double(scores.count)
-                    let trend = scores.count >= 2 ? (scores.last! - scores.first!) : 0.0
-
-                    HStack(spacing: 12) {
-                        Image(systemName: type.icon)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 32, height: 32)
-                            .background(exerciseColor(type), in: RoundedRectangle(cornerRadius: 8))
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(type.displayName)
-                                .font(.subheadline.weight(.medium))
-                            Text("\(scores.count) session\(scores.count == 1 ? "" : "s")")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.tertiary)
-                        }
-
-                        Spacer()
-
-                        // Mini sparkline
-                        if scores.count >= 2 {
-                            miniSparkline(scores: scores, color: exerciseColor(type))
-                                .frame(width: 50, height: 20)
-                        }
-
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(avg.percentString)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                            if trend != 0 {
-                                Text("\(trend > 0 ? "+" : "")\(Int(trend * 100))%")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(trend > 0 ? Color.green : AppColors.coral)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 14)
-
-                    if index < matchedGames.count - 1 {
-                        Divider().padding(.leading, 58)
-                    }
-                }
-            }
-            .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(AppColors.cardSurface)
-                    .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
-            }
-
-            } // else
-        }
-    }
-
-    private func miniSparkline(scores: [Double], color: Color) -> some View {
-        GeometryReader { geo in
-            let maxVal = max(scores.max() ?? 1, 0.01)
-            let minVal = scores.min() ?? 0
-            let range = max(maxVal - minVal, 0.01)
-            Path { path in
-                for (index, score) in scores.enumerated() {
-                    let x = geo.size.width * CGFloat(index) / CGFloat(max(scores.count - 1, 1))
-                    let y = geo.size.height * (1 - CGFloat((score - minVal) / range))
-                    if index == 0 {
-                        path.move(to: CGPoint(x: x, y: y))
-                    } else {
-                        path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
-            }
-            .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-        }
-    }
-
-    // MARK: - Score Chart (Pro)
-
-    private var scoreChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Score Trends")
-
-            if viewModel.weeklyScores.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 32))
-                        .foregroundStyle(AppColors.accent.opacity(0.4))
-                    Text("No trends yet")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Complete a few sessions to see your progress over time")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-            } else {
-                Chart {
-                    ForEach(viewModel.weeklyScores.indices, id: \.self) { index in
-                        let item = viewModel.weeklyScores[index]
-                        AreaMark(
-                            x: .value("Date", item.date),
-                            y: .value("Score", item.score)
-                        )
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [AppColors.accent.opacity(0.3), AppColors.accent.opacity(0.05)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .interpolationMethod(.catmullRom)
-
-                        LineMark(
-                            x: .value("Date", item.date),
-                            y: .value("Score", item.score)
-                        )
-                        .foregroundStyle(AppColors.accent)
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 2.5))
-
-                        PointMark(
-                            x: .value("Date", item.date),
-                            y: .value("Score", item.score)
-                        )
-                        .foregroundStyle(AppColors.accent)
-                        .symbolSize(30)
-                    }
-                }
-                .chartYScale(domain: 0...1)
-                .chartXAxis {
-                    AxisMarks(values: .automatic(desiredCount: 4)) { value in
-                        AxisValueLabel {
-                            if let date = value.as(Date.self) {
-                                Text(date, format: .dateTime.month(.abbreviated).day())
-                                    .font(.caption2)
-                            }
-                        }
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(values: [0, 0.25, 0.5, 0.75, 1.0]) { value in
-                        AxisValueLabel {
-                            if let v = value.as(Double.self) {
-                                Text(v.percentString)
-                                    .font(.caption2)
-                            }
-                        }
-                    }
-                }
-                .frame(height: 200)
-            }
-        }
-        .appCard()
-    }
-
-    // MARK: - Pro Upsell
-
-    private var proUpsell: some View {
-        Button {
-            showingPaywall = true
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Unlock Pro Analytics")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                        Text("See where you're improving")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-
-                // What you get
-                HStack(spacing: 16) {
-                    proFeaturePill(icon: "chart.xyaxis.line", text: "Trends")
-                    proFeaturePill(icon: "arrow.up.right", text: "+/- Stats")
-                    proFeaturePill(icon: "sparkles", text: "Sparklines")
-                }
-            }
-            .padding(16)
-            .background(
-                AppColors.premiumGradient,
-                in: RoundedRectangle(cornerRadius: 12)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func proFeaturePill(icon: String, text: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .bold))
-            Text(text)
-                .font(.system(size: 10, weight: .semibold))
-        }
-        .foregroundStyle(.white.opacity(0.8))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.white.opacity(0.15), in: Capsule())
+        return "\(minutes)m"
     }
 }
