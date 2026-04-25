@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var showingDebugGoodBrainAge = false
     @State private var showingDebugFocusSetup = false
     @State private var showingDebugBadBrainAge = false
+    @State private var showingDebugOnboardingReveal = false
     @State private var editingName = false
     @State private var editedName = ""
     @State private var showingAgePicker = false
@@ -121,6 +122,28 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                }
+            }
+            .fullScreenCover(isPresented: $showingDebugOnboardingReveal) {
+                ZStack {
+                    OnboardingBrainAgeReveal(
+                        brainAge: 35,
+                        userAge: user?.userAge ?? 25,
+                        onContinue: { showingDebugOnboardingReveal = false }
+                    )
+                    VStack {
+                        HStack {
+                            Button { showingDebugOnboardingReveal = false } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
+                            .padding(.leading, 16)
+                            .padding(.top, 16)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
                 }
             }
             .sheet(isPresented: $showingDebugFocusSetup) {
@@ -778,6 +801,11 @@ struct SettingsView: View {
                 showingDebugBadBrainAge = true
             }
 
+            // Onboarding Brain Age Reveal (new component)
+            debugRow(icon: "sparkles", color: AppColors.accent, title: "Onboarding Reveal", subtitle: "New onboarding brain age reveal") {
+                showingDebugOnboardingReveal = true
+            }
+
             // Jump to assessment
             debugRow(icon: "list.clipboard.fill", color: AppColors.teal, title: "Start Assessment", subtitle: "Skip to brain assessment flow") {
                 showingDebugAssessment = true
@@ -840,14 +868,6 @@ struct SettingsView: View {
             // Focus Mode — show setup flow
             debugRow(icon: "shield.lefthalf.filled", color: AppColors.violet, title: "Focus Mode Setup", subtitle: "Open Focus Mode setup flow") {
                 showingDebugFocusSetup = true
-            }
-
-            // Ultra toggle
-            debugRow(icon: "bolt.shield.fill", color: AppColors.violet, title: "Toggle Ultra", subtitle: storeService.isUltraUser ? "Ultra ON — tap to disable" : "Ultra OFF — tap to enable") {
-                storeService.isUltraUser.toggle()
-                if storeService.isUltraUser {
-                    storeService.isProUser = true
-                }
             }
 
             // Load screenshot data

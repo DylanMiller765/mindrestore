@@ -7,7 +7,6 @@ enum DeepLinkDestination: Equatable {
     case compete
     case insights
     case profile
-    case dailyChallenge
     case challenge(ChallengeLink)
     case referral(String)
     case focusUnlock
@@ -38,7 +37,6 @@ final class DeepLinkRouter {
         case "compete": pendingDestination = .compete
         case "insights": pendingDestination = .insights
         case "profile": pendingDestination = .profile
-        case "challenge": pendingDestination = .dailyChallenge
         case "duel":
             if let link = ChallengeLink(url: url) {
                 pendingChallenge = link

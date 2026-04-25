@@ -39,6 +39,8 @@
 		71A70BB62F959D10009C563D /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70BA32F959CFE009C563D /* ManagedSettings.framework */; };
 		71A70BB82F959D10009C563D /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */; };
 		71A70BC02F959D10009C563D /* MemoriShieldConfig.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70D442F9C2F0F009C563D /* FocusUnlocksReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70D552F9C30C7009C563D /* FocusOnboardingPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */; };
 		71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
 		71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
 		71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
@@ -72,6 +74,7 @@
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
 		BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB03 /* QuickAssessmentView.swift */; };
 		BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB04 /* OnboardingPaywallView.swift */; };
+		ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */; };
 		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
@@ -175,6 +178,13 @@
 			remoteGlobalIDString = 71A70BB42F959D10009C563D;
 			remoteInfo = MemoriShieldConfig;
 		};
+		71A70D422F9C2F0F009C563D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71A70D372F9C2F0F009C563D;
+			remoteInfo = FocusUnlocksReport;
+		};
 		FF00000300000000000000B1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
@@ -192,6 +202,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		71A70D452F9C2F0F009C563D /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				71A70D442F9C2F0F009C563D /* FocusUnlocksReport.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FF00000300000000000000E1 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -242,6 +263,8 @@
 		71A70BA32F959CFE009C563D /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
 		71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriShieldConfig.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettingsUI.framework; path = System/Library/Frameworks/ManagedSettingsUI.framework; sourceTree = SDKROOT; };
+		71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = FocusUnlocksReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusOnboardingPages.swift; sourceTree = "<group>"; };
 		71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiveMascotView.swift; sourceTree = "<group>"; };
 		71D9D0C32F87CD4C001C0433 /* memori (1).riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = "memori (1).riv"; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -272,6 +295,7 @@
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB03 /* QuickAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAssessmentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB04 /* OnboardingPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallView.swift; sourceTree = "<group>"; };
+		ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNewScreens.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
 		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
@@ -378,6 +402,13 @@
 			);
 			target = 71A70BB42F959D10009C563D /* MemoriShieldConfig */;
 		};
+		71FCR00000000000FEED0001 /* Exceptions for "FocusUnlocksReport" folder in "FocusUnlocksReport" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A70D372F9C2F0F009C563D /* FocusUnlocksReport */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -405,6 +436,14 @@
 			path = MemoriShieldConfig;
 			sourceTree = "<group>";
 		};
+		71A70D392F9C2F0F009C563D /* FocusUnlocksReport */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71FCR00000000000FEED0001 /* Exceptions for "FocusUnlocksReport" folder in "FocusUnlocksReport" target */,
+			);
+			path = FocusUnlocksReport;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -430,6 +469,13 @@
 			files = (
 				71A70BB62F959D10009C563D /* ManagedSettings.framework in Frameworks */,
 				71A70BB82F959D10009C563D /* ManagedSettingsUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70D352F9C2F0F009C563D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -523,6 +569,7 @@
 				71A70B922F959CC3009C563D /* Memori */,
 				71A70BA52F959CFE009C563D /* MemoriShieldAction */,
 				71A70BB92F959D10009C563D /* MemoriShieldConfig */,
+				71A70D392F9C2F0F009C563D /* FocusUnlocksReport */,
 				18FB5A40D6375556F647905B /* Products */,
 				FF00000300000000000000D2 /* Frameworks */,
 			);
@@ -537,6 +584,7 @@
 				71A70B8F2F959CC3009C563D /* Memori.appex */,
 				71A70BA22F959CFE009C563D /* MemoriShieldAction.appex */,
 				71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */,
+				71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -761,8 +809,10 @@
 		DAC9DD5A3195858D3E23B420 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */,
 				BB000002000000000000BB02 /* OnboardingAssessmentView.swift */,
 				BB000002000000000000BB04 /* OnboardingPaywallView.swift */,
+				ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */,
 				73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */,
 				BB000002000000000000BB03 /* QuickAssessmentView.swift */,
 			);
@@ -901,6 +951,28 @@
 			productReference = 71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		71A70D372F9C2F0F009C563D /* FocusUnlocksReport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A70D492F9C2F0F009C563D /* Build configuration list for PBXNativeTarget "FocusUnlocksReport" */;
+			buildPhases = (
+				71A70D342F9C2F0F009C563D /* Sources */,
+				71A70D352F9C2F0F009C563D /* Frameworks */,
+				71A70D362F9C2F0F009C563D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				71A70D392F9C2F0F009C563D /* FocusUnlocksReport */,
+			);
+			name = FocusUnlocksReport;
+			packageProductDependencies = (
+			);
+			productName = FocusUnlocksReport;
+			productReference = 71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
 		CBA069A4B0E4D5A961D22D8A /* MindRestore */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BD5915D680DF867C4B823659 /* Build configuration list for PBXNativeTarget "MindRestore" */;
@@ -909,6 +981,7 @@
 				CONFETTI00000006 /* Frameworks */,
 				C5A609DAF904C16BF286F79A /* Resources */,
 				FF00000300000000000000E1 /* Embed App Extensions */,
+				71A70D452F9C2F0F009C563D /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
@@ -917,6 +990,7 @@
 				71A70B982F959CC3009C563D /* PBXTargetDependency */,
 				71A70BAB2F959CFE009C563D /* PBXTargetDependency */,
 				71A70BBF2F959D10009C563D /* PBXTargetDependency */,
+				71A70D432F9C2F0F009C563D /* PBXTargetDependency */,
 			);
 			name = MindRestore;
 			packageProductDependencies = (
@@ -981,6 +1055,9 @@
 					71A70BB42F959D10009C563D = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					71A70D372F9C2F0F009C563D = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = 5C24BE129DCDBEAF169030CD /* Build configuration list for PBXProject "MindRestore" */;
@@ -1008,6 +1085,7 @@
 				71A70B8E2F959CC3009C563D /* Memori */,
 				71A70BA12F959CFE009C563D /* MemoriShieldAction */,
 				71A70BB42F959D10009C563D /* MemoriShieldConfig */,
+				71A70D372F9C2F0F009C563D /* FocusUnlocksReport */,
 			);
 		};
 /* End PBXProject section */
@@ -1028,6 +1106,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		71A70BB32F959D10009C563D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70D362F9C2F0F009C563D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1128,10 +1213,12 @@
 				8574E446C920D58FEE0C30CF /* NotificationService.swift in Sources */,
 				BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */,
 				BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */,
+				ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */,
 				E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */,
 				BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */,
 				BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */,
 				FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */,
+				71A70D552F9C30C7009C563D /* FocusOnboardingPages.swift in Sources */,
 				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
 				PROF0001000000000000PF01 /* ProfileView.swift in Sources */,
@@ -1202,6 +1289,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		71A70D342F9C2F0F009C563D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FF00000300000000000000C2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1241,6 +1335,11 @@
 			isa = PBXTargetDependency;
 			target = 71A70BB42F959D10009C563D /* MemoriShieldConfig */;
 			targetProxy = 71A70BBE2F959D10009C563D /* PBXContainerItemProxy */;
+		};
+		71A70D432F9C2F0F009C563D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71A70D372F9C2F0F009C563D /* FocusUnlocksReport */;
+			targetProxy = 71A70D422F9C2F0F009C563D /* PBXContainerItemProxy */;
 		};
 		FF00000300000000000000B2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1678,6 +1777,84 @@
 			};
 			name = Release;
 		};
+		71A70D462F9C2F0F009C563D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = FocusUnlocksReport/FocusUnlocksReport.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusUnlocksReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusUnlocksReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.FocusUnlocksReport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		71A70D472F9C2F0F009C563D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = FocusUnlocksReport/FocusUnlocksReport.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusUnlocksReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusUnlocksReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.FocusUnlocksReport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		FF00000300000000000000F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1801,6 +1978,15 @@
 			buildConfigurations = (
 				71A70BC32F959D10009C563D /* Debug */,
 				71A70BC42F959D10009C563D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		71A70D492F9C2F0F009C563D /* Build configuration list for PBXNativeTarget "FocusUnlocksReport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A70D462F9C2F0F009C563D /* Debug */,
+				71A70D472F9C2F0F009C563D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

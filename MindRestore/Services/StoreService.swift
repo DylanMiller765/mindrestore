@@ -5,11 +5,31 @@ import SwiftUI
 @Observable
 final class StoreService {
     var isProUser = false
-    var isUltraUser = false
+    /// Legacy alias — prefer `isProUser`. Kept temporarily so call sites compile during the
+    /// tier-collapse refactor. Both legacy Pro and new Pro (formerly Ultra) subscribers get
+    /// full features now.
+    var isUltraUser: Bool {
+        get { isProUser }
+        set { isProUser = newValue }
+    }
     var products: [Product] = []
     var purchaseError: String?
     var isLoading = false
 
+    // MARK: Product IDs
+    //
+    // Two SKU families exist due to the v2.0 single-tier pivot:
+    //   • `com.memori.pro.*`   — LEGACY ($3.99 / $19.99). Grandfathered for old subscribers.
+    //                            DO NOT use these for new purchases.
+    //   • `com.memori.ultra.*` — CANONICAL ($6.99 / $39.99 + 3-day annual trial). All
+    //                            new paywalls must charge these. They are kept under the
+    //                            "ultra" name in App Store Connect even though Ultra-as-tier
+    //                            no longer exists in the app — both families now grant the
+    //                            same Pro entitlement (see updateSubscriptionStatus below).
+    //
+    // Renaming the App Store Connect SKUs would invalidate active subscriptions, so the
+    // "ultra" suffix is permanent. Any callsite reading these constants is correct in
+    // semantics — only the name is misleading.
     static let weeklyProductID = "com.memori.pro.weekly"
     static let monthlyProductID = "com.memori.pro.monthly"
     static let annualProductID = "com.memori.pro.annual"
@@ -101,7 +121,7 @@ final class StoreService {
         let referralExpiry = UserDefaults.standard.object(forKey: "referral_trial_expiry") as? Date
         let hasReferralTrial = referralExpiry.map { $0 > Date.now } ?? false
 
-        isUltraUser = hasActiveUltraEntitlement
+        // Single tier: any active sub (legacy Pro OR new Pro/formerly-Ultra) grants full Pro.
         isProUser = hasActiveProEntitlement || hasActiveUltraEntitlement || hasReferralTrial
     }
 

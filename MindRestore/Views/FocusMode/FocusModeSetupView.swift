@@ -23,7 +23,8 @@ struct FocusModeSetupView: View {
 
     // MARK: State
 
-    @State private var currentStep = 0
+    /// Start at "pick apps" — the intro step is skipped when used inline in onboarding.
+    @State private var currentStep = 1
     @State private var scheduleEnabled = false
     @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 9)) ?? Date()
     @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 17)) ?? Date()
@@ -35,8 +36,11 @@ struct FocusModeSetupView: View {
     private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
     private let dayIndices = [1, 2, 3, 4, 5, 6, 7] // Sunday=1 through Saturday=7
 
-    private let totalSteps = 4
     private let durationOptions = [5, 15, 30, 60]
+
+    /// True when this view is being shown as part of OnboardingView — hides the inner page dots
+    /// because the outer onboarding flow renders its own progress indicator.
+    private var isEmbeddedInOnboarding: Bool { onComplete != nil }
 
     // MARK: Body
 
@@ -46,7 +50,6 @@ struct FocusModeSetupView: View {
 
             VStack(spacing: 0) {
                 TabView(selection: $currentStep) {
-                    introStep.tag(0)
                     pickAppsStep.tag(1)
                     scheduleStep.tag(2)
                     durationStep.tag(3)
@@ -55,79 +58,24 @@ struct FocusModeSetupView: View {
                 .scrollDisabled(true)
                 .animation(.easeInOut, value: currentStep)
 
-                // Page indicator dots
-                HStack(spacing: 8) {
-                    ForEach(0..<totalSteps, id: \.self) { index in
-                        Capsule()
-                            .fill(
-                                index == currentStep
-                                    ? AnyShapeStyle(AppColors.accentGradient)
-                                    : AnyShapeStyle(Color.gray.opacity(0.25))
-                            )
-                            .frame(width: index == currentStep ? 24 : 8, height: 8)
-                            .animation(.spring(response: 0.3), value: currentStep)
+                // Inner page indicator — only shown when used as a standalone sheet (not in onboarding).
+                if !isEmbeddedInOnboarding {
+                    HStack(spacing: 8) {
+                        ForEach(1..<4, id: \.self) { index in
+                            Capsule()
+                                .fill(
+                                    index == currentStep
+                                        ? AnyShapeStyle(AppColors.accentGradient)
+                                        : AnyShapeStyle(Color.gray.opacity(0.25))
+                                )
+                                .frame(width: index == currentStep ? 24 : 8, height: 8)
+                                .animation(.spring(response: 0.3), value: currentStep)
+                        }
                     }
+                    .padding(.bottom, 20)
                 }
-                .padding(.bottom, 20)
             }
         }
-    }
-
-    // MARK: - Step 0: Intro
-
-    private var introStep: some View {
-        VStack(spacing: 0) {
-            Spacer().frame(height: 24)
-
-            Text("Take back your\nscreen time")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 8)
-
-            Text("Block distracting apps. Play a brain game\nto unlock them. You're in control.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 24)
-
-            Image("mascot-goal")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 200)
-
-            Spacer()
-
-            // Feature pills
-            VStack(spacing: 10) {
-                featurePill(icon: "shield.fill", color: AppColors.coral, text: "Pick apps to block")
-                featurePill(icon: "brain.head.profile", color: AppColors.violet, text: "Play a quick brain game to unlock")
-                featurePill(icon: "clock.fill", color: AppColors.accent, text: "Apps unlock for a set time")
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-
-            continueButton { currentStep = 1 }
-        }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
-    }
-
-    private func featurePill(icon: String, color: Color, text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 32, height: 32)
-                .background(color.opacity(0.12), in: Circle())
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Step 1: Pick Apps
@@ -149,7 +97,7 @@ struct FocusModeSetupView: View {
             }
 
             // Free-user limit note — tappable to open paywall
-            if !storeService.isUltraUser {
+            if !storeService.isProUser {
                 Button {
                     showingUltraPaywall = true
                 } label: {
@@ -157,7 +105,7 @@ struct FocusModeSetupView: View {
                         Image(systemName: "lock.fill")
                             .font(.caption)
                             .foregroundStyle(AppColors.amber)
-                        Text(storeService.isProUser ? "Pro plan: 1 app. Upgrade to Ultra for unlimited." : "Free plan: 1 app. Upgrade to Ultra for unlimited.")
+                        Text("Free plan: 1 app. Get Pro for unlimited.")
                             .font(.caption)
                             .foregroundStyle(AppColors.amber)
                     }
@@ -215,9 +163,9 @@ struct FocusModeSetupView: View {
 
             Spacer()
 
-            continueButton {
+            continueButton(disabled: totalSelected == 0) {
                 let exceedsLimit = appCount > 1 || catCount > 0
-                if !storeService.isUltraUser && exceedsLimit {
+                if !storeService.isProUser && exceedsLimit {
                     showingUltraPaywall = true
                 } else {
                     currentStep = 2
@@ -515,11 +463,13 @@ struct FocusModeSetupView: View {
 
     // MARK: - Helpers
 
-    private func continueButton(action: @escaping () -> Void) -> some View {
+    private func continueButton(disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text("Continue")
                 .gradientButton()
+                .opacity(disabled ? 0.45 : 1.0)
         }
+        .disabled(disabled)
         .padding(.horizontal, 32)
     }
 

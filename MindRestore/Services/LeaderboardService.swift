@@ -19,6 +19,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
     case chimpTest = "Chimp Test"
     case verbalMemory = "Verbal Memory"
     case dailyChallenge = "Daily Challenge"
+    case focusBlocking = "Focus Mode"
 
     var id: String { rawValue }
 
@@ -39,6 +40,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .chimpTest: return "pawprint.fill"
         case .verbalMemory: return "text.book.closed.fill"
         case .dailyChallenge: return "star.circle.fill"
+        case .focusBlocking: return "shield.fill"
         }
     }
 
@@ -59,6 +61,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .chimpTest: return "Highest level reached — more numbers, harder positions"
         case .verbalMemory: return "Longest streak without a mistake"
         case .dailyChallenge: return "Highest daily challenge score"
+        case .focusBlocking: return "Total minutes of distracting apps blocked this week"
         }
     }
 }
@@ -66,6 +69,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
 enum LeaderboardTimeFilter: String, CaseIterable, Identifiable {
     case today = "Today"
     case thisWeek = "This Week"
+    case thisMonth = "This Month"
     case allTime = "All Time"
 
     var id: String { rawValue }

@@ -2,6 +2,7 @@ import Foundation
 import FamilyControls
 import ManagedSettings
 import DeviceActivity
+import GameKit
 
 // MARK: - Shared UserDefaults Keys
 
@@ -17,6 +18,10 @@ private enum FocusKey {
     static let cooldownUntil    = "focus_cooldown_until"
     static let activitySelection = "focus_activity_selection"
     static let scheduleDays     = "focus_schedule_days"
+    // Weekly blocking metric (for leaderboard)
+    static let weeklyMinutes    = "focus_weekly_minutes"
+    static let weekStart        = "focus_week_start"
+    static let lastBlockStart   = "focus_last_block_start"
 }
 
 // MARK: - FocusModeService
@@ -101,8 +106,13 @@ final class FocusModeService {
     init() {
         sharedDefaults = UserDefaults(suiteName: "group.com.memori.shared") ?? .standard
         loadPersistedState()
-        Task { await checkAuthorizationStatus() }
-        reconcileShieldState()
+        // Auth check must complete before reconcileShieldState — otherwise the
+        // ManagedSettingsStore can be mutated while permission is still .notDetermined,
+        // which silently no-ops and leaves the user with no feedback that shields aren't applied.
+        Task {
+            await checkAuthorizationStatus()
+            reconcileShieldState()
+        }
     }
 
     // MARK: - Authorization
@@ -152,6 +162,16 @@ final class FocusModeService {
         } else {
             applyShields()
         }
+        Analytics.focusModeEnabled()
+    }
+
+    /// Force shields on right now, overriding any schedule. Used by "Turn On Now" when in a scheduled-off window.
+    func activateNow() {
+        isEnabled = true
+        persist(bool: true, forKey: FocusKey.enabled)
+        clearUnlock()
+        clearCooldown()
+        applyShields()
         Analytics.focusModeEnabled()
     }
 
@@ -212,12 +232,78 @@ final class FocusModeService {
         store.shield.webDomains = activitySelection.webDomainTokens.isEmpty
             ? nil
             : activitySelection.webDomainTokens
+
+        // Start tracking blocked-minutes window
+        sharedDefaults.set(Date.now, forKey: FocusKey.lastBlockStart)
     }
 
     private func removeShields() {
         store.shield.applications = nil
         store.shield.applicationCategories = nil
         store.shield.webDomains = nil
+
+        // Flush elapsed minutes to weekly total
+        flushBlockedMinutes()
+    }
+
+    /// If a block window is open, count elapsed minutes into the weekly total and report.
+    private func flushBlockedMinutes() {
+        guard let start = sharedDefaults.object(forKey: FocusKey.lastBlockStart) as? Date else { return }
+        let elapsed = Date.now.timeIntervalSince(start)
+        let minutes = Int(elapsed / 60)
+        sharedDefaults.removeObject(forKey: FocusKey.lastBlockStart)
+        guard minutes > 0 else { return }
+
+        rolloverWeekIfNeeded()
+        let current = sharedDefaults.integer(forKey: FocusKey.weeklyMinutes)
+        let updated = current + minutes
+        sharedDefaults.set(updated, forKey: FocusKey.weeklyMinutes)
+
+        reportFocusBlockingScore(updated)
+    }
+
+    /// Resets the weekly counter when a new ISO week begins.
+    private func rolloverWeekIfNeeded() {
+        let cal = Calendar.current
+        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: .now)?.start else { return }
+        if let saved = sharedDefaults.object(forKey: FocusKey.weekStart) as? Date,
+           cal.isDate(saved, equalTo: weekStart, toGranularity: .weekOfYear) {
+            return
+        }
+        sharedDefaults.set(0, forKey: FocusKey.weeklyMinutes)
+        sharedDefaults.set(weekStart, forKey: FocusKey.weekStart)
+    }
+
+    /// Submit weekly minutes to Game Center.
+    private func reportFocusBlockingScore(_ minutes: Int) {
+        Task { @MainActor in
+            try? await GKLeaderboard.submitScore(
+                minutes,
+                context: 0,
+                player: GKLocalPlayer.local,
+                leaderboardIDs: [GameCenterService.focusBlockingLeaderboard]
+            )
+        }
+    }
+
+    /// Public hook — call when app foregrounds or rank UI is opened, to roll over expired sessions.
+    func reconcileBlockedMinutes() {
+        guard isEnabled, !isTemporarilyUnlocked else { return }
+        // Flush whatever has accumulated since last sample, then start a new window.
+        flushBlockedMinutes()
+        sharedDefaults.set(Date.now, forKey: FocusKey.lastBlockStart)
+    }
+
+    /// Current week's blocked minutes (for UI display).
+    var weeklyBlockedMinutes: Int {
+        rolloverWeekIfNeeded()
+        let stored = sharedDefaults.integer(forKey: FocusKey.weeklyMinutes)
+        // Add whatever's accumulating right now (without persisting)
+        if let start = sharedDefaults.object(forKey: FocusKey.lastBlockStart) as? Date {
+            let elapsed = Int(Date.now.timeIntervalSince(start) / 60)
+            return stored + max(0, elapsed)
+        }
+        return stored
     }
 
     // MARK: - Relock scheduling

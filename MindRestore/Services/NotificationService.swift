@@ -378,6 +378,35 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["decay_preview"])
     }
 
+    // MARK: - Weekly Leaderboard Reset Warning (Sunday 8pm — 4h before midnight reset)
+
+    func scheduleWeeklyLeaderboardReset() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["weekly_leaderboard_reset"])
+
+        let messages: [(String, String)] = [
+            ("Leaderboards reset in 4 hours", "Lock in your rank before midnight."),
+            ("Final hours of the week", "One last push to climb the leaderboard."),
+            ("Sunday night warning", "Leaderboards reset at midnight — squeeze in a few games."),
+        ]
+        let pick = messages.randomElement()!
+
+        let content = UNMutableNotificationContent()
+        content.title = pick.0
+        content.body = pick.1
+        content.sound = .default
+
+        // Sunday at 8pm, repeats weekly
+        var dateComponents = DateComponents()
+        dateComponents.weekday = 1 // Sunday (Calendar.current's Sunday = 1)
+        dateComponents.hour = 20
+        dateComponents.minute = 0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let request = UNNotificationRequest(identifier: "weekly_leaderboard_reset", content: content, trigger: trigger)
+        center.add(request)
+    }
+
     func cancelAll() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }

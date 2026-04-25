@@ -111,3 +111,4 @@ xcodebuild -exportArchive -archivePath build/MindRestore.xcarchive -exportPath b
 - 8 games live: Reaction Time, Color Match, Speed Match, Visual Memory, Number Memory, Math Speed, Dual N-Back, Chunking
 - v1.2 adds: Word Scramble, Memory Chain, async friend challenges, daily challenge leaderboard
 - Spaced repetition, memory palace, active recall, prospective memory, mixed training: REMOVED (user finds boring)
+- If using XcodeBuildMCP, use the installed XcodeBuildMCP skill before calling XcodeBuildMCP tools.

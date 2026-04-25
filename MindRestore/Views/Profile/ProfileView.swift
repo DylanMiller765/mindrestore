@@ -13,7 +13,6 @@ struct ProfileView: View {
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
-    private var isUltraUser: Bool { storeService.isUltraUser }
 
     private var unlockedAchievements: [Achievement] {
         achievements.sorted { $0.unlockedAt < $1.unlockedAt }

@@ -26,6 +26,26 @@ final class GameCenterService {
     static let chimpTestLeaderboard = "com.dylanmiller.mindrestore.leaderboard.chimpTest"
     static let verbalMemoryLeaderboard = "com.dylanmiller.mindrestore.leaderboard.verbalMemory"
     static let dailyChallengeLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dailyChallengeScore"
+    static let focusBlockingLeaderboard = "com.dylanmiller.mindrestore.leaderboard.focusBlocking"
+
+    // MARK: - Monthly Leaderboards
+    //
+    // Convention: every lifetime leaderboard ID has a sibling monthly-reset leaderboard
+    // with `.monthly` appended. Configure these in App Store Connect as recurring
+    // leaderboards with reset cadence = monthly. Reporting via `reportScore(...)` below
+    // submits to BOTH the lifetime and monthly IDs in one call so all callsites get
+    // monthly support automatically.
+    //
+    // MANUAL STEP for user: in App Store Connect, create a monthly recurring leaderboard
+    // for each ID below (lifetime ID + ".monthly"), e.g.
+    //   com.dylanmiller.mindrestore.leaderboard.brainScore.monthly
+    //   com.dylanmiller.mindrestore.leaderboard.xp.monthly
+    //   ...
+    static let monthlySuffix = ".monthly"
+
+    static func monthlyLeaderboardID(for category: LeaderboardCategory) -> String {
+        leaderboardID(for: category) + monthlySuffix
+    }
 
     // MARK: - Achievement ID Mapping
 
@@ -52,6 +72,7 @@ final class GameCenterService {
         case .chimpTest: return chimpTestLeaderboard
         case .verbalMemory: return verbalMemoryLeaderboard
         case .dailyChallenge: return dailyChallengeLeaderboard
+        case .focusBlocking: return focusBlockingLeaderboard
         }
     }
 
@@ -95,13 +116,23 @@ final class GameCenterService {
             return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
         }
 
-        let leaderboardID = Self.leaderboardID(for: category)
-
+        // Monthly uses a separate, monthly-reset leaderboard ID and queries it as `.allTime`
+        // (the leaderboard itself resets monthly server-side via App Store Connect config).
+        let leaderboardID: String
         let timeScope: GKLeaderboard.TimeScope
         switch timeFilter {
-        case .today: timeScope = .today
-        case .thisWeek: timeScope = .week
-        case .allTime: timeScope = .allTime
+        case .today:
+            leaderboardID = Self.leaderboardID(for: category)
+            timeScope = .today
+        case .thisWeek:
+            leaderboardID = Self.leaderboardID(for: category)
+            timeScope = .week
+        case .thisMonth:
+            leaderboardID = Self.monthlyLeaderboardID(for: category)
+            timeScope = .allTime
+        case .allTime:
+            leaderboardID = Self.leaderboardID(for: category)
+            timeScope = .allTime
         }
 
         do {
@@ -163,18 +194,25 @@ final class GameCenterService {
     func reportScore(_ score: Int, leaderboardID: String) {
         guard isAuthenticated else { return }
 
+        // Submit to lifetime + monthly in one call. If the monthly leaderboard isn't yet
+        // configured in App Store Connect, the call fails and is logged — lifetime
+        // submissions are not affected because Game Center accepts/rejects each ID
+        // independently inside a single submitScore call.
+        let monthlyID = leaderboardID + Self.monthlySuffix
+        let ids = [leaderboardID, monthlyID]
+
         Task {
             do {
-                print("[GameCenterService] Submitting score \(score) to leaderboard \(leaderboardID)")
+                print("[GameCenterService] Submitting score \(score) to \(ids)")
                 try await GKLeaderboard.submitScore(
                     score,
                     context: 0,
                     player: GKLocalPlayer.local,
-                    leaderboardIDs: [leaderboardID]
+                    leaderboardIDs: ids
                 )
-                print("[GameCenterService] Successfully submitted score \(score) to \(leaderboardID)")
+                print("[GameCenterService] Successfully submitted score \(score) to \(ids)")
             } catch {
-                print("[GameCenterService] Failed to report score \(score) to \(leaderboardID): \(error.localizedDescription)")
+                print("[GameCenterService] Failed to report score \(score) to \(ids): \(error.localizedDescription)")
             }
         }
     }

@@ -35,9 +35,13 @@ enum ScreenshotDataGenerator {
         user.subscriptionStatusRaw = "subscribed"
         user.hasCompletedOnboarding = true
 
-        // 3. Generate brain score history (5 assessments over past 3 weeks)
+        // 3. Generate dense brain score history (21 points across last 30 days)
+        // Daily-ish data in the last 7 days makes 7D chart view look great
         let brainScores: [(daysAgo: Int, score: Int)] = [
-            (21, 520), (14, 590), (10, 645), (5, 710), (0, 748)
+            (30, 508), (28, 522), (26, 545), (24, 552), (22, 575),
+            (20, 583), (18, 598), (16, 602), (14, 622), (12, 638),
+            (10, 658), (9, 672), (8, 681), (7, 689), (6, 702),
+            (5, 711), (4, 720), (3, 723), (2, 736), (1, 740), (0, 748)
         ]
         for entry in brainScores {
             let result = BrainScoreResult()
@@ -128,7 +132,7 @@ enum ScreenshotDataGenerator {
             .streak3, .streak7, .streak14,
             .firstPerfect, .fivePerfects,
             .brainScore500, .brainScore700,
-            .firstDualNBack, .firstActiveRecall, .firstDailyChallenge,
+            .firstDualNBack,
             .lightningReaction, .firstShare,
             .earlyBird, .weekendWarrior
         ]

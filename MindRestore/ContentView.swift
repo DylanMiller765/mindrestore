@@ -21,7 +21,6 @@ struct ContentView: View {
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
-    @State private var workoutEngine = WorkoutEngine()
     @State private var referralService = ReferralService()
     @State private var focusModeService = FocusModeService()
 
@@ -74,7 +73,6 @@ struct ContentView: View {
         .environment(trainingManager)
         .environment(gameCenterService)
         .environment(deepLinkRouter)
-        .environment(workoutEngine)
         .environment(referralService)
         .environment(focusModeService)
         .onOpenURL { url in
@@ -109,6 +107,7 @@ struct ContentView: View {
                 )
             }
             gameCenterService.authenticate()
+            focusModeService.reconcileBlockedMinutes()
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
@@ -117,6 +116,7 @@ struct ContentView: View {
                 NotificationService.shared.scheduleDailyBrainFact()
                 NotificationService.shared.scheduleSocialProof()
                 NotificationService.shared.scheduleDecayPreview()
+                NotificationService.shared.scheduleWeeklyLeaderboardReset()
             }
             // Brain score decay — mascot ages if you don't train
             let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
@@ -253,7 +253,7 @@ struct ContentView: View {
             case .home:
                 selectedTab = 0
                 deepLinkRouter.pendingDestination = nil
-            case .train, .dailyChallenge:
+            case .train:
                 selectedTab = 1
                 deepLinkRouter.pendingDestination = nil
             case .game(_):
@@ -337,6 +337,13 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showFocusUnlockToast = true
                 }
+            }
+        }
+        // If the user backs out of the focus-unlock game without completing it, clear
+        // the pending flag so a later, unrelated game completion can't trigger a free unlock.
+        .onChange(of: focusUnlockExercise) { oldValue, newValue in
+            if oldValue != nil && newValue == nil && focusUnlockPending {
+                focusUnlockPending = false
             }
         }
         .overlay(alignment: .top) {
@@ -836,13 +843,25 @@ struct TrainingView: View {
                     gamesPlayedToday: paywallTrigger.exercisesToday
                 )
             }
-            .sheet(isPresented: $showFreePlayPopup) {
-                FreePlayPopup {
-                    showFreePlayPopup = false
+            .overlay {
+                if showFreePlayPopup {
+                    ZStack {
+                        Color.black.opacity(0.55)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showFreePlayPopup = false
+                                }
+                            }
+                        FreePlayPopup {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showFreePlayPopup = false
+                            }
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(100)
                 }
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(.clear)
             }
             .onAppear {
                 if !isProUser && !hasSeenFreePlayPopup {

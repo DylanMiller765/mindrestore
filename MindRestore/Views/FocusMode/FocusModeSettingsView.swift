@@ -6,7 +6,7 @@ struct FocusModeSettingsView: View {
     @Environment(StoreService.self) private var storeService
     @Environment(\.dismiss) private var dismiss
     @State private var showingAppPicker = false
-    @State private var showingUltraPaywall = false
+    @State private var showingProPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -21,19 +21,43 @@ struct FocusModeSettingsView: View {
                     }
 
                     if focusModeService.isTemporarilyUnlocked, let until = focusModeService.unlockUntil {
-                        HStack {
-                            Text("Currently unlocked")
-                            Spacer()
-                            Text(unlockTimeRemaining(until: until))
-                                .foregroundStyle(.secondary)
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            HStack {
+                                Text("Currently unlocked")
+                                Spacer()
+                                Text(unlockTimeRemaining(until: until))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
                         }
                     }
                 }
 
                 // MARK: Blocked Apps
                 Section("Blocked Apps") {
-                    Button("Edit blocked apps") {
-                        showingAppPicker = true
+                    if focusModeService.isEnabled {
+                        if storeService.isProUser {
+                            Button {
+                                showingAppPicker = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundStyle(AppColors.accent)
+                                    Text("Add apps")
+                                }
+                            }
+                        } else {
+                            HStack {
+                                Image(systemName: "lock.fill")
+                                    .foregroundStyle(.secondary)
+                                Text("Locked while Focus is active")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Button("Edit blocked apps") {
+                            showingAppPicker = true
+                        }
                     }
 
                     HStack {
@@ -108,10 +132,13 @@ struct FocusModeSettingsView: View {
                 // MARK: Disable / Cooldown
                 Section {
                     if focusModeService.isInCooldown, let cooldownEnd = focusModeService.cooldownUntil {
-                        HStack {
-                            Text("Cooldown — \(cooldownTimeRemaining(until: cooldownEnd))")
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            HStack {
+                                Text("Cooldown — \(cooldownTimeRemaining(until: cooldownEnd))")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                                Spacer()
+                            }
                         }
                     } else if focusModeService.isEnabled {
                         Button("Turn off Focus Mode", role: .destructive) {
@@ -131,17 +158,28 @@ struct FocusModeSettingsView: View {
             .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
                 get: { focusModeService.activitySelection },
                 set: { newSelection in
+                    // Active session + Pro: additions only — discard removals so users
+                    // can't unblock apps mid-patrol to escape the commitment.
+                    if focusModeService.isEnabled && storeService.isProUser {
+                        var merged = focusModeService.activitySelection
+                        merged.applicationTokens.formUnion(newSelection.applicationTokens)
+                        merged.categoryTokens.formUnion(newSelection.categoryTokens)
+                        merged.webDomainTokens.formUnion(newSelection.webDomainTokens)
+                        focusModeService.updateActivitySelection(merged)
+                        return
+                    }
+
                     let appCount = newSelection.applicationTokens.count
                     let catCount = newSelection.categoryTokens.count
                     let exceedsLimit = appCount > 1 || catCount > 0
-                    if !storeService.isUltraUser && exceedsLimit {
-                        showingUltraPaywall = true
+                    if !storeService.isProUser && exceedsLimit {
+                        showingProPaywall = true
                     } else {
                         focusModeService.updateActivitySelection(newSelection)
                     }
                 }
             ))
-            .sheet(isPresented: $showingUltraPaywall) {
+            .sheet(isPresented: $showingProPaywall) {
                 PaywallView(triggerSource: "focus_mode_limit")
             }
         }

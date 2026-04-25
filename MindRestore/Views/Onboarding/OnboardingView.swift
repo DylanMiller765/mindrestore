@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import FamilyControls
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(FocusModeService.self) private var focusModeService
     @Query private var users: [User]
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
@@ -28,11 +30,12 @@ struct OnboardingView: View {
     @State private var showingFocusModeSetup = false
     @State private var focusModeWasSetUp = false
     @State private var quickAssessmentBgColor: Color = AppColors.pageBg
-    @State private var showingOnboardingPaywall = false
+    @State private var showingBrainAgeReveal = false
+    @State private var screenTimeAuthorized = false
 
     var onComplete: () -> Void
 
-    private let totalPages = 9
+    private let totalPages = 12
 
     var body: some View {
         ZStack {
@@ -46,9 +49,12 @@ struct OnboardingView: View {
                     agePage.tag(3)
                     scarePage.tag(4)
                     quickAssessmentPage.tag(5)
-                    revealAndHopePage.tag(6)
-                    focusModePage.tag(7)
-                    commitmentPage.tag(8)
+                    personalSolutionPage.tag(6)
+                    notificationPrimingPage.tag(7)
+                    stat144Page.tag(8)
+                    personalUnlocksPage.tag(9)
+                    focusModePage.tag(10)
+                    commitmentPage.tag(11)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -73,7 +79,7 @@ struct OnboardingView: View {
                         goodNewsTypingDone = false
                         goodNewsSubtitleVisible = false
                     }
-                    if newPage != 8 {
+                    if newPage != 11 {
                         commitmentBullet1Visible = false
                         commitmentBullet2Visible = false
                         commitmentBullet3Visible = false
@@ -101,11 +107,66 @@ struct OnboardingView: View {
         }
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "reveal", "focusMode", "commitment"]
+                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "personalSolution", "notificationPriming", "stat144", "personalUnlocks", "focusMode", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
         }
+        // Single full-screen cover for reveal → paywall. Chaining two .fullScreenCover
+        // presentations produces a race where the second cover can silently fail to present
+        // while the first is still in its dismiss animation.
+        .fullScreenCover(isPresented: $showingBrainAgeReveal, onDismiss: {
+            Analytics.onboardingStep(step: "reveal")
+            withAnimation { currentPage = 6 } // → personalSolution
+        }) {
+            OnboardingFinaleSequence(
+                brainAge: assessmentResult?.brainAge ?? 25,
+                userAge: selectedAge > 0 ? selectedAge : 25
+            )
+        }
+    }
+
+    // MARK: - Stat 144× Page
+
+    private var stat144Page: some View {
+        FocusOnboardA {
+            Analytics.onboardingStep(step: "stat144")
+            // Request FamilyControls/Screen Time auth so the next page can show real unlocks.
+            Task {
+                await focusModeService.requestAuthorization()
+                screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+                withAnimation { currentPage = 9 } // → personalUnlocks
+            }
+        }
+    }
+
+    // MARK: - Personal Unlocks (287×) Page
+
+    private var personalUnlocksPage: some View {
+        FocusOnboardPersonalUnlocks(
+            onContinue: {
+                if screenTimeAuthorized {
+                    Analytics.onboardingStep(step: "personalUnlocksAuthorized")
+                    withAnimation { currentPage = 10 } // → focusMode
+                } else {
+                    // User declined — re-prompt auth
+                    Task {
+                        await focusModeService.requestAuthorization()
+                        screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+                        if screenTimeAuthorized {
+                            // stay on this page; view will switch to authorized variant via state update
+                            Analytics.onboardingStep(step: "personalUnlocksAuthorized")
+                        } else {
+                            // still declined — let them continue anyway
+                            Analytics.onboardingStep(step: "personalUnlocksDeclined")
+                            withAnimation { currentPage = 10 } // → focusMode
+                        }
+                    }
+                }
+            },
+            authorized: screenTimeAuthorized,
+            count: 287
+        )
     }
 
     private var welcomePage: some View {
@@ -259,24 +320,21 @@ struct OnboardingView: View {
     }
 
     private var goalsPage: some View {
-        VStack(spacing: 12) {
-            Spacer().frame(height: 12)
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 32)
 
-            Image("mascot-goal")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 90)
-
-            VStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Pick your focus")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                Text("Select 1-3 goals")
-                    .font(.caption)
+                    .font(.system(size: 32, weight: .bold))
+                    .kerning(-0.6)
+                Text("Select 1–3 goals")
+                    .font(.system(size: 15))
                     .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 28)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 ForEach(UserFocusGoal.allCases) { goal in
                     GoalCard(goal: goal, isSelected: selectedGoals.contains(goal)) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -312,18 +370,17 @@ struct OnboardingView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            VStack(spacing: 8) {
-                Text("🎂")
-                    .font(.system(size: 64))
-
+            VStack(spacing: 10) {
                 Text("How old are you?")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold))
+                    .kerning(-0.6)
                     .multilineTextAlignment(.center)
 
-                Text("We'll compare your Brain Age to your real age")
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.textTertiary)
+                Text("We'll compare your Brain Age to your real age.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
 
             Picker("Age", selection: $selectedAge) {
@@ -436,105 +493,33 @@ struct OnboardingView: View {
         QuickAssessmentView(backgroundColor: $quickAssessmentBgColor) { result in
             assessmentResult = result
             Analytics.onboardingStep(step: "quickAssessment")
-            withAnimation { currentPage = 6 }
+            // Present dramatic reveal as a full-screen cover so it escapes the TabView.
+            // Cover only fires from a legitimate onComplete — swiping the TabView won't trigger it.
+            showingBrainAgeReveal = true
         }
     }
 
-    // MARK: - Reveal and Hope Page
+    // MARK: - Personal Solution Page (NEW)
 
-    private var revealAndHopePage: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 60)
-
-            if let result = assessmentResult {
-                VStack(spacing: 4) {
-                    Text("Your Brain Age")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    Text("\(result.brainAge)")
-                        .font(.system(size: 72, weight: .black, design: .rounded))
-                        .foregroundStyle(result.brainAge > (selectedAge > 0 ? selectedAge : 25) ? AppColors.coral : AppColors.teal)
-                }
+    private var personalSolutionPage: some View {
+        OnboardingPersonalSolutionView(
+            userGoals: selectedGoals,
+            brainAge: assessmentResult?.brainAge,
+            userAge: selectedAge,
+            onContinue: {
+                Analytics.onboardingStep(step: "personalSolution")
+                withAnimation { currentPage = 7 } // → notification priming
             }
+        )
+    }
 
-            Image("mascot-working-out")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 140)
+    // MARK: - Notification Priming Page (NEW)
 
-            VStack(spacing: 8) {
-                VStack(spacing: 4) {
-                    TypewriterText(fullText: "But your brain can") {
-                        withAnimation(.easeOut(duration: 0.3)) {
-                            goodNewsTypingDone = true
-                        }
-                    }
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-
-                    Text("bounce back")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.accent)
-                        .opacity(goodNewsTypingDone ? 1 : 0)
-                        .scaleEffect(goodNewsTypingDone ? 1 : 0.5)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: goodNewsTypingDone)
-                }
-
-                Text("5 minutes of daily brain training\ncan reverse the damage.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .opacity(goodNewsSubtitleVisible ? 1 : 0)
-                    .offset(y: goodNewsSubtitleVisible ? 0 : 10)
-                    .animation(.easeOut(duration: 0.5), value: goodNewsSubtitleVisible)
-                    .onChange(of: goodNewsTypingDone) { _, done in
-                        if done {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                goodNewsSubtitleVisible = true
-                            }
-                        }
-                    }
-
-                Text("And we can block the apps that caused it.")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColors.accent)
-                    .multilineTextAlignment(.center)
-                    .opacity(goodNewsSubtitleVisible ? 1 : 0)
-                    .animation(.easeOut(duration: 0.5).delay(0.3), value: goodNewsSubtitleVisible)
-            }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                Button {
-                    showingOnboardingPaywall = true
-                } label: {
-                    Text("Start Free Trial")
-                        .gradientButton()
-                }
-
-                Button {
-                    Analytics.onboardingStep(step: "reveal")
-                    withAnimation { currentPage = 7 }
-                } label: {
-                    Text("Maybe later")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                }
-            }
-            .padding(.horizontal, 32)
-            .sheet(isPresented: $showingOnboardingPaywall) {
-                PaywallView(
-                    isHighIntent: true,
-                    triggerSource: "onboarding"
-                )
-            }
+    private var notificationPrimingPage: some View {
+        OnboardingNotificationPrimingView { granted in
+            notificationsEnabled = granted
+            withAnimation { currentPage = 8 } // → stat144
         }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Commitment Page
@@ -560,31 +545,31 @@ struct OnboardingView: View {
             // Commitment bullets
             VStack(alignment: .leading, spacing: 16) {
                 if commitmentBullet1Visible {
-                    TypewriterText(fullText: "• I'll train my brain for 5 minutes a day")
+                    TypewriterText(fullText: "• I'll train my brain for 5 minutes a day", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet2Visible {
-                    TypewriterText(fullText: "• I'll build my streak and not break it")
+                    TypewriterText(fullText: "• I'll build my streak and not break it", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet3Visible {
                     TypewriterText(fullText: focusModeWasSetUp
                         ? "• I'll let Memori block my distracting apps"
-                        : "• I'll put down the scroll and pick up the games")
+                        : "• I'll put down the scroll and pick up the games", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet4Visible {
-                    TypewriterText(fullText: "• I'll take back my screen time")
+                    TypewriterText(fullText: "• I'll take back my screen time", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
             }
             .padding(.horizontal, 32)
             .onAppear {
-                let delays = [0.3, 1.8, 3.3, 4.8]
+                let delays = [0.15, 0.85, 1.55, 2.25]
                 DispatchQueue.main.asyncAfter(deadline: .now() + delays[0]) {
                     withAnimation { commitmentBullet1Visible = true }
                 }
@@ -610,27 +595,37 @@ struct OnboardingView: View {
                         .frame(width: 100, height: 100)
                         .contentShape(Circle())
 
-                    // Organic background outline
+                    // Base grey ring (always visible)
                     OrganicCircle()
                         .stroke(AppColors.cardBorder, lineWidth: 2.5)
                         .frame(width: 80, height: 80)
 
-                    // Progress fill inside
+                    // Bright accent ring fades in as you hold
                     OrganicCircle()
-                        .fill(AppColors.accent.opacity(0.15 * holdProgress))
+                        .stroke(AppColors.accent, lineWidth: 3.5)
+                        .frame(width: 80, height: 80)
+                        .opacity(holdProgress)
+                        .shadow(color: AppColors.accent.opacity(0.7 * holdProgress), radius: 14 * holdProgress)
+                        .animation(.easeOut(duration: 0.08), value: holdProgress)
+
+                    // Progress fill — strong at full hold
+                    OrganicCircle()
+                        .fill(AppColors.accent.opacity(0.85 * holdProgress))
                         .frame(width: 74, height: 74)
-                        .scaleEffect(0.3 + 0.7 * holdProgress)
-                        .animation(.easeOut(duration: 0.1), value: holdProgress)
+                        .scaleEffect(0.5 + 0.5 * holdProgress)
+                        .shadow(color: AppColors.accent.opacity(0.5 * holdProgress), radius: 16 * holdProgress)
+                        .animation(.easeOut(duration: 0.08), value: holdProgress)
 
                     // Completed state
                     if commitmentCompleted {
                         OrganicCircle()
-                            .fill(AppColors.accent.opacity(0.2))
+                            .fill(AppColors.accent)
                             .frame(width: 74, height: 74)
+                            .shadow(color: AppColors.accent.opacity(0.6), radius: 18)
 
                         Image(systemName: "checkmark")
                             .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(AppColors.accent)
+                            .foregroundStyle(.white)
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
@@ -652,6 +647,8 @@ struct OnboardingView: View {
                 if !commitmentCompleted {
                     Text("Hold to agree")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(holdProgress > 0.05 ? AppColors.accent : Color.primary)
+                        .animation(.easeOut(duration: 0.15), value: holdProgress > 0.05)
 
                     Text("Research shows that committing to contracts\nboosts follow-through and accountability")
                         .font(.caption)
@@ -723,14 +720,14 @@ struct OnboardingView: View {
             FocusModeSetupView(onComplete: {
                 focusModeWasSetUp = true
                 Analytics.onboardingStep(step: "focusModeCompleted")
-                withAnimation { currentPage = 8 }
+                withAnimation { currentPage = 11 } // → commitment
             })
 
             // "Not now" skip button
             Button {
                 Analytics.onboardingStep(step: "focusModeSkipped")
                 Analytics.focusSetupSkipped()
-                withAnimation { currentPage = 8 }
+                withAnimation { currentPage = 11 } // → commitment
             } label: {
                 Text("Not now")
                     .font(.subheadline.weight(.medium))
@@ -839,30 +836,47 @@ struct GoalCard: View {
     let isSelected: Bool
     let action: () -> Void
 
+    private var goalColor: Color {
+        switch goal {
+        case .screenTimeFrying: return AppColors.coral
+        case .doomscrolling:    return AppColors.violet
+        case .attentionShot:    return AppColors.accent
+        case .loseFocus:        return AppColors.sky
+        case .forgetInstantly:  return AppColors.mint
+        case .getSharper:       return AppColors.amber
+        }
+    }
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Text(goal.emoji)
-                    .font(.system(size: 22))
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(goalColor)
+                    Image(systemName: goal.icon)
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 56, height: 56)
 
                 Text(goal.displayName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-
-                Spacer()
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? goalColor : .primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.vertical, 11)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? AppColors.accent.opacity(0.10) : AppColors.cardSurface)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? goalColor.opacity(0.10) : AppColors.cardSurface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(
-                        isSelected ? AppColors.accent : AppColors.cardBorder,
+                        isSelected ? goalColor : AppColors.cardBorder,
                         lineWidth: isSelected ? 2 : 1
                     )
             )

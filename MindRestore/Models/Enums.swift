@@ -211,11 +211,11 @@ enum UserFocusGoal: String, Codable, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .screenTimeFrying: return "iphone.gen3.slash"
-        case .doomscrolling: return "iphone"
-        case .attentionShot: return "brain.head.profile"
-        case .loseFocus: return "eye.slash"
-        case .forgetInstantly: return "wind"
+        case .screenTimeFrying: return "iphone"
+        case .doomscrolling: return "infinity"
+        case .attentionShot: return "scope"
+        case .loseFocus: return "cloud.fill"
+        case .forgetInstantly: return "questionmark"
         case .getSharper: return "bolt.fill"
         }
     }

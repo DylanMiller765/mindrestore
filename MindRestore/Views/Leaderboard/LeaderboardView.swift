@@ -9,7 +9,7 @@ struct LeaderboardView: View {
     @Environment(GameCenterService.self) private var gameCenterService
 
     @State private var selectedCategory: LeaderboardCategory = .brainScore
-    @State private var selectedFilter: LeaderboardTimeFilter = .allTime
+    @State private var selectedFilter: LeaderboardTimeFilter = .thisWeek
     @State private var entries: [LeaderboardEntryData] = []
     @State private var totalPlayerCount: Int = 0
     @State private var isLoading = false
@@ -61,9 +61,9 @@ struct LeaderboardView: View {
                 .scrollIndicators(.hidden)
                 .padding(.vertical, 12)
 
-                // Time filter
+                // Time filter — Today / This Week / This Month
                 Picker("Filter", selection: $selectedFilter) {
-                    ForEach(LeaderboardTimeFilter.allCases) { filter in
+                    ForEach(LeaderboardTimeFilter.allCases.filter { $0 != .allTime }) { filter in
                         Text(filter.rawValue).tag(filter)
                     }
                 }
@@ -563,6 +563,10 @@ struct LeaderboardView: View {
         case .mathSpeed:
             let correct = score / 1000
             return "\(correct)/20"
+        case .focusBlocking:
+            let h = score / 60
+            let m = score % 60
+            return h > 0 ? "\(h)h \(m)m" : "\(m)m"
         default:
             return formatScore(score)
         }
@@ -595,6 +599,10 @@ struct LeaderboardView: View {
             return "\(score)"
         case .dailyChallenge:
             return "\(score)"
+        case .focusBlocking:
+            let h = score / 60
+            let m = score % 60
+            return h > 0 ? "\(h)h \(m)m blocked" : "\(m)m blocked"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)
@@ -771,6 +779,9 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .verbalMemory)
         case .dailyChallenge:
             return nil
+        case .focusBlocking:
+            // Read from FocusModeService's shared defaults
+            return UserDefaults(suiteName: "group.com.memori.shared")?.integer(forKey: "focus_weekly_minutes")
         }
     }
 }

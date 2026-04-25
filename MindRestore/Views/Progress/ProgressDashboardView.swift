@@ -270,24 +270,17 @@ struct ProgressDashboardView: View {
     private var trendlineChart: some View {
         let chartData = filteredScores.sorted { $0.date < $1.date }
         let scores = chartData.map(\.brainScore)
-        let minScore = max(0, (scores.min() ?? 0) - 30)
-        let maxScore = min(1000, (scores.max() ?? 1000) + 30)
+        let rawMin = scores.min() ?? 0
+        let rawMax = scores.max() ?? 1000
+        let span = max(rawMax - rawMin, 1)
+        // 50pt minimum padding or 40% of span — keeps line floating instead of hugging edges
+        let padding = max(50, span * 2 / 5)
+        let minScore = max(0, rawMin - padding)
+        let maxScore = min(1000, rawMax + padding)
+        let lastIndex = chartData.count - 1
 
         return Chart {
-            ForEach(chartData, id: \.id) { item in
-                AreaMark(
-                    x: .value("Date", item.date),
-                    y: .value("Score", item.brainScore)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [AppColors.accent.opacity(0.25), AppColors.accent.opacity(0.02)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
-
+            ForEach(Array(chartData.enumerated()), id: \.element.id) { index, item in
                 LineMark(
                     x: .value("Date", item.date),
                     y: .value("Score", item.brainScore)
@@ -295,6 +288,13 @@ struct ProgressDashboardView: View {
                 .foregroundStyle(AppColors.accent)
                 .interpolationMethod(.catmullRom)
                 .lineStyle(StrokeStyle(lineWidth: 2.5))
+
+                PointMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.brainScore)
+                )
+                .foregroundStyle(AppColors.accent)
+                .symbolSize(index == lastIndex ? 80 : 24)
             }
         }
         .chartYScale(domain: minScore...maxScore)
