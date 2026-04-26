@@ -162,7 +162,7 @@ struct FocusOnboardHowItWorks: View {
                     .padding(.top, 20)
                     .padding(.bottom, 12)
 
-                (Text("How Memori blocks\nyour ") + Text("brain rot").foregroundColor(FO.accent) + Text("."))
+                (Text("How Memo blocks\nyour ") + Text("brain rot").foregroundColor(FO.accent) + Text("."))
                     .font(.system(size: 30, weight: .bold))
                     .kerning(-0.9)
                     .foregroundStyle(FO.fg)
@@ -680,15 +680,13 @@ struct FocusOnboardPersonalUnlocks: View {
 
     private var ctaTitle: String {
         if authorized { return "Continue" }
-        if previouslyDenied { return "Open Settings" }
+        if previouslyDenied { return "Continue" }
         return "Unlock the Real Numbers"
     }
 
     private func ctaAction() {
         if !authorized && previouslyDenied {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
+            onContinue()
             return
         }
         onContinue()

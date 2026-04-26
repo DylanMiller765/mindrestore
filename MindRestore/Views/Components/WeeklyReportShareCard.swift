@@ -193,7 +193,7 @@ private struct WRBrandingHeader: View {
 
 private struct WRBrandingFooter: View {
     var body: some View {
-        Text("Train your brain free \u{2014} Memori")
+        Text("Train your brain free \u{2014} Memo")
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
     }

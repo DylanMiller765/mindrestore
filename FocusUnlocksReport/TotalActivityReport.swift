@@ -5,6 +5,7 @@
 
 import DeviceActivity
 import ExtensionKit
+import Foundation
 import SwiftUI
 
 extension DeviceActivityReport.Context {
@@ -31,6 +32,7 @@ struct TotalActivityReport: DeviceActivityReportScene {
                 }
             }
         }
+        UserDefaults(suiteName: "group.com.memori.shared")?.set(total, forKey: "onboarding_yesterday_unlocks")
         return total
     }
 }
@@ -47,6 +49,12 @@ struct ScreenTimeReport: DeviceActivityReportScene {
                 totalSeconds += segment.totalActivityDuration
             }
         }
-        return totalSeconds / 3600.0
+        let hours = totalSeconds / 3600.0
+        if hours > 0 {
+            let shared = UserDefaults(suiteName: "group.com.memori.shared")
+            shared?.set(hours, forKey: "onboarding_daily_screen_time_hours")
+            shared?.set(Date(), forKey: "onboarding_screen_time_hours_updated_at")
+        }
+        return hours
     }
 }

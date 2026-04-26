@@ -372,10 +372,10 @@ struct ContentView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showFocusUnlockToast)
             }
         }
-        .alert("Welcome to Memori!", isPresented: $showReferralWelcome) {
+        .alert("Welcome to Memo!", isPresented: $showReferralWelcome) {
             Button("Let's go!") {}
         } message: {
-            Text("Your friend referred you! Enjoy 1 week of Memori Pro — all games unlocked.")
+            Text("Your friend referred you! Enjoy 1 week of Memo Pro — all games unlocked.")
         }
         .task {
             // Check for pending referral rewards from CloudKit (only after onboarding)

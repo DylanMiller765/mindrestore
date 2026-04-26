@@ -107,21 +107,23 @@ struct OnboardingProcessingView: View {
     }
 }
 
-// MARK: - Personal Solution + Testimonial
+// MARK: - Personal Plan Reveal
 //
-// Mirrors back the user's goals with concrete app solutions.
-// Embeds a real App Store testimonial as social proof.
-// Sits after the brain age reveal.
+// Sits after the brain age reveal. Turns the user's inputs into the
+// resistance plan: train, lock apps, earn unlocks, compete.
 
 struct OnboardingPersonalSolutionView: View {
     let userGoals: Set<UserFocusGoal>
     let brainAge: Int?
     let userAge: Int
+    let dailyScreenTimeHours: Double
+    let projectedScreenTimeHours: Int
+    let projectionIsEstimate: Bool
     let onContinue: () -> Void
 
-    @State private var cardsAppeared: [Bool] = [false, false, false]
+    @State private var cardsAppeared: [Bool] = [false, false, false, false]
     @State private var headlineAppeared = false
-    @State private var testimonialAppeared = false
+    @State private var statAppeared = false
 
     /// Top 3 solutions to mirror back. Falls back to a sensible default trio
     /// if the user skipped goal selection (so the page still has substance).
@@ -172,41 +174,80 @@ struct OnboardingPersonalSolutionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 32)
+            Spacer().frame(height: 20)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Your plan")
-                    .font(.system(size: 32, weight: .bold))
-                    .kerning(-0.6)
-                Text(brainAgeSubtitle)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Your projection")
+                    .font(.system(size: 36, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(projectedHoursText)
+                        .font(.system(size: 66, weight: .black, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(AppColors.coral)
+                        .minimumScaleFactor(0.75)
+
+                    Text("\(projectedYearsText) years by 60 if nothing changes")
+                        .font(.system(size: 14, weight: .heavy))
+                        .tracking(0.9)
+                        .foregroundStyle(AppColors.textTertiary)
+                        .textCase(.uppercase)
+                }
+                .opacity(statAppeared ? 1 : 0)
+                .offset(y: statAppeared ? 0 : 12)
+
+                Text(projectionSubtitle)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 28)
             .opacity(headlineAppeared ? 1 : 0)
             .offset(y: headlineAppeared ? 0 : 8)
 
-            Spacer().frame(height: 24)
+            Spacer().frame(height: 18)
 
-            VStack(spacing: 12) {
-                ForEach(Array(solutions.enumerated()), id: \.offset) { index, goal in
-                    solutionRow(goal: goal, index: index)
-                }
+            Text("Memo's plan")
+                .font(.system(size: 12, weight: .heavy))
+                .tracking(1.1)
+                .foregroundStyle(AppColors.textTertiary)
+                .textCase(.uppercase)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 6)
+
+            VStack(spacing: 0) {
+                Divider().overlay(AppColors.cardBorder)
+
+                planRow(number: "01", title: "Train daily", detail: "5 minutes before the feed", value: "5 min", index: 0)
+                Divider().overlay(AppColors.cardBorder)
+                planRow(number: "02", title: "Lock the noise", detail: appLockDetail, value: appLockValue, index: 1)
+                Divider().overlay(AppColors.cardBorder)
+                planRow(number: "03", title: "Earn unlocks", detail: "Screen time costs reps now", value: "3x", index: 2)
+                Divider().overlay(AppColors.cardBorder)
+                planRow(number: "04", title: "Compete on Brain Score", detail: "Beat the algorithm, then beat the room", value: "Day 5", index: 3)
+                Divider().overlay(AppColors.cardBorder)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 28)
 
-            Spacer().frame(height: 20)
-
-            testimonialCard
-                .padding(.horizontal, 24)
-                .opacity(testimonialAppeared ? 1 : 0)
-                .offset(y: testimonialAppeared ? 0 : 12)
+            if !solutions.isEmpty {
+                Text(solutionSummary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 12)
+                    .opacity(cardsAppeared[3] ? 1 : 0)
+            }
 
             Spacer(minLength: 16)
 
             Button(action: onContinue) {
-                Text("Continue")
+                Text("Put Memo on patrol")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -215,15 +256,17 @@ struct OnboardingPersonalSolutionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) { headlineAppeared = true }
-            for i in 0..<solutions.count {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25 + Double(i) * 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+                    statAppeared = true
+                }
+            }
+            for i in 0..<cardsAppeared.count {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35 + Double(i) * 0.12) {
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                         if i < cardsAppeared.count { cardsAppeared[i] = true }
                     }
                 }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25 + Double(solutions.count) * 0.15) {
-                withAnimation(.easeOut(duration: 0.4)) { testimonialAppeared = true }
             }
         }
     }
@@ -232,84 +275,77 @@ struct OnboardingPersonalSolutionView: View {
         if let brainAge, userAge > 0 {
             let diff = brainAge - userAge
             if diff > 0 {
-                return "Built to drop your brain age \(diff) year\(diff == 1 ? "" : "s")."
+                return "You're not stuck with that score. Memo trains the brain and locks the noise."
             } else if diff < 0 {
-                return "Built to keep you sharper than your real age."
+                return "You're ahead. Memo helps you stay dangerous."
             } else {
-                return "Built to push your brain age below \(userAge)."
+                return "Memo's plan is built to push your Brain Age down."
             }
         }
-        return "Built around what you told us."
+        return "Train your brain. Block the noise. Earn your time back."
     }
 
-    private func solutionRow(goal: UserFocusGoal, index: Int) -> some View {
+    private var projectionSubtitle: String {
+        let source = projectionIsEstimate ? "estimated \(dailyScreenTimeText)/day" : "\(dailyScreenTimeText)/day from Screen Time"
+        return "\(source). \(brainAgeSubtitle)"
+    }
+
+    private var dailyScreenTimeText: String {
+        String(format: "%.1fh", dailyScreenTimeHours)
+    }
+
+    private var projectedHoursText: String {
+        let rounded = projectedScreenTimeHours >= 1000
+            ? Int((Double(projectedScreenTimeHours) / 1000.0).rounded()) * 1000
+            : projectedScreenTimeHours
+        return rounded.formatted()
+    }
+
+    private var projectedYearsText: String {
+        String(format: "%.1f", Double(projectedScreenTimeHours) / 8760.0)
+    }
+
+    private var appLockValue: String {
+        userGoals.isEmpty ? "200+" : "\(max(userGoals.count * 40, 80))+"
+    }
+
+    private var appLockDetail: String {
+        userGoals.isEmpty ? "Distracting apps stay locked" : "Built around what you picked"
+    }
+
+    private var solutionSummary: String {
+        "Built around your picks. Training first. Feed second."
+    }
+
+    private func planRow(number: String, title: String, detail: String, value: String, index: Int) -> some View {
         let appeared = index < cardsAppeared.count ? cardsAppeared[index] : true
-        let color = goalColor(goal)
         return HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(color)
-                Image(systemName: goal.icon)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 52, height: 52)
+            Text(number)
+                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 34, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(solutionTitle(goal))
+                Text(title)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.primary)
-                Text(solutionDetail(goal))
+                Text(detail)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)
+
+            Text(value)
+                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(index == 0 ? AppColors.accent : AppColors.textPrimary)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppColors.cardBorder, lineWidth: 1)
-        )
+        .padding(.vertical, 12)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
-    }
-
-    private var testimonialCard: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 3) {
-                    ForEach(0..<5) { _ in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(AppColors.amber)
-                    }
-                    Spacer()
-                    Text("App Store")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.tertiary)
-                }
-                Text("\u{201C}Apparently my brain age is 43. I'm 21, training daily now.\u{201D}")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("— sjvdheisjsbsis")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.amber.opacity(0.07))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppColors.amber.opacity(0.22), lineWidth: 1)
-        )
     }
 }
 
@@ -347,13 +383,13 @@ struct OnboardingNotificationPrimingView: View {
             }
 
             VStack(spacing: 10) {
-                Text("Stay on track,\neven when life gets busy")
+                Text("Memo can tap\nyour shoulder.")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .opacity(headlineAppeared ? 1 : 0)
                     .offset(y: headlineAppeared ? 0 : 12)
 
-                Text("We'll send a quiet nudge when it matters.")
+                Text("Not the algorithm. Just your brain's bouncer.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -361,9 +397,9 @@ struct OnboardingNotificationPrimingView: View {
             }
 
             VStack(spacing: 14) {
-                primingBullet(icon: "flame.fill", color: AppColors.coral, text: "Save your streak before it breaks")
-                primingBullet(icon: "trophy.fill", color: AppColors.amber, text: "Heads-up before leaderboards reset")
-                primingBullet(icon: "brain.head.profile", color: AppColors.accent, text: "A daily reminder to keep training")
+                primingBullet(icon: "flame.fill", color: AppColors.coral, text: "Streak rescue before midnight")
+                primingBullet(icon: "trophy.fill", color: AppColors.amber, text: "Leaderboard resets before you slip")
+                primingBullet(icon: "shield.fill", color: AppColors.accent, text: "Patrol reminders when apps unlock")
             }
             .padding(.horizontal, 32)
             .padding(.top, 8)
@@ -375,7 +411,7 @@ struct OnboardingNotificationPrimingView: View {
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.caption2)
-                Text("No spam. We won't notify more than once a day.")
+                Text("No spam. No engagement bait. Once a day max.")
                     .font(.caption)
             }
             .foregroundStyle(.tertiary)
@@ -457,7 +493,7 @@ struct OnboardingNotificationPrimingView: View {
     private var buttonTitle: String {
         if previouslyDenied { return "Open Settings" }
         if showTimeoutError { return "Try Again" }
-        return "Enable Notifications"
+        return "Let Memo nudge me"
     }
 
     private func primingBullet(icon: String, color: Color, text: String) -> some View {
@@ -566,7 +602,7 @@ struct OnboardingBrainAgeReveal: View {
     }
 
     private var shareText: String {
-        "My Brain Age is \(brainAge)! Test yours with Memori"
+        "My Brain Age is \(brainAge)! Test yours with Memo"
     }
 
     var body: some View {
@@ -779,6 +815,9 @@ struct OnboardingBrainAgeReveal: View {
         userGoals: [.screenTimeFrying, .doomscrolling, .attentionShot],
         brainAge: 35,
         userAge: 28,
+        dailyScreenTimeHours: 4.3,
+        projectedScreenTimeHours: 50200,
+        projectionIsEstimate: false,
         onContinue: {}
     )
 }
@@ -788,6 +827,9 @@ struct OnboardingBrainAgeReveal: View {
         userGoals: [],
         brainAge: nil,
         userAge: 0,
+        dailyScreenTimeHours: 4,
+        projectedScreenTimeHours: 51100,
+        projectionIsEstimate: true,
         onContinue: {}
     )
 }

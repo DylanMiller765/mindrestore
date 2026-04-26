@@ -115,7 +115,7 @@ struct ScoreRevealView: View {
                         // First-time brain age below real age celebration
                         if userAge > 0 && viewModel.brainAge < userAge && !celebratedBrainAgeBelow {
                             ShareLink(
-                                item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                                item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memo"
                             ) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "square.and.arrow.up")
@@ -283,7 +283,7 @@ struct ScoreRevealView: View {
 
                             if let previous = previousScore, viewModel.brainScore > previous.brainScore {
                                 let diff = viewModel.brainScore - previous.brainScore
-                                ShareLink(item: "I improved my Brain Score by +\(diff) points! (\(previous.brainScore) -> \(viewModel.brainScore)/1000)\n\nTest yours with Memori") {
+                                ShareLink(item: "I improved my Brain Score by +\(diff) points! (\(previous.brainScore) -> \(viewModel.brainScore)/1000)\n\nTest yours with Memo") {
                                     HStack {
                                         Image(systemName: "chart.line.uptrend.xyaxis")
                                         Text("Share Your Improvement")
@@ -558,7 +558,7 @@ struct ScoreRevealView: View {
     }
 
     private var brainAgeShareText: String {
-        "My Brain Age is \(viewModel.brainAge)! Better than \(viewModel.percentile)% of players.\n\nTest yours with Memori"
+        "My Brain Age is \(viewModel.brainAge)! Better than \(viewModel.percentile)% of players.\n\nTest yours with Memo"
     }
 
     private func brainAgeVerdict(_ age: Int) -> String {
@@ -583,7 +583,7 @@ struct ScoreRevealView: View {
     }
 
     private var shareText: String {
-        "My Brain Score is \(viewModel.brainScore)/1000 (Brain Age: \(viewModel.brainAge)) \u{1F9E0}\n\nI'm a \(viewModel.brainType.displayName) \u{2014} better than \(viewModel.percentile)% of players!\n\nTest yours with Memori"
+        "My Brain Score is \(viewModel.brainScore)/1000 (Brain Age: \(viewModel.brainAge)) \u{1F9E0}\n\nI'm a \(viewModel.brainType.displayName) \u{2014} better than \(viewModel.percentile)% of players!\n\nTest yours with Memo"
     }
 
     private var brainTypeColor: Color {

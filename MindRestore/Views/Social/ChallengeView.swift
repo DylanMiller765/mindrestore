@@ -25,11 +25,11 @@ struct ChallengeView: View {
     private var shareText: String {
         switch challengeType {
         case .brainScore(let brainAge, _, _, _, _):
-            return "I scored \(playerScore) on Memori Brain Assessment (Brain Age: \(brainAge))! Can you beat me? Download Memori to try."
+            return "I scored \(playerScore) on Memo Brain Assessment (Brain Age: \(brainAge))! Can you beat me? Download Memo to try."
         case .dailyChallenge(let challengeName):
-            return "I scored \(playerScore) on today's \(challengeName) challenge in Memori! Think you can beat me? Download Memori to try."
+            return "I scored \(playerScore) on today's \(challengeName) challenge in Memo! Think you can beat me? Download Memo to try."
         case .duel(let exerciseType):
-            return "I just scored \(playerScore) on \(exerciseType) in Memori! Challenge accepted? Download Memori to try."
+            return "I just scored \(playerScore) on \(exerciseType) in Memo! Challenge accepted? Download Memo to try."
         }
     }
 
@@ -199,7 +199,7 @@ struct ChallengeView: View {
                 ShareLink(
                     item: shareText,
                     preview: SharePreview(
-                        "Memori Challenge",
+                        "Memo Challenge",
                         image: Image(uiImage: shareImage)
                     )
                 ) {
@@ -343,9 +343,9 @@ struct ChallengeResultView: View {
 
     private var shareText: String {
         if isTie {
-            return "It's a tie! We both scored \(player1Score) on \(exerciseType) in Memori! Who will break the tie? Download Memori to challenge us."
+            return "It's a tie! We both scored \(player1Score) on \(exerciseType) in Memo! Who will break the tie? Download Memo to challenge us."
         }
-        return "\(winnerName) won the \(exerciseType) duel in Memori! \(player1Won ? player1Score : player2Score) vs \(player1Won ? player2Score : player1Score). Think you can beat us? Download Memori to try."
+        return "\(winnerName) won the \(exerciseType) duel in Memo! \(player1Won ? player1Score : player2Score) vs \(player1Won ? player2Score : player1Score). Think you can beat us? Download Memo to try."
     }
 
     var body: some View {
@@ -515,7 +515,7 @@ struct ChallengeResultView: View {
                 ShareLink(
                     item: shareText,
                     preview: SharePreview(
-                        "Memori Duel Results",
+                        "Memo Duel Results",
                         image: Image(uiImage: shareImage)
                     )
                 ) {

@@ -2,7 +2,13 @@
 
 The brain-training app for people tired of social media giants farming their attention. Fun, competitive, Gen Z, slightly pissed off. Not Lumosity-clinical. Not Calm-wellness. Not Opal-minimalist. Closer to Duolingo × NYT Games × Brick.
 
-For brand voice and copy rules see `MEMORY.md` → Brand & Positioning.
+> **Sister docs that govern the same surfaces — read both before designing or writing copy:**
+> - **Brand voice + copy rules:** Memori auto-memory `project_brand_voice.md` (informed-fear + defiance mode, line bank, do-say/don't-say, escalation across onboarding)
+> - **Brand identity + positioning:** auto-memory `project_brand_identity.md` (the dual-promise USP, competitor framing)
+>
+> This document defines *visuals*. The voice docs define *words*. Don't ship UI without checking the voice doc for whatever copy goes on it.
+
+> **Rename in flight:** the app is being renamed from "Memori" → "Memo - Doomscroll Blocker" (subtitle: "Block Apps. Train Your Brain."). Bundle ID stays. Codebase string sweep happens with the v2.0 onboarding redesign. Until that ships, in-code references still say "Memori" — match what's in the codebase, but new copy in design mocks should use "Memo."
 
 ---
 
@@ -209,12 +215,15 @@ Spotify-Wrapped-style reveal triggered from `QuickAssessmentView.onComplete`, pr
 | Asset | Where | Size |
 |---|---|---|
 | `mascot-welcome` | Onboarding p0 | 220pt, bobbing |
+| `mascot-lookout` | Onboarding goals / Feed Heist | 220–265pt wide, points flashlight toward feed wall |
 | `mascot-low-score` | Onboarding scare p4 | 180pt |
 | `mascot-goal` | FocusOnboardA | 200pt |
 | `mascot-thinking` | FocusOnboardHowItWorks | 130pt, rotated -8° |
 | `mascot-unlocked` | Paywall hero | 220pt + confetti |
 | `mascot-locked-sad` | Exit offer sheet | 140pt, spring-in |
 | `mascot-no-score` | Home fallback | 80pt |
+
+**Mission-pose rule:** new static Memo poses are allowed for onboarding hero beats when the existing set cannot carry the scene. They must match the existing blue/purple/pink mascot system, preserve the glasses and rounded brain silhouette, and avoid extra-limb artifacts. Use them as character moments, not generic decoration.
 
 ---
 

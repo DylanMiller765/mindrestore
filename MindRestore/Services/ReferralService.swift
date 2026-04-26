@@ -143,7 +143,7 @@ final class ReferralService {
     /// Present share sheet with referral link
     func shareReferralLink(modelContext: ModelContext) {
         guard let url = getReferralURL(modelContext: modelContext) else { return }
-        let text = "Try Memori and test your brain age! Use my link to get 1 week of Pro free 🧠"
+        let text = "Try Memo and test your brain age! Use my link to get 1 week of Pro free 🧠"
         let activityVC = UIActivityViewController(
             activityItems: [text, url],
             applicationActivities: nil

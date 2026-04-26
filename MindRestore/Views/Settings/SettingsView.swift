@@ -637,7 +637,7 @@ struct SettingsView: View {
                         .frame(width: 28, height: 28)
                         .background(Color.orange, in: RoundedRectangle(cornerRadius: 7))
 
-                    Text("Rate Memori")
+                    Text("Rate Memo")
                         .font(.subheadline)
                         .foregroundStyle(.primary)
 

@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import FamilyControls
+import DeviceActivity
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
@@ -32,29 +33,40 @@ struct OnboardingView: View {
     @State private var quickAssessmentBgColor: Color = AppColors.pageBg
     @State private var showingBrainAgeReveal = false
     @State private var screenTimeAuthorized = false
+    @State private var isRequestingScreenTimeAccess = false
+    @State private var screenTimeEstimateHours: Double = 4
+    @State private var measuredScreenTimeHours: Double?
+    @State private var useScreenTimeEstimate = false
 
     var onComplete: () -> Void
 
-    private let totalPages = 12
+    private let totalPages = 15
 
     var body: some View {
         ZStack {
-            (currentPage == 5 ? quickAssessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            (currentPage == 8 ? quickAssessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
+                if currentPage != 8 {
+                    onboardingProgressHeader
+                }
+
                 TabView(selection: $currentPage) {
                     welcomePage.tag(0)
                     namePage.tag(1)
                     goalsPage.tag(2)
-                    agePage.tag(3)
-                    scarePage.tag(4)
-                    quickAssessmentPage.tag(5)
-                    personalSolutionPage.tag(6)
-                    notificationPrimingPage.tag(7)
-                    stat144Page.tag(8)
-                    personalUnlocksPage.tag(9)
-                    focusModePage.tag(10)
-                    commitmentPage.tag(11)
+                    screenTimeAccessPage.tag(3)
+                    screenTimeEstimatePage.tag(4)
+                    empathyPage.tag(5)
+                    agePage.tag(6)
+                    scarePage.tag(7)
+                    quickAssessmentPage.tag(8)
+                    personalSolutionPage.tag(9)
+                    notificationPrimingPage.tag(10)
+                    stat144Page.tag(11)
+                    personalUnlocksPage.tag(12)
+                    focusModePage.tag(13)
+                    commitmentPage.tag(14)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -71,43 +83,26 @@ struct OnboardingView: View {
                         }
                     }
                     // Reset typewriter animation states when navigating away
-                    if newPage != 4 {
+                    if newPage != 7 {
                         badNewsTypingDone = false
                         badNewsSubtitleVisible = false
                     }
-                    if newPage != 6 {
+                    if newPage != 9 {
                         goodNewsTypingDone = false
                         goodNewsSubtitleVisible = false
                     }
-                    if newPage != 11 {
+                    if newPage != 14 {
                         commitmentBullet1Visible = false
                         commitmentBullet2Visible = false
                         commitmentBullet3Visible = false
                         commitmentBullet4Visible = false
                     }
                 }
-
-                if currentPage != 5 {
-                    HStack(spacing: 8) {
-                        ForEach(0..<totalPages, id: \.self) { index in
-                            Capsule()
-                                .fill(
-                                    index == currentPage
-                                        ? AnyShapeStyle(AppColors.accentGradient)
-                                        : AnyShapeStyle(Color.gray.opacity(0.25))
-                                )
-                                .frame(width: index == currentPage ? 24 : 8, height: 8)
-
-                                .animation(.spring(response: 0.3), value: currentPage)
-                        }
-                    }
-                    .padding(.bottom, 16)
-                }
             }
         }
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "personalSolution", "notificationPriming", "stat144", "personalUnlocks", "focusMode", "commitment"]
+                let stepNames = ["welcome", "name", "goals", "screenTimeAccess", "screenTimeEstimate", "empathy", "age", "personalizedScare", "quickAssessment", "personalSolution", "notificationPriming", "stat144", "personalUnlocks", "focusMode", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -117,7 +112,7 @@ struct OnboardingView: View {
         // while the first is still in its dismiss animation.
         .fullScreenCover(isPresented: $showingBrainAgeReveal, onDismiss: {
             Analytics.onboardingStep(step: "paywallDismissed")
-            withAnimation { currentPage = 6 } // → personalSolution
+            withAnimation { currentPage = 9 } // → personalSolution
         }) {
             OnboardingFinaleSequence(
                 brainAge: assessmentResult?.brainAge ?? 25,
@@ -126,17 +121,114 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Progress Header
+
+    private var onboardingProgressHeader: some View {
+        ZStack {
+            GeometryReader { proxy in
+                let barWidth = min(proxy.size.width * 0.76, 320)
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(AppColors.cardBorder)
+
+                    Capsule()
+                        .fill(AppColors.accent)
+                        .frame(width: barWidth * onboardingProgress)
+                }
+                .frame(width: barWidth, height: 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+            .frame(height: 34)
+
+            Button {
+                guard currentPage > 0 else { return }
+                withAnimation { currentPage -= 1 }
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(currentPage > 0 ? AppColors.textSecondary : .clear)
+                    .frame(width: 34, height: 34)
+                    .contentShape(Rectangle())
+            }
+            .disabled(currentPage == 0)
+            .accessibilityLabel("Back")
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: currentPage)
+    }
+
+    private var onboardingProgress: CGFloat {
+        guard totalPages > 1 else { return 1 }
+        return CGFloat(currentPage + 1) / CGFloat(totalPages)
+    }
+
+    private var onboardingGoalOrder: [UserFocusGoal] {
+        [.attentionShot, .screenTimeFrying, .doomscrolling, .loseFocus, .forgetInstantly, .getSharper]
+    }
+
+    private var effectiveDailyScreenTimeHours: Double {
+        if useScreenTimeEstimate { return screenTimeEstimateHours }
+        let measured = measuredScreenTimeHours ?? readCachedScreenTimeHours()
+        return measured ?? screenTimeEstimateHours
+    }
+
+    private var projectionIsEstimate: Bool {
+        if useScreenTimeEstimate { return true }
+        return measuredScreenTimeHours == nil && readCachedScreenTimeHours() == nil
+    }
+
+    private var yearsUntilSixty: Int {
+        max(1, 60 - (selectedAge > 0 ? selectedAge : 25))
+    }
+
+    private var projectedScreenTimeHours: Int {
+        Int((effectiveDailyScreenTimeHours * 365 * Double(yearsUntilSixty)).rounded())
+    }
+
+    private var yesterdayScreenTimeFilter: DeviceActivityFilter {
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: Date())
+        let yesterdayStart = cal.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
+        return DeviceActivityFilter(
+            segment: .daily(during: DateInterval(start: yesterdayStart, end: todayStart)),
+            users: .all,
+            devices: .init([.iPhone])
+        )
+    }
+
+    private func readCachedScreenTimeHours() -> Double? {
+        let value = UserDefaults(suiteName: "group.com.memori.shared")?
+            .double(forKey: "onboarding_daily_screen_time_hours") ?? 0
+        return value > 0 ? value : nil
+    }
+
+    private func refreshCachedScreenTimeHours() {
+        measuredScreenTimeHours = readCachedScreenTimeHours()
+    }
+
+    private func formatProjectedHours(_ value: Int) -> String {
+        if value >= 1000 {
+            let rounded = Int((Double(value) / 1000.0).rounded()) * 1000
+            return rounded.formatted()
+        }
+        return value.formatted()
+    }
+
+    private var projectedYearsText: String {
+        String(format: "%.1f", Double(projectedScreenTimeHours) / 8760.0)
+    }
+
     // MARK: - Stat 144× Page
 
     private var stat144Page: some View {
         FocusOnboardA {
             Analytics.onboardingStep(step: "stat144")
-            // Request FamilyControls/Screen Time auth so the next page can show real unlocks.
-            Task {
-                await focusModeService.requestAuthorization()
-                screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
-                withAnimation { currentPage = 9 } // → personalUnlocks
-            }
+            screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+            withAnimation { currentPage = 12 } // → personalUnlocks
         }
     }
 
@@ -150,7 +242,7 @@ struct OnboardingView: View {
             onContinue: {
                 if screenTimeAuthorized {
                     Analytics.onboardingStep(step: "personalUnlocksAuthorized")
-                    withAnimation { currentPage = 10 } // → focusMode
+                    withAnimation { currentPage = 13 } // → focusMode
                 } else if denied {
                     // CTA already deep-links to Settings inside the view. Nothing to do here.
                     // (User returns to this page; if they enabled it, screenTimeAuthorized
@@ -166,7 +258,7 @@ struct OnboardingView: View {
                         } else {
                             // still declined — let them continue anyway
                             Analytics.onboardingStep(step: "personalUnlocksDeclined")
-                            withAnimation { currentPage = 10 } // → focusMode
+                            withAnimation { currentPage = 13 } // → focusMode
                         }
                     }
                 }
@@ -332,63 +424,346 @@ struct OnboardingView: View {
     }
 
     private var goalsPage: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer().frame(height: 32)
+        ZStack(alignment: .topTrailing) {
+            FeedHeistBackdrop()
+                .padding(.top, 18)
+                .padding(.trailing, 0)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Pick your focus")
-                    .font(.system(size: 32, weight: .bold))
-                    .kerning(-0.6)
-                Text("Select 1–3 goals")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 28)
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 2)
 
-            VStack(spacing: 10) {
-                ForEach(UserFocusGoal.allCases) { goal in
-                    GoalCard(goal: goal, isSelected: selectedGoals.contains(goal)) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            if selectedGoals.contains(goal) {
-                                selectedGoals.remove(goal)
-                            } else if selectedGoals.count < 3 {
-                                selectedGoals.insert(goal)
+                MemoLookoutHeader()
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 10)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("What are you\ntaking back?")
+                        .font(.system(size: 37, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(1)
+                        .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Pick up to 3. Memo builds your anti-scroll plan.")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppColors.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+
+                Text("Choose up to 3")
+                    .font(.system(size: 12, weight: .heavy))
+                    .tracking(1.2)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .textCase(.uppercase)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 4)
+
+                VStack(spacing: 0) {
+                    Divider()
+                        .overlay(AppColors.cardBorder)
+
+                    ForEach(Array(onboardingGoalOrder.enumerated()), id: \.element.id) { index, goal in
+                        GoalCard(goal: goal, index: index, isSelected: selectedGoals.contains(goal)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                                if selectedGoals.contains(goal) {
+                                    selectedGoals.remove(goal)
+                                } else if selectedGoals.count < 3 {
+                                    selectedGoals.insert(goal)
+                                }
                             }
                         }
+
+                        Divider()
+                            .overlay(AppColors.cardBorder.opacity(selectedGoals.contains(goal) ? 0.9 : 0.7))
                     }
                 }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 10)
+
+                continueButton("Build my plan") {
+                    Analytics.onboardingStep(step: "goals")
+                    currentPage = 3
+                }
+                    .disabled(selectedGoals.isEmpty)
+                    .opacity(selectedGoals.isEmpty ? 0.4 : 1)
             }
-            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+            .responsiveContent(maxWidth: 500)
+            .frame(maxWidth: .infinity)
+        }
+        .clipped()
+        .onAppear { nameFieldFocused = false }
+    }
+
+    // MARK: - Screen Time Access Page
+
+    private var screenTimeAccessPage: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 28)
+
+            ZStack(alignment: .trailing) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Let Memo see\nwhat the feed\nis taking.")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .lineSpacing(1)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("We use Screen Time to personalize your plan and block the apps you choose. No ads. No data sold.")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.trailing, 76)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image("mascot-lookout")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 132)
+                    .offset(x: 16, y: 62)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 28)
+
+            Spacer().frame(height: 28)
+
+            VStack(spacing: 0) {
+                Divider().overlay(AppColors.cardBorder)
+                screenTimeProofRow(number: "01", title: "Personal fear math", detail: "Your plan uses your real daily pace.")
+                Divider().overlay(AppColors.cardBorder)
+                screenTimeProofRow(number: "02", title: "App blocking", detail: "Memo can bounce the apps you choose.")
+                Divider().overlay(AppColors.cardBorder)
+                screenTimeProofRow(number: "03", title: "Apple-private", detail: "Screen Time data stays on device.")
+                Divider().overlay(AppColors.cardBorder)
+            }
+            .padding(.horizontal, 28)
+
+            if screenTimeAuthorized {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Yesterday's Screen Time")
+                        .font(.system(size: 12, weight: .heavy))
+                        .tracking(1.0)
+                        .foregroundStyle(AppColors.textTertiary)
+                        .textCase(.uppercase)
+
+                    DeviceActivityReport(.screenTime, filter: yesterdayScreenTimeFilter)
+                        .frame(height: 58)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                refreshCachedScreenTimeHours()
+                            }
+                        }
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 22)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            Spacer(minLength: 18)
+
+            VStack(spacing: 12) {
+                continueButton(screenTimeAuthorized ? "Continue" : "Allow Screen Time") {
+                    if screenTimeAuthorized {
+                        Analytics.onboardingStep(step: "screenTimeAccessApproved")
+                        useScreenTimeEstimate = false
+                        refreshCachedScreenTimeHours()
+                        withAnimation { currentPage = 5 }
+                    } else {
+                        requestScreenTimeForOnboarding()
+                    }
+                }
+                .disabled(isRequestingScreenTimeAccess)
+                .opacity(isRequestingScreenTimeAccess ? 0.6 : 1)
+
+                Button {
+                    Analytics.onboardingStep(step: "screenTimeAccessEstimate")
+                    useScreenTimeEstimate = true
+                    withAnimation { currentPage = 4 }
+                } label: {
+                    Text("Use an estimate instead")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.textTertiary)
+                        .padding(.vertical, 8)
+                }
+            }
+            .padding(.bottom, 18)
+        }
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+        .onAppear {
+            screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+            refreshCachedScreenTimeHours()
+        }
+    }
+
+    private var screenTimeEstimatePage: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 48)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("No access?\nGive Memo a\nrough number.")
+                    .font(.system(size: 38, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("We'll mark the projection as estimated and keep the flow moving.")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 28)
+
+            Spacer().frame(height: 34)
+
+            VStack(spacing: 0) {
+                Divider().overlay(AppColors.cardBorder)
+                ForEach([2.0, 4.0, 6.0, 8.0], id: \.self) { hours in
+                    ScreenTimeEstimateRow(
+                        hours: hours,
+                        isSelected: screenTimeEstimateHours == hours,
+                        action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.78)) {
+                                screenTimeEstimateHours = hours
+                                measuredScreenTimeHours = nil
+                                useScreenTimeEstimate = true
+                            }
+                        }
+                    )
+                    Divider().overlay(AppColors.cardBorder)
+                }
+            }
+            .padding(.horizontal, 28)
 
             Spacer()
 
-            continueButton {
-                Analytics.onboardingStep(step: "goals")
-                currentPage = 3
+            continueButton("Use \(screenTimeEstimateLabel)") {
+                Analytics.onboardingStep(step: "screenTimeEstimate")
+                useScreenTimeEstimate = true
+                withAnimation { currentPage = 5 }
             }
-                .disabled(selectedGoals.isEmpty)
-                .opacity(selectedGoals.isEmpty ? 0.4 : 1)
+            .padding(.bottom, 18)
         }
-        .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
-        .onAppear { nameFieldFocused = false }
+    }
+
+    private var screenTimeEstimateLabel: String {
+        screenTimeEstimateHours >= 8 ? "8h+" : "\(Int(screenTimeEstimateHours))h"
+    }
+
+    private var dailyScreenTimeLabel: String {
+        if effectiveDailyScreenTimeHours >= 8 && projectionIsEstimate {
+            return "8h+"
+        }
+        return String(format: "%.1fh", effectiveDailyScreenTimeHours)
+    }
+
+    private func requestScreenTimeForOnboarding() {
+        isRequestingScreenTimeAccess = true
+        Task {
+            await focusModeService.requestAuthorization()
+            screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+            refreshCachedScreenTimeHours()
+            isRequestingScreenTimeAccess = false
+            if screenTimeAuthorized {
+                useScreenTimeEstimate = false
+                Analytics.onboardingStep(step: "screenTimeAccessApproved")
+            } else {
+                useScreenTimeEstimate = true
+                Analytics.onboardingStep(step: "screenTimeAccessDenied")
+                withAnimation { currentPage = 4 }
+            }
+        }
+    }
+
+    private func screenTimeProofRow(number: String, title: String, detail: String) -> some View {
+        HStack(alignment: .center, spacing: 16) {
+            Text(number)
+                .font(.system(size: 17, weight: .heavy, design: .monospaced))
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 34, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 16)
+    }
+
+    // MARK: - Empathy Page
+
+    private var empathyPage: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 34)
+
+            RiveMascotView(mood: .neutral, size: 148)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 24)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Your brain\nisn't broken.")
+                    .font(.system(size: 38, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("It's been hijacked.")
+                    .font(.system(size: 38, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("47 apps are fighting for your attention every minute. Memo's gonna fight back with you.")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
+            }
+            .padding(.horizontal, 28)
+
+            Spacer()
+
+            continueButton("Show me my plan") {
+                Analytics.onboardingStep(step: "empathy")
+                withAnimation { currentPage = 6 }
+            }
+            .padding(.bottom, 18)
+        }
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Age Page
 
     private var agePage: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 30) {
             Spacer()
 
             VStack(spacing: 10) {
-                Text("How old are you?")
+                Text("How many years\nare we defending?")
                     .font(.system(size: 32, weight: .bold))
                     .kerning(-0.6)
                     .multilineTextAlignment(.center)
 
-                Text("We'll compare your Brain Age to your real age.")
+                Text("Memo uses this to compare your Brain Age and make the stakes personal.")
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -417,13 +792,13 @@ struct OnboardingView: View {
             VStack(spacing: 12) {
                 continueButton {
                     Analytics.onboardingStep(step: "age")
-                    currentPage = 4
+                    currentPage = 7
                 }
 
                 Button {
                     selectedAge = 0
                     Analytics.onboardingStep(step: "age")
-                    withAnimation { currentPage = 4 }
+                    withAnimation { currentPage = 7 }
                 } label: {
                     Text("Skip")
                         .font(.subheadline.weight(.medium))
@@ -440,37 +815,53 @@ struct OnboardingView: View {
     // MARK: - Scare Page
 
     private var scarePage: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 60)
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 34)
 
-            Image("mascot-low-score")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 180)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image("mascot-low-score")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 98, height: 98)
+                        .accessibilityHidden(true)
 
-            VStack(spacing: 8) {
-                VStack(spacing: 4) {
-                    TypewriterText(fullText: "Doomscrolling is frying") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(projectionIsEstimate ? "Estimated from your pace" : "Based on your Screen Time")
+                            .font(.system(size: 11, weight: .heavy))
+                            .tracking(1.0)
+                            .foregroundStyle(AppColors.textTertiary)
+                            .textCase(.uppercase)
+
+                        Text("At \(dailyScreenTimeLabel)/day, the feed takes")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColors.textSecondary)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 0) {
+                    TypewriterText(fullText: formatProjectedHours(projectedScreenTimeHours)) {
                         withAnimation(.easeOut(duration: 0.3)) {
                             badNewsTypingDone = true
                         }
                     }
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
+                    .font(.system(size: 70, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColors.coral)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.72)
 
-                    Text("your memory")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.red)
+                    Text("hours by 60.")
+                        .font(.system(size: 31, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
                         .opacity(badNewsTypingDone ? 1 : 0)
-                        .scaleEffect(badNewsTypingDone ? 1 : 0.5)
+                        .offset(y: badNewsTypingDone ? 0 : 10)
                         .animation(.spring(response: 0.4, dampingFraction: 0.6), value: badNewsTypingDone)
                 }
 
-                Text("Heavy phone users have the attention span\nof a goldfish. Literally.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                Text("That's \(projectedYearsText) years if nothing changes.")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
                     .opacity(badNewsSubtitleVisible ? 1 : 0)
                     .offset(y: badNewsSubtitleVisible ? 0 : 10)
                     .animation(.easeOut(duration: 0.5), value: badNewsSubtitleVisible)
@@ -481,20 +872,27 @@ struct OnboardingView: View {
                             }
                         }
                     }
+
+                Text("Memo turns that time into reps.")
+                    .font(.system(size: 21, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .opacity(badNewsSubtitleVisible ? 1 : 0)
+                    .offset(y: badNewsSubtitleVisible ? 0 : 10)
             }
+            .padding(.horizontal, 28)
 
             Spacer()
 
             Button {
                 Analytics.onboardingStep(step: "scare")
-                withAnimation { currentPage = 5 }
+                withAnimation { currentPage = 8 }
             } label: {
-                Text("Don't believe us? Let's test it.")
+                Text("Test my brain")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
+            .padding(.bottom, 18)
         }
-        .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
     }
@@ -518,9 +916,12 @@ struct OnboardingView: View {
             userGoals: selectedGoals,
             brainAge: assessmentResult?.brainAge,
             userAge: selectedAge,
+            dailyScreenTimeHours: effectiveDailyScreenTimeHours,
+            projectedScreenTimeHours: projectedScreenTimeHours,
+            projectionIsEstimate: projectionIsEstimate,
             onContinue: {
                 Analytics.onboardingStep(step: "personalSolution")
-                withAnimation { currentPage = 7 } // → notification priming
+                withAnimation { currentPage = 10 } // → notification priming
             }
         )
     }
@@ -530,7 +931,7 @@ struct OnboardingView: View {
     private var notificationPrimingPage: some View {
         OnboardingNotificationPrimingView { granted in
             notificationsEnabled = granted
-            withAnimation { currentPage = 8 } // → stat144
+            withAnimation { currentPage = 11 } // → stat144
         }
     }
 
@@ -543,12 +944,12 @@ struct OnboardingView: View {
             // Title with user's name
             Group {
                 if enteredName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Your Contract")
+                    Text("Join the fight")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                 } else {
                     (Text(enteredName.trimmingCharacters(in: .whitespacesAndNewlines))
                         .foregroundColor(AppColors.accent)
-                    + Text("'s Contract"))
+                    + Text("'s fight plan"))
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                 }
             }
@@ -557,24 +958,22 @@ struct OnboardingView: View {
             // Commitment bullets
             VStack(alignment: .leading, spacing: 16) {
                 if commitmentBullet1Visible {
-                    TypewriterText(fullText: "• I'll train my brain for 5 minutes a day", speed: 0.025)
+                    TypewriterText(fullText: "• I'll train before the feed gets me", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet2Visible {
-                    TypewriterText(fullText: "• I'll build my streak and not break it", speed: 0.025)
+                    TypewriterText(fullText: "• I'll make scrolling cost reps", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet3Visible {
-                    TypewriterText(fullText: focusModeWasSetUp
-                        ? "• I'll let Memori block my distracting apps"
-                        : "• I'll put down the scroll and pick up the games", speed: 0.025)
+                    TypewriterText(fullText: "• I'll let Memo bounce the apps that drain me", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
                 if commitmentBullet4Visible {
-                    TypewriterText(fullText: "• I'll take back my screen time", speed: 0.025)
+                    TypewriterText(fullText: "• I'll stop being free real estate", speed: 0.025)
                         .font(.subheadline)
                         .transition(.opacity)
                 }
@@ -674,7 +1073,7 @@ struct OnboardingView: View {
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.caption2)
-                Text("All data stays on your device. No tracking. No cloud uploads.")
+                Text("No ads. No data sold. Memo stays on your side.")
                     .font(.caption)
             }
             .foregroundStyle(.tertiary)
@@ -732,14 +1131,14 @@ struct OnboardingView: View {
             FocusModeSetupView(onComplete: {
                 focusModeWasSetUp = true
                 Analytics.onboardingStep(step: "focusModeCompleted")
-                withAnimation { currentPage = 11 } // → commitment
+                withAnimation { currentPage = 14 } // → commitment
             })
 
             // "Not now" skip button
             Button {
                 Analytics.onboardingStep(step: "focusModeSkipped")
                 Analytics.focusSetupSkipped()
-                withAnimation { currentPage = 11 } // → commitment
+                withAnimation { currentPage = 14 } // → commitment
             } label: {
                 Text("Not now")
                     .font(.subheadline.weight(.medium))
@@ -749,9 +1148,9 @@ struct OnboardingView: View {
         }
     }
 
-    private func continueButton(action: @escaping () -> Void) -> some View {
+    private func continueButton(_ title: String = "Continue", action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text("Continue")
+            Text(title)
                 .gradientButton()
         }
         .accessibilityHint("Continues to the next step")
@@ -773,6 +1172,10 @@ struct OnboardingView: View {
         user.focusGoals = Array(selectedGoals)
         user.notificationsEnabled = notificationsEnabled
         user.userAge = selectedAge
+        let sharedDefaults = UserDefaults(suiteName: "group.com.memori.shared")
+        sharedDefaults?.set(effectiveDailyScreenTimeHours, forKey: "onboarding_projection_daily_hours")
+        sharedDefaults?.set(projectionIsEstimate, forKey: "onboarding_projection_is_estimate")
+        sharedDefaults?.set(projectedScreenTimeHours, forKey: "onboarding_projected_screen_time_hours")
 
         // Save brain score result — assessment does NOT count toward daily session/limit
         if let result = assessmentResult {
@@ -841,59 +1244,285 @@ struct FeatureRow: View {
     }
 }
 
-// MARK: - Goal Card
+// MARK: - Screen Time Estimate Row
 
-struct GoalCard: View {
-    let goal: UserFocusGoal
+struct ScreenTimeEstimateRow: View {
+    let hours: Double
     let isSelected: Bool
     let action: () -> Void
 
-    private var goalColor: Color {
-        switch goal {
-        case .screenTimeFrying: return AppColors.coral
-        case .doomscrolling:    return AppColors.violet
-        case .attentionShot:    return AppColors.accent
-        case .loseFocus:        return AppColors.sky
-        case .forgetInstantly:  return AppColors.mint
-        case .getSharper:       return AppColors.amber
+    private var title: String {
+        hours >= 8 ? "8h+" : "\(Int(hours))h"
+    }
+
+    private var subtitle: String {
+        switch hours {
+        case ..<3: return "Light scroll, still worth defending"
+        case ..<5: return "Average phone pace"
+        case ..<7: return "Heavy feed territory"
+        default: return "The algorithm is clocked in"
         }
     }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(goalColor)
-                    Image(systemName: goal.icon)
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 56, height: 56)
+            HStack(spacing: 16) {
+                Text(title)
+                    .font(.system(size: 23, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(isSelected ? AppColors.accent : AppColors.textSecondary)
+                    .frame(width: 56, alignment: .leading)
 
-                Text(goal.displayName)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(isSelected ? goalColor : .primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(subtitle)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Text("\(projectedAnnualHours.formatted()) hours a year")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppColors.textTertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(isSelected ? AppColors.accent : AppColors.cardBorder)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? goalColor.opacity(0.10) : AppColors.cardSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(
-                        isSelected ? goalColor : AppColors.cardBorder,
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(goal.displayName)\(isSelected ? ", selected" : "")")
+    }
+
+    private var projectedAnnualHours: Int {
+        Int((hours * 365).rounded())
+    }
+}
+
+// MARK: - Goal Card
+
+struct GoalCard: View {
+    let goal: UserFocusGoal
+    let index: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var missionTitle: String {
+        switch goal {
+        case .screenTimeFrying: return "Screen Time"
+        case .doomscrolling: return "Memory"
+        case .attentionShot: return "Attention"
+        case .loseFocus: return "Mornings"
+        case .forgetInstantly: return "Sleep"
+        case .getSharper: return "Self-Control"
+        }
+    }
+
+    private var missionSubtitle: String {
+        switch goal {
+        case .screenTimeFrying: return "Make scrolling cost reps"
+        case .doomscrolling: return "Train recall daily"
+        case .attentionShot: return "Stop losing the thread"
+        case .loseFocus: return "Start before the feed"
+        case .forgetInstantly: return "Protect your wind-down"
+        case .getSharper: return "Build the no muscle"
+        }
+    }
+
+    private var missionNumber: String {
+        String(format: "%02d", index + 1)
+    }
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .leading) {
+                HStack(spacing: 16) {
+                    Rectangle()
+                        .fill(isSelected ? AppColors.accent : Color.clear)
+                        .frame(width: 3, height: 44)
+                        .shadow(color: AppColors.accent.opacity(isSelected ? 0.6 : 0), radius: 8)
+
+                    Text(missionNumber)
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .tracking(0.8)
+                        .foregroundStyle(isSelected ? AppColors.accent : AppColors.textTertiary.opacity(0.74))
+                        .frame(width: 36, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(missionTitle)
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textPrimary.opacity(0.92))
+                            .lineLimit(1)
+                            .multilineTextAlignment(.leading)
+
+                        Text(missionSubtitle)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppColors.textTertiary)
+                            .lineLimit(1)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    GoalSelectionMark(isSelected: isSelected)
+                }
+                .overlay(alignment: .bottom) {
+                    if isSelected {
+                        SelectedGoalUnderline()
+                            .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 2.25, lineCap: .round, lineJoin: .round))
+                            .shadow(color: AppColors.accent.opacity(0.45), radius: 8)
+                            .frame(height: 16)
+                            .padding(.leading, 2)
+                            .padding(.trailing, 6)
+                            .offset(y: 12)
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+                }
+            }
+            .padding(.vertical, isSelected ? 10 : 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(missionTitle), \(missionSubtitle)\(isSelected ? ", selected" : "")")
+    }
+}
+
+private struct MemoLookoutHeader: View {
+    var body: some View {
+        Image("mascot-lookout")
+            .renderingMode(.original)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 265, height: 118, alignment: .leading)
+            .offset(x: -20)
+            .shadow(color: AppColors.accent.opacity(0.28), radius: 18, y: 8)
+            .accessibilityHidden(true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct FeedHeistBackdrop: View {
+    private let reels: [FeedReelStyle] = [
+        .init(color: AppColors.coral, offset: 10, opacity: 0.30),
+        .init(color: AppColors.violet, offset: -6, opacity: 0.34),
+        .init(color: AppColors.accent, offset: 14, opacity: 0.28),
+        .init(color: AppColors.mint, offset: -2, opacity: 0.24)
+    ]
+
+    var body: some View {
+        ZStack {
+            HStack(alignment: .top, spacing: 9) {
+                ForEach(Array(reels.enumerated()), id: \.offset) { index, reel in
+                    FeedReel(style: reel, index: index)
+                        .offset(y: reel.offset)
+                }
+            }
+            .rotation3DEffect(.degrees(-28), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+            .rotationEffect(.degrees(4))
+            .frame(width: 162)
+
+            LinearGradient(
+                colors: [
+                    .clear,
+                    AppColors.pageBg.opacity(0.54),
+                    AppColors.pageBg
+                ],
+                startPoint: .topTrailing,
+                endPoint: .bottomLeading
+            )
+        }
+        .frame(width: 176, height: 250)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct FeedReelStyle {
+    let color: Color
+    let offset: CGFloat
+    let opacity: Double
+}
+
+private struct FeedReel: View {
+    let style: FeedReelStyle
+    let index: Int
+
+    var body: some View {
+        VStack(spacing: 7) {
+            ForEach(0..<3, id: \.self) { item in
+                FeedFrame(color: style.color, index: index + item)
+            }
+        }
+        .opacity(style.opacity)
+    }
+}
+
+private struct FeedFrame: View {
+    let color: Color
+    let index: Int
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(AppColors.cardElevated.opacity(0.84))
+            .overlay(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(color.opacity(0.78))
+                    .frame(width: 28, height: 28)
+                    .padding(6)
+            }
+            .overlay(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Capsule()
+                        .fill(AppColors.textPrimary.opacity(0.22))
+                        .frame(width: index.isMultiple(of: 2) ? 32 : 24, height: 4)
+                    Capsule()
+                        .fill(AppColors.textPrimary.opacity(0.12))
+                        .frame(width: 22, height: 4)
+                }
+                .padding(7)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(AppColors.cardBorder.opacity(0.8), lineWidth: 1)
+            }
+            .frame(width: 44, height: 66)
+            .shadow(color: color.opacity(0.18), radius: 12, y: 6)
+    }
+}
+
+private struct GoalSelectionMark: View {
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 21, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .shadow(color: AppColors.accent.opacity(0.55), radius: 8)
+                    .transition(.scale.combined(with: .opacity))
+            } else {
+                Circle()
+                    .stroke(AppColors.cardBorder.opacity(0.92), lineWidth: 2)
+                    .frame(width: 24, height: 24)
+            }
+        }
+        .frame(width: 30, height: 30)
+    }
+}
+
+private struct SelectedGoalUnderline: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let y = rect.maxY - 4
+        let left = rect.minX + 4
+        let right = rect.maxX - 4
+
+        path.move(to: CGPoint(x: left, y: y))
+        path.addLine(to: CGPoint(x: right - 48, y: y))
+        path.addLine(to: CGPoint(x: right - 32, y: y - 12))
+        path.addLine(to: CGPoint(x: right, y: y - 12))
+        return path
     }
 }

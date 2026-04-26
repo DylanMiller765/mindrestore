@@ -62,7 +62,7 @@ private struct BrandingFooter: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Text("Test yours free \u{2014} Memori")
+        Text("Test yours free \u{2014} Memo")
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.4) : Color(red: 0.62, green: 0.60, blue: 0.58))
     }
@@ -632,7 +632,7 @@ struct ExerciseShareCard: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 36)
 
-                // -- Memori branding --
+                // -- Memo branding --
                 exerciseCardBrandingHeader
 
                 Spacer().frame(height: 32)

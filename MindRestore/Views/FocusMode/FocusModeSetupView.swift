@@ -87,11 +87,11 @@ struct FocusModeSetupView: View {
             Spacer().frame(height: 32)
 
             VStack(spacing: 8) {
-                Text("Choose apps to block")
+                Text("Pick what\nMemo bounces")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
-                Text("These will be shielded while Focus Mode is on")
+                Text("Distracting apps stay locked until you earn them back.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -107,7 +107,7 @@ struct FocusModeSetupView: View {
                         Image(systemName: "lock.fill")
                             .font(.caption)
                             .foregroundStyle(AppColors.amber)
-                        Text("Free plan: 1 app. Get Pro for unlimited.")
+                        Text("Free plan: 1 app. Pro lets Memo bounce the whole feed.")
                             .font(.caption)
                             .foregroundStyle(AppColors.amber)
                     }
@@ -140,9 +140,9 @@ struct FocusModeSetupView: View {
                         .foregroundStyle(totalSelected > 0 ? AppColors.mint : AppColors.accent)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(totalSelected > 0 ? "\(totalSelected) selected" : "Tap to choose apps")
+                        Text(totalSelected > 0 ? "\(totalSelected) targets picked" : "Choose Memo's targets")
                             .font(.system(size: 16, weight: .semibold))
-                        Text(totalSelected > 0 ? "Tap to change" : "Pick apps & categories to block")
+                        Text(totalSelected > 0 ? "Tap to change the hit list" : "Pick apps and categories to lock")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -192,12 +192,12 @@ struct FocusModeSetupView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
 
-            Text("When should\napps be blocked?")
+            Text("When is Memo\non patrol?")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 6)
 
-            Text("You can change this anytime in settings.")
+            Text("Choose when the algorithm has to get through Memo first.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -208,14 +208,14 @@ struct FocusModeSetupView: View {
                 scheduleCard(
                     mascot: "mascot-streak-fire",
                     title: "All day",
-                    subtitle: "Maximum commitment. No breaks.",
+                    subtitle: "Maximum patrol. No easy exits.",
                     isSelected: !scheduleEnabled
                 ) { scheduleEnabled = false }
 
                 scheduleCard(
                     mascot: "mascot-thinking",
                     title: "Set hours",
-                    subtitle: "Active only when you need it.",
+                    subtitle: "Memo clocks in when you need backup.",
                     isSelected: scheduleEnabled
                 ) { scheduleEnabled = true }
             }
@@ -329,11 +329,12 @@ struct FocusModeSetupView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
 
-            Text("Pick your pace")
+            Text("Choose your\nunlock rules")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
                 .padding(.bottom, 6)
 
-            Text("Every brain game earns you unlock time.\nYou can change this later.")
+            Text("Every brain game earns screen time back.\nScrolling costs reps now.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -343,8 +344,8 @@ struct FocusModeSetupView: View {
             VStack(spacing: 10) {
                 paceCard(
                     mascot: "mascot-streak-fire",
-                    name: "Laser",
-                    description: "Max focus. Apps snap shut fast.",
+                    name: "Hard mode",
+                    description: "Apps snap shut fast.",
                     minutes: 5,
                     isRecommended: false
                 )
@@ -352,23 +353,23 @@ struct FocusModeSetupView: View {
                 paceCard(
                     mascot: "mascot-cool",
                     name: "Balanced",
-                    description: "The one most people stick with.",
+                    description: "Enough time to reply. Not enough to spiral.",
                     minutes: 15,
                     isRecommended: true
                 )
 
                 paceCard(
                     mascot: "mascot-welcome",
-                    name: "Breathing",
-                    description: "Room to reply without earning it twice.",
+                    name: "Breathing room",
+                    description: "A softer start while Memo trains you up.",
                     minutes: 30,
                     isRecommended: false
                 )
 
                 paceCard(
                     mascot: "mascot-bored",
-                    name: "Easing in",
-                    description: "Light touch while you're still adjusting.",
+                    name: "Training wheels",
+                    description: "Light patrol while you build the habit.",
                     minutes: 60,
                     isRecommended: false
                 )
@@ -397,7 +398,7 @@ struct FocusModeSetupView: View {
                     }
                 }
             } label: {
-                Text("Enable Focus Mode")
+                Text("Put Memo on patrol")
                     .gradientButton()
             }
             .padding(.horizontal, 32)

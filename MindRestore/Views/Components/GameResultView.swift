@@ -269,7 +269,7 @@ struct GameResultView: View {
 
             // Challenge Back button
             if let url = challengeBackLink.vercelURL {
-                ShareLink(item: url, subject: Text("Memori Challenge"), message: Text(challengeBackLink.shareMessage())) {
+                ShareLink(item: url, subject: Text("Memo Challenge"), message: Text(challengeBackLink.shareMessage())) {
                     Label("Challenge Back", systemImage: "arrow.uturn.left")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
@@ -288,7 +288,7 @@ struct GameResultView: View {
         VStack(spacing: 12) {
             // Challenge a Friend (only when not responding to a challenge)
             if activeChallenge == nil, let link = challengeLink, let url = link.vercelURL {
-                ShareLink(item: url, subject: Text("Memori Challenge"), message: Text(link.shareMessage())) {
+                ShareLink(item: url, subject: Text("Memo Challenge"), message: Text(link.shareMessage())) {
                     Label("Challenge a Friend", systemImage: "person.2.fill")
                         .font(.headline)
                         .frame(maxWidth: .infinity)

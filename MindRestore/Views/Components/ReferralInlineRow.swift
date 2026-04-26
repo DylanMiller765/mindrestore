@@ -14,8 +14,8 @@ struct ReferralInlineRow: View {
     var body: some View {
         ShareLink(
             item: shareURL,
-            subject: Text("Try Memori"),
-            message: Text("Try Memori and test your brain age! Use my link to get 1 week of Pro free")
+            subject: Text("Try Memo"),
+            message: Text("Try Memo and test your brain age! Use my link to get 1 week of Pro free")
         ) {
             HStack(spacing: 8) {
                 Text("🎁")
