@@ -41,6 +41,7 @@
 		71A70BC02F959D10009C563D /* MemoriShieldConfig.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		71A70D442F9C2F0F009C563D /* FocusUnlocksReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		71A70D552F9C30C7009C563D /* FocusOnboardingPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */; };
+		71A70DFF2F9DA39C009C563D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 71A70DFE2F9DA39C009C563D /* RevenueCat */; };
 		71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
 		71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
 		71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
@@ -74,7 +75,6 @@
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
 		BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB03 /* QuickAssessmentView.swift */; };
 		BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB04 /* OnboardingPaywallView.swift */; };
-		ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */; };
 		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
@@ -134,6 +134,7 @@
 		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
 		MASCOT0STATE0002 /* MascotStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MASCOT0STATE0001 /* MascotStateView.swift */; };
 		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
+		ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */; };
 		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
 		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		RFRRL0000000000000001 /* ReferralService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000002 /* ReferralService.swift */; };
@@ -295,7 +296,6 @@
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB03 /* QuickAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAssessmentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB04 /* OnboardingPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallView.swift; sourceTree = "<group>"; };
-		ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNewScreens.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
 		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
@@ -357,6 +357,7 @@
 		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
 		MASCOT0STATE0001 /* MascotStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotStateView.swift; sourceTree = "<group>"; };
 		MCHN0002000000000000MC01 /* MemoryChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryChainView.swift; sourceTree = "<group>"; };
+		ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNewScreens.swift; sourceTree = "<group>"; };
 		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000002 /* ReferralService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralService.swift; sourceTree = "<group>"; };
@@ -483,6 +484,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71A70DFF2F9DA39C009C563D /* RevenueCat in Frameworks */,
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
 				71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */,
 				71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */,
@@ -997,6 +999,7 @@
 				CONFETTI00000003 /* ConfettiSwiftUI */,
 				71A50A1C2F86EB9500C6CDC3 /* PostHog */,
 				71D9D0C52F87CDFF001C0433 /* RiveRuntime */,
+				71A70DFE2F9DA39C009C563D /* RevenueCat */,
 			);
 			productName = MindRestore;
 			productReference = A2AA6B711819E89512C58132 /* MindRestore.app */;
@@ -1073,6 +1076,7 @@
 				CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 				71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */,
 				71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 18FB5A40D6375556F647905B /* Products */;
@@ -2029,6 +2033,14 @@
 				minimumVersion = 3.50.0;
 			};
 		};
+		71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.69.0;
+			};
+		};
 		71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rive-app/rive-ios";
@@ -2052,6 +2064,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */;
 			productName = PostHog;
+		};
+		71A70DFE2F9DA39C009C563D /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
 		};
 		71D9D0C52F87CDFF001C0433 /* RiveRuntime */ = {
 			isa = XCSwiftPackageProductDependency;

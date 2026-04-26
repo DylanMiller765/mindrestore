@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import UserNotifications
+import RevenueCat
 
 @main
 struct MindRestoreApp: App {
@@ -10,6 +11,12 @@ struct MindRestoreApp: App {
 
     init() {
         Analytics.configure()
+        Purchases.logLevel = .info
+        Purchases.configure(
+            with: Configuration.Builder(withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC")
+                .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
+                .build()
+        )
         configureTabBarAppearance()
     }
 
