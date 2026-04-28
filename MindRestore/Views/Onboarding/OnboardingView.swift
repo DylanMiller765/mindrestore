@@ -87,27 +87,21 @@ struct OnboardingView: View {
                     onboardingProgressHeader
                 }
 
-                TabView(selection: $currentPage) {
-                    welcomePage.tag(0)
-                    namePage.tag(1)
-                    painCardsPage.tag(2)
-                    industryScarePage.tag(3)
-                    empathyPage.tag(4)
-                    goalsPage.tag(5)
-                    agePage.tag(6)
-                    screenTimeAccessPage.tag(7)
-                    personalScarePage.tag(8)
-                    quickAssessmentPage.tag(9)
-                    planRevealPage.tag(10)
-                    comparisonPage.tag(11)
-                    differentiationPage.tag(12)
-                    focusModePage.tag(13)
-                    notificationPrimingPage.tag(14)
-                    commitmentPage.tag(15)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .scrollDisabled(true)
-                .animation(.easeInOut, value: currentPage)
+                pageContent
+                    .id(currentPage)
+                    .zIndex(Double(currentPage))
+                    .transition(reduceMotion
+                        ? AnyTransition.opacity.animation(.easeInOut(duration: 0.18))
+                        : AnyTransition.asymmetric(
+                            insertion: .opacity
+                                .combined(with: .scale(scale: 0.96, anchor: .center))
+                                .combined(with: .offset(y: 8))
+                                .animation(.easeOut(duration: 0.40)),
+                            removal: .opacity
+                                .animation(.easeIn(duration: 0.30))
+                        )
+                    )
+                    .animation(.easeInOut(duration: 0.40), value: currentPage)
                 .onChange(of: currentPage) { _, newPage in
                     // Animate keyboard dismiss smoothly
                     UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
@@ -183,6 +177,32 @@ struct OnboardingView: View {
     // Lives at the outer ZStack level so blur effects extend full-screen
     // (including behind the progress bar). Add new cases as pages adopt
     // atmosphere effects.
+
+    /// Single source of truth for which page to render at a given currentPage.
+    /// Wrapped in @ViewBuilder so SwiftUI can apply .id / .transition uniformly
+    /// to any of the 16 child views.
+    @ViewBuilder
+    private var pageContent: some View {
+        switch currentPage {
+        case 0: welcomePage
+        case 1: namePage
+        case 2: painCardsPage
+        case 3: industryScarePage
+        case 4: empathyPage
+        case 5: goalsPage
+        case 6: agePage
+        case 7: screenTimeAccessPage
+        case 8: personalScarePage
+        case 9: quickAssessmentPage
+        case 10: planRevealPage
+        case 11: comparisonPage
+        case 12: differentiationPage
+        case 13: focusModePage
+        case 14: notificationPrimingPage
+        case 15: commitmentPage
+        default: EmptyView()
+        }
+    }
 
     @ViewBuilder
     private var pageAtmosphere: some View {
@@ -728,13 +748,15 @@ struct OnboardingView: View {
             Spacer().frame(height: 28)
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Let Memo see\nwhat's been\ntaken from you.")
+                Text(screenTimeAuthorized ? "Screen Time\nconnected." : "Let Memo read\nthe damage.")
                     .font(.system(size: 38, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.textPrimary)
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Screen Time powers your plan and lets Memo block the apps you pick. No ads. No data sold. We never see it.")
+                Text(screenTimeAuthorized
+                     ? "Memo can now build your plan from real numbers. Apple-private. No ads. No data sold."
+                     : "Screen Time lets Memo personalize your plan and block the apps you choose. Apple-private. No ads. No data sold.")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(AppColors.textSecondary)
                     .lineSpacing(3)
@@ -742,54 +764,67 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 28)
 
-            Image("mascot-thinking")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 98, height: 98)
-                .shadow(color: AppColors.accent.opacity(0.22), radius: 16, y: 8)
-                .accessibilityHidden(true)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 34)
-                .padding(.top, 14)
-                .padding(.bottom, 18)
+            ZStack(alignment: .trailing) {
+                if screenTimeAuthorized {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Screen Time connected")
+                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                            .tracking(0.8)
+                            .textCase(.uppercase)
+                    }
+                    .foregroundStyle(AppColors.accent)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(AppColors.accent.opacity(0.42), lineWidth: 1.2)
+                    )
+                    .rotationEffect(.degrees(-2))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                }
+
+                Image("mascot-thinking")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 98, height: 98)
+                    .shadow(color: AppColors.accent.opacity(screenTimeAuthorized ? 0.34 : 0.22), radius: screenTimeAuthorized ? 22 : 16, y: 8)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 34)
+            .padding(.top, 14)
+            .padding(.bottom, 18)
 
             VStack(spacing: 0) {
                 Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(title: "Make the math personal", detail: "Plan calibrated to your real pace, not an industry average.")
+                screenTimeReasonRow(
+                    title: "Real numbers",
+                    detail: screenTimeAuthorized ? "Your plan uses your real pace now." : "Your plan uses your pace, not averages.",
+                    isConfirmed: screenTimeAuthorized
+                )
                 Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(title: "Bounce the worst offenders", detail: "Memo locks the apps you pick. You earn them back.")
+                screenTimeReasonRow(
+                    title: "Real blockers",
+                    detail: "Choose what Memo bounces after this.",
+                    isConfirmed: screenTimeAuthorized
+                )
                 Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(title: "Stays on your phone", detail: "Apple-private. We never see it. We don't want to.")
+                screenTimeReasonRow(
+                    title: "Private by design",
+                    detail: "Screen Time data stays on your phone.",
+                    isConfirmed: screenTimeAuthorized
+                )
                 Divider().overlay(AppColors.cardBorder)
             }
             .padding(.horizontal, 28)
 
-            if screenTimeAuthorized {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Yesterday's Screen Time")
-                        .font(.system(size: 12, weight: .heavy))
-                        .tracking(1.0)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .textCase(.uppercase)
-
-                    DeviceActivityReport(.screenTime, filter: yesterdayScreenTimeFilter)
-                        .frame(height: 58)
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                                refreshCachedScreenTimeHours()
-                            }
-                        }
-                }
-                .padding(.horizontal, 28)
-                .padding(.top, 22)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-
             Spacer(minLength: 18)
 
             VStack(spacing: 12) {
-                continueButton(screenTimeAuthorized ? "Continue" : "Allow Screen Time") {
+                continueButton(screenTimeAuthorized ? "Show what Memo found" : "Allow Screen Time") {
                     if screenTimeAuthorized {
                         Analytics.onboardingStep(step: "screenTimeAccessApproved")
                         useScreenTimeEstimate = false
@@ -802,14 +837,16 @@ struct OnboardingView: View {
                 .disabled(isRequestingScreenTimeAccess)
                 .opacity(isRequestingScreenTimeAccess ? 0.6 : 1)
 
-                Button {
-                    Analytics.onboardingStep(step: "screenTimeAccessEstimate")
-                    showingScreenTimeEstimateSheet = true
-                } label: {
-                    Text("Use a rough estimate")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppColors.textTertiary)
-                        .padding(.vertical, 8)
+                if !screenTimeAuthorized {
+                    Button {
+                        Analytics.onboardingStep(step: "screenTimeAccessEstimate")
+                        showingScreenTimeEstimateSheet = true
+                    } label: {
+                        Text("Use a rough estimate")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppColors.textTertiary)
+                            .padding(.vertical, 8)
+                    }
                 }
             }
             .padding(.bottom, 18)
@@ -853,7 +890,6 @@ struct OnboardingView: View {
             if screenTimeAuthorized {
                 useScreenTimeEstimate = false
                 Analytics.onboardingStep(step: "screenTimeAccessApproved")
-                goToPage(8) // → personalScare
             } else {
                 useScreenTimeEstimate = true
                 Analytics.onboardingStep(step: "screenTimeAccessDenied")
@@ -862,13 +898,21 @@ struct OnboardingView: View {
         }
     }
 
-    private func screenTimeReasonRow(title: String, detail: String) -> some View {
+    private func screenTimeReasonRow(title: String, detail: String, isConfirmed: Bool = false) -> some View {
         HStack(alignment: .center, spacing: 16) {
-            Circle()
-                .fill(AppColors.accent)
-                .frame(width: 8, height: 8)
-                .shadow(color: AppColors.accent.opacity(0.55), radius: 8)
-                .frame(width: 34, alignment: .leading)
+            ZStack {
+                if isConfirmed {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundStyle(AppColors.accent)
+                } else {
+                    Circle()
+                        .fill(AppColors.accent)
+                        .frame(width: 8, height: 8)
+                        .shadow(color: AppColors.accent.opacity(0.55), radius: 8)
+                }
+            }
+            .frame(width: 34, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
