@@ -7,6 +7,7 @@ import DeviceActivity
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(FocusModeService.self) private var focusModeService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var users: [User]
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
@@ -194,6 +195,21 @@ struct OnboardingView: View {
     }
 
     // MARK: - Progress Header
+
+    /// Pages where the top progress bar is hidden (full-bleed editorial moments):
+    /// 4 Empathy, 9 Quick Assessment, 10 Plan Reveal.
+    private var progressHeaderOpacity: Double {
+        let hiddenPages: Set<Int> = [4, 9, 10]
+        return hiddenPages.contains(currentPage) ? 0 : 1
+    }
+
+    /// Single funnel for every page advance / back-step. All onboarding CTAs
+    /// route through this so the transition curve is tunable in one place.
+    private func goToPage(_ page: Int) {
+        withAnimation(.easeInOut(duration: 0.40)) {
+            currentPage = page
+        }
+    }
 
     private var onboardingProgressHeader: some View {
         ZStack {
