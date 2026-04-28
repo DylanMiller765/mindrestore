@@ -168,10 +168,10 @@ struct OnboardingView: View {
         switch lastDismissedCover {
         case .brainAgeReveal:
             Analytics.onboardingStep(step: "revealDismissed")
-            withAnimation { currentPage = 10 } // → planReveal
+            goToPage(10) // → planReveal
         case .paywall:
             Analytics.onboardingStep(step: "paywallDismissed")
-            withAnimation { currentPage = 13 } // → focusMode
+            goToPage(13) // → focusMode
         case nil:
             break
         }
@@ -235,7 +235,7 @@ struct OnboardingView: View {
 
             Button {
                 guard currentPage > 0 else { return }
-                withAnimation { currentPage -= 1 }
+                goToPage(max(0, currentPage - 1))
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .bold))
@@ -325,7 +325,7 @@ struct OnboardingView: View {
         FocusOnboardPersonalUnlocks(
             onContinue: {
                 Analytics.onboardingStep(step: "personalScare")
-                withAnimation { currentPage = 9 } // → quickAssessment
+                goToPage(9) // → quickAssessment
             },
             authorized: screenTimeAuthorized,
             count: 287,
@@ -650,7 +650,7 @@ struct OnboardingView: View {
     private func dismissAndAdvance() {
         nameFieldFocused = false
         Analytics.onboardingStep(step: "name")
-        withAnimation { currentPage = 2 }
+        goToPage(2)
     }
 
     private var goalsPage: some View {
@@ -708,7 +708,7 @@ struct OnboardingView: View {
 
                 continueButton("Continue") {
                     Analytics.onboardingStep(step: "goals")
-                    withAnimation { currentPage = 6 } // → age
+                    goToPage(6) // → age
                 }
                     .disabled(selectedGoals.isEmpty)
                     .opacity(selectedGoals.isEmpty ? 0.4 : 1)
@@ -794,7 +794,7 @@ struct OnboardingView: View {
                         Analytics.onboardingStep(step: "screenTimeAccessApproved")
                         useScreenTimeEstimate = false
                         refreshCachedScreenTimeHours()
-                        withAnimation { currentPage = 8 } // → personalScare
+                        goToPage(8) // → personalScare
                     } else {
                         requestScreenTimeForOnboarding()
                     }
@@ -828,7 +828,7 @@ struct OnboardingView: View {
                     measuredScreenTimeHours = nil
                     showingScreenTimeEstimateSheet = false
                     Analytics.onboardingStep(step: "screenTimeEstimate")
-                    withAnimation { currentPage = 8 } // → personalScare
+                    goToPage(8) // → personalScare
                 }
             )
             .presentationDetents([.medium, .large])
@@ -853,7 +853,7 @@ struct OnboardingView: View {
             if screenTimeAuthorized {
                 useScreenTimeEstimate = false
                 Analytics.onboardingStep(step: "screenTimeAccessApproved")
-                withAnimation { currentPage = 8 } // → personalScare
+                goToPage(8) // → personalScare
             } else {
                 useScreenTimeEstimate = true
                 Analytics.onboardingStep(step: "screenTimeAccessDenied")
@@ -933,7 +933,7 @@ struct OnboardingView: View {
 
                 Button {
                     Analytics.onboardingStep(step: "empathy")
-                    withAnimation { currentPage = 5 } // → goals
+                    goToPage(5) // → goals
                 } label: {
                     Text("Pick what I take back")
                         .gradientButton()
@@ -1023,7 +1023,7 @@ struct OnboardingView: View {
             VStack(spacing: 12) {
                 Button {
                     Analytics.onboardingStep(step: "age")
-                    withAnimation { currentPage = 7 } // → screenTimeAccess
+                    goToPage(7) // → screenTimeAccess
                 } label: {
                     Text("Run my numbers")
                         .gradientButton()
@@ -1033,7 +1033,7 @@ struct OnboardingView: View {
                 Button {
                     selectedAge = 0
                     Analytics.onboardingStep(step: "age")
-                    withAnimation { currentPage = 7 } // → screenTimeAccess
+                    goToPage(7) // → screenTimeAccess
                 } label: {
                     Text("Skip")
                         .font(.subheadline.weight(.medium))
@@ -1087,7 +1087,7 @@ struct OnboardingView: View {
             receiptCount: receiptCount,
             onContinue: {
                 Analytics.onboardingStep(step: "planReveal")
-                withAnimation { currentPage = 11 } // → comparison
+                goToPage(11) // → comparison
             }
         )
     }
@@ -1097,7 +1097,7 @@ struct OnboardingView: View {
     private var notificationPrimingPage: some View {
         OnboardingNotificationPrimingView { granted in
             notificationsEnabled = granted
-            withAnimation { currentPage = 15 } // → commitment
+            goToPage(15) // → commitment
         }
     }
 
@@ -1106,7 +1106,7 @@ struct OnboardingView: View {
     private var industryScarePage: some View {
         FocusOnboardIndustryScare {
             Analytics.onboardingStep(step: "industryScare")
-            withAnimation { currentPage = 4 } // → empathy
+            goToPage(4) // → empathy
         }
     }
 
@@ -1115,7 +1115,7 @@ struct OnboardingView: View {
     private var painCardsPage: some View {
         OnboardingPainCardsView { count in
             receiptCount = count
-            withAnimation { currentPage = 3 } // → industryScare
+            goToPage(3) // → industryScare
         }
     }
 
@@ -1127,7 +1127,7 @@ struct OnboardingView: View {
             dailyHours: effectiveDailyScreenTimeHours,
             brainAge: assessmentResult?.brainAge,
             onContinue: {
-                withAnimation { currentPage = 12 } // → differentiation
+                goToPage(12) // → differentiation
             }
         )
     }
@@ -1337,14 +1337,14 @@ struct OnboardingView: View {
             FocusModeSetupView(onComplete: {
                 focusModeWasSetUp = true
                 Analytics.onboardingStep(step: "focusModeCompleted")
-                withAnimation { currentPage = 14 } // → notificationPriming
+                goToPage(14) // → notificationPriming
             })
 
             // "Not now" skip button
             Button {
                 Analytics.onboardingStep(step: "focusModeSkipped")
                 Analytics.focusSetupSkipped()
-                withAnimation { currentPage = 14 } // → notificationPriming
+                goToPage(14) // → notificationPriming
             } label: {
                 Text("Not now")
                     .font(.subheadline.weight(.medium))
