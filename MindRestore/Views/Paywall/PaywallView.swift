@@ -16,8 +16,8 @@ private enum PaywallPlan: String, CaseIterable {
 
     var total: String {
         switch self {
-        case .annual:  return "$39.99"
-        case .monthly: return "$6.99"
+        case .annual:  return "$49.99"
+        case .monthly: return "$7.99"
         case .weekly:  return "$3.99"
         }
     }
@@ -32,8 +32,8 @@ private enum PaywallPlan: String, CaseIterable {
 
     var perMo: String {
         switch self {
-        case .annual:  return "$3.33/mo"
-        case .monthly: return "$6.99/mo"
+        case .annual:  return "$4.16/mo"
+        case .monthly: return "$7.99/mo"
         case .weekly:  return "$3.99/wk"
         }
     }
@@ -41,7 +41,7 @@ private enum PaywallPlan: String, CaseIterable {
     var hasTrial: Bool { self == .annual }
 
     var saveLabel: String? {
-        self == .annual ? "BEST VALUE · 52% OFF" : nil
+        self == .annual ? "BEST VALUE · 48% OFF" : nil
     }
 
     var productID: String {
@@ -336,7 +336,7 @@ struct PaywallView: View {
 
     private var priceLine: some View {
         VStack(spacing: 0) {
-            Text(selectedPlan.hasTrial ? "3 days free, then" : "Subscribe now for")
+            Text(selectedPlan.hasTrial ? "7 days free, then" : "Subscribe now for")
                 .font(.system(size: 14))
                 .foregroundStyle(PW.fg2)
 
@@ -396,7 +396,7 @@ struct PaywallView: View {
     }
 
     private var ctaTitle: String {
-        if selectedPlan.hasTrial { return "Start 3-day free trial" }
+        if selectedPlan.hasTrial { return "Start 7-day free trial" }
         return "Subscribe for \(selectedPlan.total)\(selectedPlan.period)"
     }
 
@@ -549,7 +549,7 @@ private struct PlansSheet: View {
     }
 
     private var sheetCtaTitle: String {
-        if selected.hasTrial { return "Start 3-day free trial" }
+        if selected.hasTrial { return "Start 7-day free trial" }
         return "Subscribe for \(selected.total)\(selected.period)"
     }
 
@@ -567,7 +567,7 @@ private struct PlansSheet: View {
         } label: {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(plan.label + (plan.hasTrial ? " · 3-day free trial" : ""))
+                    Text(plan.label + (plan.hasTrial ? " · 7-day free trial" : ""))
                         .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(PW.fg)
 

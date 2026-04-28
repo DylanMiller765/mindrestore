@@ -35,7 +35,12 @@ final class PaywallTriggerService {
         !triedGameTypes.contains(type.rawValue)
     }
 
-    // MARK: - Daily Exercise Limit (Free = 3/day)
+    // MARK: - Daily Exercise Limit (REMOVED in v2.0 — freemium with Focus Mode as paywall)
+    //
+    // Free users get unlimited brain games + leaderboards. Pro tier unlocks
+    // Focus Mode (block + train-to-unlock loop) and progression analytics.
+    // The exercisesToday counter still tracks for analytics + streak math
+    // but no longer gates access. `hasReachedDailyLimit` is hard-pinned false.
 
     var exercisesToday: Int {
         guard let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
@@ -46,11 +51,14 @@ final class PaywallTriggerService {
     }
 
     var freeExercisesRemaining: Int {
-        max(0, Constants.Defaults.freeExercisesPerDay - exercisesToday)
+        // No daily limit anymore; preserved for any callers, returns a high
+        // sentinel so legacy banner UI hides itself naturally.
+        Int.max
     }
 
     var hasReachedDailyLimit: Bool {
-        exercisesToday >= Constants.Defaults.freeExercisesPerDay
+        // Daily limit removed in v2.0. Always false.
+        false
     }
 
     func recordExerciseCompleted(gameType: ExerciseType? = nil) {
