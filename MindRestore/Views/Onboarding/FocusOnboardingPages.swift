@@ -127,7 +127,7 @@ struct FocusOnboardIndustryScare: View {
     @State private var sequenceTask: Task<Void, Never>?
 
     private let suspects: [(asset: String, name: String, parent: String, role: String)] = [
-        (asset: "logo-tiktok", name: "TikTok", parent: "BYTEDANCE", role: "FEED"),
+        (asset: "logo-tiktok", name: "TikTok", parent: "BYTEDANCE", role: "FYP"),
         (asset: "logo-instagram", name: "Instagram", parent: "META", role: "REELS"),
         (asset: "logo-youtube", name: "YouTube", parent: "GOOGLE", role: "SHORTS"),
         (asset: "logo-snapchat", name: "Snap", parent: "SNAP INC", role: "SPOTLIGHT")
@@ -144,16 +144,29 @@ struct FocusOnboardIndustryScare: View {
                 .opacity(slugVisible ? 1 : 0)
                 .offset(y: slugVisible ? 0 : 8)
 
-            // Headline — sequel to Pain Cards' "memo found the receipts."
-            Text("memo found\nthe suspects.")
-                .font(.brand(size: 26, weight: .heavy))
-                .kerning(-0.5)
-                .lineSpacing(2)
-                .foregroundStyle(OB.fg)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 8)
-                .opacity(headlineVisible ? 1 : 0)
-                .offset(y: headlineVisible ? 0 : 8)
+            // Headline + detective Memo side by side — Memo is examining the case file.
+            HStack(alignment: .top, spacing: 12) {
+                Text("memo found\nthe suspects.")
+                    .font(.brand(size: 24, weight: .heavy))
+                    .kerning(-0.5)
+                    .lineSpacing(2)
+                    .foregroundStyle(OB.fg)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(headlineVisible ? 1 : 0)
+                    .offset(y: headlineVisible ? 0 : 8)
+
+                Spacer(minLength: 0)
+
+                Image("mascot-detective")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                    .shadow(color: OB.accent.opacity(0.32), radius: 16, x: 0, y: 6)
+                    .opacity(mascotVisible ? 1 : 0)
+                    .scaleEffect(mascotVisible ? 1 : 0.88, anchor: .center)
+                    .accessibilityHidden(true)
+            }
+            .padding(.top, 8)
 
             // Caution-tape divider (full-bleed via negative horizontal margins)
             cautionTape
@@ -213,24 +226,6 @@ struct FocusOnboardIndustryScare: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(FO.bg.ignoresSafeArea())
-        .overlay(alignment: .bottomTrailing) {
-            // Detective Memo
-            VStack(alignment: .trailing, spacing: 4) {
-                Image("mascot-detective")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .shadow(color: OB.accent.opacity(0.32), radius: 16, x: 0, y: 6)
-                Text("MEMO · DETECTIVE")
-                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                    .tracking(1.0)
-                    .foregroundStyle(OB.fg3)
-            }
-            .padding(.trailing, 20)
-            .padding(.bottom, 96)
-            .opacity(mascotVisible ? 1 : 0)
-            .accessibilityHidden(true)
-        }
         .safeAreaInset(edge: .bottom) {
             FOContinueButton(title: "i'm in. fight back.", action: onContinue)
                 .padding(.horizontal, 24)
@@ -306,6 +301,9 @@ struct FocusOnboardIndustryScare: View {
                 slugVisible = true
                 headlineVisible = true
             }
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
+                mascotVisible = true
+            }
 
             try? await Task.sleep(for: .milliseconds(450))
             guard !Task.isCancelled else { return }
@@ -347,7 +345,6 @@ struct FocusOnboardIndustryScare: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.40)) {
                 captionVisible = true
-                mascotVisible = true
                 ctaVisible = true
             }
         }
