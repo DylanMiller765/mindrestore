@@ -113,181 +113,263 @@ private struct SuspectRow: View {
 struct FocusOnboardIndustryScare: View {
     var onContinue: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var slugVisible = false
+    @State private var headlineVisible = false
+    @State private var tapeProgress: CGFloat = 0
+    @State private var rowsVisible: [Bool] = Array(repeating: false, count: 4)
+    @State private var dividerVisible = false
     @State private var displayedNumber: Int = 0
-    @State private var subtitleVisible = false
-    @State private var calloutVisible = false
+    @State private var captionVisible = false
     @State private var mascotVisible = false
-    @State private var defianceVisible = false
-    @State private var equalizerVisible = false
-    @State private var countUpTimer: Timer?
+    @State private var ctaVisible = false
+    @State private var sequenceTask: Task<Void, Never>?
+
+    private let suspects: [(asset: String, name: String, parent: String, role: String)] = [
+        (asset: "logo-tiktok", name: "TikTok", parent: "BYTEDANCE", role: "FEED"),
+        (asset: "logo-instagram", name: "Instagram", parent: "META", role: "REELS"),
+        (asset: "logo-youtube", name: "YouTube", parent: "GOOGLE", role: "SHORTS"),
+        (asset: "logo-snapchat", name: "Snap", parent: "SNAP INC", role: "SPOTLIGHT")
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            FOEyebrow(text: "WHAT YOU'RE UP AGAINST")
-                .padding(.top, 24)
-                .padding(.bottom, 16)
+            // Case-file slug (replaces the old blue marketing eyebrow)
+            Text("CASE FILE · 04 OF 04")
+                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .tracking(1.6)
+                .foregroundStyle(OB.fg3)
+                .padding(.top, 12)
+                .opacity(slugVisible ? 1 : 0)
+                .offset(y: slugVisible ? 0 : 8)
 
-            // The number — Monkeytype-coded. $ + animating integer + B.
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text("$")
-                    .font(.system(size: 92, weight: .bold, design: .monospaced))
-                    .kerning(-4)
-                    .foregroundStyle(FO.accent)
-                Text("\(displayedNumber)")
-                    .font(.system(size: 132, weight: .bold, design: .monospaced))
-                    .kerning(-7)
-                    .foregroundStyle(FO.fg)
-                    .contentTransition(.numericText(value: Double(displayedNumber)))
-                    .monospacedDigit()
-                Text("B")
-                    .font(.system(size: 132, weight: .bold, design: .monospaced))
-                    .kerning(-7)
-                    .foregroundStyle(FO.fg)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            // Headline — sequel to Pain Cards' "memo found the receipts."
+            Text("memo found\nthe suspects.")
+                .font(.brand(size: 26, weight: .heavy))
+                .kerning(-0.5)
+                .lineSpacing(2)
+                .foregroundStyle(OB.fg)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+                .opacity(headlineVisible ? 1 : 0)
+                .offset(y: headlineVisible ? 0 : 8)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("/ YEAR ENGINEERING YOUR FEED")
-                    .font(.system(size: 12, weight: .semibold))
-                    .tracking(0.5)
-                    .foregroundStyle(FO.fg3)
-                    .textCase(.uppercase)
+            // Caution-tape divider (full-bleed via negative horizontal margins)
+            cautionTape
+                .padding(.top, 16)
 
-                Text("TIKTOK · INSTAGRAM · YOUTUBE · SNAP")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.4)
-                    .foregroundStyle(FO.fg2)
-                    .textCase(.uppercase)
-            }
-            .padding(.top, 10)
-            .opacity(subtitleVisible ? 1 : 0)
-            .offset(y: subtitleVisible ? 0 : 8)
-
-            // Callout — two short punchy lines, no italic for readability
-            HStack(spacing: 0) {
-                Rectangle().fill(FO.accent).frame(width: 2)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("The algorithm isn't broken.")
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(FO.fg)
-
-                    (Text("It's working exactly ")
-                     + Text("as designed").foregroundColor(FO.accent).fontWeight(.bold))
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(FO.fg)
+            // Suspect lineup
+            VStack(spacing: 0) {
+                ForEach(Array(suspects.enumerated()), id: \.offset) { index, suspect in
+                    SuspectRow(
+                        logoAsset: suspect.asset,
+                        suspect: suspect.name,
+                        parent: suspect.parent,
+                        role: suspect.role,
+                        visible: index < rowsVisible.count && rowsVisible[index],
+                        isLast: index == suspects.count - 1
+                    )
                 }
-                .padding(.leading, 14)
-                .padding(.vertical, 2)
             }
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 340, alignment: .leading)
-            .padding(.top, 22)
-            .opacity(calloutVisible ? 1 : 0)
-            .offset(x: calloutVisible ? 0 : -20)
+            .padding(.top, 4)
 
-            Spacer()
+            // Top divider above the totals block
+            Rectangle()
+                .fill(Color.white.opacity(0.18))
+                .frame(height: 1.5)
+                .padding(.top, 12)
+                .opacity(dividerVisible ? 1 : 0)
 
-            // Memo (defiant) bottom-left
-            HStack {
-                Image("mascot-goal")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 180, height: 180)
-                    .offset(x: -8, y: 8)
-                Spacer()
+            // Totals block
+            VStack(alignment: .leading, spacing: 6) {
+                Text("COMBINED R&D · ANNUAL")
+                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(OB.fg3)
+
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("$\(displayedNumber)B")
+                        .font(.system(size: 56, weight: .black, design: .monospaced))
+                        .kerning(-3)
+                        .foregroundStyle(OB.fg)
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(displayedNumber)))
+                }
+                .lineLimit(1)
+
+                Text("spent every year engineering\nyour feed against you.")
+                    .font(.brand(size: 12, weight: .semibold))
+                    .foregroundStyle(OB.fg2)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(captionVisible ? 1 : 0)
+                    .offset(y: captionVisible ? 0 : 8)
             }
-            .opacity(mascotVisible ? 1 : 0)
-            .scaleEffect(mascotVisible ? 1 : 0.82, anchor: .bottomLeading)
+            .padding(.top, 14)
 
-            // Defiance headline
-            (Text("You're not weak.\nYou're ") + Text("outgunned").foregroundColor(FO.accent) + Text("."))
-                .font(.system(size: 30, weight: .bold))
-                .kerning(-0.9)
-                .foregroundStyle(FO.fg)
-                .lineSpacing(1)
-                .padding(.bottom, 4)
-                .opacity(defianceVisible ? 1 : 0)
-                .offset(y: defianceVisible ? 0 : 8)
-
-            Text("Memo's the equalizer.")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(FO.fg2)
-                .padding(.bottom, 8)
-                .opacity(equalizerVisible ? 1 : 0)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(FO.bg.ignoresSafeArea())
+        .overlay(alignment: .bottomTrailing) {
+            // Detective Memo
+            VStack(alignment: .trailing, spacing: 4) {
+                Image("mascot-detective")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                    .shadow(color: OB.accent.opacity(0.32), radius: 16, x: 0, y: 6)
+                Text("MEMO · DETECTIVE")
+                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                    .tracking(1.0)
+                    .foregroundStyle(OB.fg3)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 96)
+            .opacity(mascotVisible ? 1 : 0)
+            .accessibilityHidden(true)
+        }
         .safeAreaInset(edge: .bottom) {
-            FOContinueButton(title: "Continue", action: onContinue)
+            FOContinueButton(title: "i'm in. fight back.", action: onContinue)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
+                .opacity(ctaVisible ? 1 : 0)
         }
         .preferredColorScheme(.dark)
         .onAppear { startSequence() }
         .onDisappear {
-            countUpTimer?.invalidate()
-            countUpTimer = nil
+            sequenceTask?.cancel()
+            sequenceTask = nil
         }
+    }
+
+    private var cautionTape: some View {
+        GeometryReader { proxy in
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: OB.amber, location: 0),
+                            .init(color: OB.amber, location: 0.5),
+                            .init(color: FO.bg, location: 0.5),
+                            .init(color: FO.bg, location: 1)
+                        ],
+                        startPoint: UnitPoint(x: 0, y: 0),
+                        endPoint: UnitPoint(x: 0.05, y: 0.05)
+                    )
+                )
+                .frame(width: proxy.size.width * tapeProgress)
+        }
+        .frame(height: 10)
+        .padding(.horizontal, -24) // full-bleed past the page's 24pt margin
     }
 
     private func startSequence() {
         // Reset every appearance so re-entry replays the cinema.
+        slugVisible = false
+        headlineVisible = false
+        tapeProgress = 0
+        rowsVisible = Array(repeating: false, count: 4)
+        dividerVisible = false
         displayedNumber = 0
-        subtitleVisible = false
-        calloutVisible = false
+        captionVisible = false
         mascotVisible = false
-        defianceVisible = false
-        equalizerVisible = false
+        ctaVisible = false
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            startCountUp()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.15) {
-            withAnimation(.easeOut(duration: 0.4)) { subtitleVisible = true }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) {
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) { calloutVisible = true }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.85) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { mascotVisible = true }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.15) {
-            withAnimation(.easeOut(duration: 0.4)) { defianceVisible = true }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
-            withAnimation(.easeOut(duration: 0.4)) { equalizerVisible = true }
+        sequenceTask?.cancel()
+        sequenceTask = Task { @MainActor in
+            if reduceMotion {
+                // Reduce Motion path — single 0.18s opacity fade, $57B set immediately.
+                displayedNumber = 57
+                withAnimation(.easeOut(duration: 0.18)) {
+                    slugVisible = true
+                    headlineVisible = true
+                    tapeProgress = 1
+                    rowsVisible = Array(repeating: true, count: 4)
+                    dividerVisible = true
+                    captionVisible = true
+                    mascotVisible = true
+                    ctaVisible = true
+                }
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.6)
+                return
+            }
+
+            // Standard cinematic path (~3.0s total).
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.40)) {
+                slugVisible = true
+                headlineVisible = true
+            }
+
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.50)) {
+                tapeProgress = 1
+            }
+
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+
+            // Suspect rows stagger 0.10s apart, light haptic per row.
+            let lightImpact = UIImpactFeedbackGenerator(style: .light)
+            lightImpact.prepare()
+            for i in 0..<rowsVisible.count {
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.30)) {
+                    if i < rowsVisible.count { rowsVisible[i] = true }
+                }
+                lightImpact.impactOccurred(intensity: 0.4)
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.30)) {
+                dividerVisible = true
+            }
+
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+
+            // $57B count-up over ~1.2s.
+            await runCountUp()
+            guard !Task.isCancelled else { return }
+
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.40)) {
+                captionVisible = true
+                mascotVisible = true
+                ctaVisible = true
+            }
         }
     }
 
-    private func startCountUp() {
+    @MainActor
+    private func runCountUp() async {
         let target = 57
-        let duration = 0.95
-        let totalSteps = target
-        let interval = duration / Double(totalSteps)
-
+        let steps = target
+        let stepMs = 21 // ~1.2s total
         let lightImpact = UIImpactFeedbackGenerator(style: .light)
-        let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
         lightImpact.prepare()
-        heavyImpact.prepare()
 
-        countUpTimer?.invalidate()
-        countUpTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
-            Task { @MainActor in
-                if displayedNumber >= target {
-                    timer.invalidate()
-                    countUpTimer = nil
-                    heavyImpact.impactOccurred(intensity: 1.0)
-                } else {
-                    displayedNumber += 1
-                    if displayedNumber % 7 == 0 {
-                        lightImpact.impactOccurred(intensity: 0.4)
-                    }
-                }
+        for step in 1...steps {
+            guard !Task.isCancelled else { return }
+            displayedNumber = step
+            if step % 7 == 0 {
+                lightImpact.impactOccurred(intensity: 0.3)
             }
+            try? await Task.sleep(for: .milliseconds(stepMs))
         }
+        displayedNumber = target
     }
 }
 
