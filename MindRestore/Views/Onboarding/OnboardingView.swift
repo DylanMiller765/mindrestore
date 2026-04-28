@@ -90,6 +90,7 @@ struct OnboardingView: View {
                 onboardingProgressHeader
                     .opacity(progressHeaderOpacity)
                     .animation(.easeInOut(duration: 0.30), value: currentPage)
+                    .allowsHitTesting(progressHeaderOpacity > 0)
 
                 pageContent
                     .id(currentPage)
