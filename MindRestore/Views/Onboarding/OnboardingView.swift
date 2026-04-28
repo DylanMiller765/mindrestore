@@ -203,9 +203,13 @@ struct OnboardingView: View {
         return hiddenPages.contains(currentPage) ? 0 : 1
     }
 
-    /// Single funnel for every page advance / back-step. All onboarding CTAs
-    /// route through this so the transition curve is tunable in one place.
+    /// Single funnel for every page advance / back-step. The animation
+    /// context for `currentPage` state changes is tunable here in one place.
+    /// The visual transition CURVE itself is defined by `.transition(...)` on
+    /// the page container — this `withAnimation` only schedules SwiftUI's
+    /// re-render block.
     private func goToPage(_ page: Int) {
+        guard (0..<totalPages).contains(page) else { return }
         withAnimation(.easeInOut(duration: 0.40)) {
             currentPage = page
         }
