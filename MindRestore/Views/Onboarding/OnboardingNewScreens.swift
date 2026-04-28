@@ -1405,7 +1405,10 @@ struct OnboardingPainCardsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
-                OBEyebrow(text: "MEMO FOUND THE RECEIPTS")
+                Text("CASE FILE · 03 OF 04")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(OB.fg3)
 
                 Text("Which ones are yours?")
                     .font(.brand(size: 31, weight: .heavy))
