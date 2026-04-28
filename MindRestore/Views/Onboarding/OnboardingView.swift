@@ -102,25 +102,25 @@ struct OnboardingView: View {
                         )
                     )
                     .animation(.easeInOut(duration: 0.40), value: currentPage)
-                .onChange(of: currentPage) { _, newPage in
-                    // Animate keyboard dismiss smoothly
-                    UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                    nameFieldFocused = false
-                    if newPage == 1 {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            nameFieldFocused = true
+                    .onChange(of: currentPage) { _, newPage in
+                        // Animate keyboard dismiss smoothly
+                        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        nameFieldFocused = false
+                        if newPage == 1 {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                nameFieldFocused = true
+                            }
+                        }
+                        // Reset commitment typewriter bullets when navigating away
+                        if newPage != 15 {
+                            commitmentBullet1Visible = false
+                            commitmentBullet2Visible = false
+                            commitmentBullet3Visible = false
+                            commitmentBullet4Visible = false
                         }
                     }
-                    // Reset commitment typewriter bullets when navigating away
-                    if newPage != 15 {
-                        commitmentBullet1Visible = false
-                        commitmentBullet2Visible = false
-                        commitmentBullet3Visible = false
-                        commitmentBullet4Visible = false
-                    }
-                }
             }
         }
         .preferredColorScheme(.dark)
