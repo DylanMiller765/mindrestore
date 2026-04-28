@@ -66,7 +66,11 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            (currentPage == 9 ? quickAssessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            // Onboarding is dark-pinned regardless of system theme — use OB.bg
+            // directly so light-mode iPhones don't bleed cream pageBg through
+            // the chrome around the TabView. Quick Assessment keeps its
+            // dynamic bg color (the assessment animates color shifts).
+            (currentPage == 9 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()
 
             // Page-specific atmosphere lifted out of individual pages so
             // blurs/glows extend behind the progress bar instead of clipping
@@ -124,6 +128,8 @@ struct OnboardingView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, .dark)
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
                 let stepNames = ["welcome", "name", "painCards", "industryScare", "empathy", "goals", "age", "screenTimeAccess", "personalScare", "quickAssessment", "planReveal", "comparison", "differentiation", "focusMode", "notificationPriming", "commitment"]
