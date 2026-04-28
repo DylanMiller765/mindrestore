@@ -191,15 +191,15 @@ struct FocusOnboardIndustryScare: View {
                     .tracking(1.6)
                     .foregroundStyle(OB.fg3)
 
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text("$\(displayedNumber)B")
-                        .font(.system(size: 56, weight: .black, design: .monospaced))
-                        .kerning(-3)
-                        .foregroundStyle(OB.fg)
-                        .monospacedDigit()
-                        .contentTransition(.numericText(value: Double(displayedNumber)))
-                }
-                .lineLimit(1)
+                Text("$\(displayedNumber)B")
+                    .font(.system(size: 56, weight: .black, design: .monospaced))
+                    .kerning(-3)
+                    .foregroundStyle(OB.fg)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: Double(displayedNumber)))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 4)
 
                 Text("spent every year engineering\nyour feed against you.")
                     .font(.brand(size: 12, weight: .semibold))
