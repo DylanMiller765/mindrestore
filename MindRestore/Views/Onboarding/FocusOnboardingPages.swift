@@ -231,24 +231,26 @@ struct FocusOnboardIndustryScare: View {
     }
 
     private var cautionTape: some View {
-        GeometryReader { proxy in
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: OB.amber, location: 0),
-                            .init(color: OB.amber, location: 0.5),
-                            .init(color: FO.bg, location: 0.5),
-                            .init(color: FO.bg, location: 1)
-                        ],
-                        startPoint: UnitPoint(x: 0, y: 0),
-                        endPoint: UnitPoint(x: 0.05, y: 0.05)
-                    )
-                )
-                .frame(width: proxy.size.width * tapeProgress)
+        Canvas { ctx, size in
+            let stripeWidth: CGFloat = 14
+            let slant = size.height
+            let count = Int(ceil((size.width + slant + stripeWidth) / stripeWidth)) + 1
+            for i in 0..<count {
+                let x = CGFloat(i) * stripeWidth - slant
+                let isAmber = i % 2 == 0
+                var path = Path()
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x + stripeWidth, y: 0))
+                path.addLine(to: CGPoint(x: x + stripeWidth - slant, y: size.height))
+                path.addLine(to: CGPoint(x: x - slant, y: size.height))
+                path.closeSubpath()
+                ctx.fill(path, with: .color(isAmber ? OB.amber : FO.bg))
+            }
         }
         .frame(height: 10)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, -24) // full-bleed past the page's 24pt margin
+        .scaleEffect(x: tapeProgress, y: 1, anchor: .leading)
     }
 
     private func startSequence() {
@@ -844,8 +846,6 @@ struct FocusOnboardPersonalUnlocks: View {
     /// "Open Settings" deep-link instead of the standard "Unlock" CTA.
     var previouslyDenied: Bool = false
 
-    private var minsBetween: Int { max(1, Int((1440.0 / Double(count)).rounded())) }
-
     /// Filter to yesterday 00:00 → today 00:00 for pickup count.
     private var yesterdayFilter: DeviceActivityFilter {
         let cal = Calendar.current
@@ -860,12 +860,12 @@ struct FocusOnboardPersonalUnlocks: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            FOEyebrow(text: "TURNS OUT…")
+            FOEyebrow(text: "PATTERN FOUND")
                 .padding(.top, 24)
                 .padding(.bottom, 14)
 
-            Text("Actually, you unlocked your phone")
-                .font(.system(size: 16, weight: .medium))
+            Text("You unlocked your phone")
+                .font(.system(size: 19, weight: .semibold))
                 .foregroundStyle(FO.fg2)
                 .lineSpacing(3)
                 .padding(.bottom, 12)
@@ -903,12 +903,8 @@ struct FocusOnboardPersonalUnlocks: View {
                 if authorized {
                     HStack(spacing: 0) {
                         Rectangle().fill(FO.accent).frame(width: 2)
-                        (Text("That's one unlock every ")
-                         + Text("\(minsBetween) \(minsBetween == 1 ? "minute" : "minutes")")
-                            .underline(color: FO.accent)
-                            .fontWeight(.semibold)
-                         + Text("."))
-                            .font(.system(size: 19, weight: .medium).italic())
+                        Text("Every unlock is another shot for the feed to pull you back.")
+                            .font(.system(size: 18, weight: .semibold))
                             .kerning(-0.2)
                             .foregroundStyle(FO.fg)
                             .lineSpacing(4)
@@ -947,26 +943,27 @@ struct FocusOnboardPersonalUnlocks: View {
 
             Spacer()
 
-            // Memo (judgy) + headline
-            ZStack(alignment: .bottomTrailing) {
+            // Memo + bridge into the assessment.
+            ZStack(alignment: .topTrailing) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Spacer()
-                    (Text("Let's ") + Text("fix that").foregroundColor(FO.accent) + Text("."))
-                        .font(.system(size: 36, weight: .bold))
-                        .kerning(-1.1)
+                    (Text("Now let's check\nwhat it's doing\nto your brain."))
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .kerning(-0.8)
+                        .lineSpacing(2)
                         .foregroundStyle(FO.fg)
-                        .padding(.bottom, 8)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image("mascot-thinking")
+                Image("mascot-detective")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 88, height: 88)
-                    .scaleEffect(x: -1, y: 1)
-                    .shadow(color: .black.opacity(0.5), radius: 12, y: 8)
-                    .offset(x: 12, y: -60)
+                    .frame(width: 96, height: 96)
+                    .shadow(color: FO.accent.opacity(0.28), radius: 18, y: 8)
+                    .offset(x: 8, y: -14)
+                    .accessibilityHidden(true)
             }
-            .frame(height: 140)
+            .frame(height: 150)
         }
         .padding(.horizontal, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -980,7 +977,7 @@ struct FocusOnboardPersonalUnlocks: View {
     }
 
     private var ctaTitle: String {
-        if authorized { return "Continue" }
+        if authorized { return "Start Brain Age Test" }
         if previouslyDenied { return "Continue" }
         return "Unlock the Real Numbers"
     }
