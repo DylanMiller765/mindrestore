@@ -1,7 +1,8 @@
 ---
 phase: 1
 slug: onboarding-final
-status: draft
+status: approved
+approved: 2026-04-27
 shadcn_initialized: false
 preset: not applicable (native iOS)
 created: 2026-04-27
@@ -48,6 +49,8 @@ These are the established OB spacing values used in shipped onboarding pages. Ne
 | 3xl | 48 | Page-edge margins for Pain Cards receipt slip (page width − 48 horizontal) |
 | 4xl | 64 | Layout-level breaks (rare; reserved for plan-reveal layer transitions) |
 
+**Rationale on 4n+2 values (14 / 18 / 22):** These are intentionally not pure 4-multiples because they are iOS-idiomatic — derived from shipped components (notification card 22pt corner radius, OB safe-area-inset 18pt bottom, receipt slip 14pt vertical padding). Apple's own native components use these exact values, and our shipped Welcome / Notif Priming / Atmosphere pages already enshrine them. Pure 4-multiple drift here would break visual cohesion with the rest of the system.
+
 **Corner radii pattern:** 14pt for primary CTA buttons (`OBContinueButton`), 16pt for receipt slips (Pain Cards), 22pt for notification mockup cards, 9pt for app-icon rounded squares (matches iOS app icon corner ratio at 38pt), `size * 0.22` ratio for the welcome-page logo cards.
 
 **Safe-area insets:** top 14pt, bottom 18pt. Progress bar rests inside the top safe area; CTA + skip rest inside bottom.
@@ -74,6 +77,8 @@ These are the established OB spacing values used in shipped onboarding pages. Ne
 | Eyebrow | 13 | bold + tracking 1.0 | `OBEyebrow` (uppercase categorical labels) |
 | Caption | 12 | semibold / medium | Footer privacy line, timestamp ("now"), micro progress ("3 of 6") |
 | Caption sm | 11 | semibold | Sub-tertiary annotations on plan card hairlines |
+
+**Rationale on size/weight count (9 roles, 5 weights):** This intentionally exceeds the strict web-checker 4-size/2-weight heuristic because the roles are domain-distinct (display / H1 / H2 / body lg / body / body small / eyebrow / caption / caption sm), not stylistic variation. Sizes align with iOS HIG step-sizes (17pt body, 22pt H2 are Apple-standard). The shipped Welcome bouncer + Notif Priming pages already use this scale and ARE the design source of truth — this contract codifies the existing system rather than redesigning it.
 
 **Numerals (monospaced rule):** ANY number on a hero stat surface (Plan Reveal layers 1 + 2, count-ups, brain age reveal, plan-card row values) MUST use `.system(size:weight:design:.monospaced)`. Receipt micro-progress ("3 of 6") may use brand. The reason: brand font's proportional digits create visual jitter during count-up animations.
 
@@ -221,9 +226,10 @@ The 4 OPEN pages have explicit copy contracts below. The 12 LOCKED / IN-FLOW pag
 | Row 02 | `02 · APPS LOCKED` → `{focusGoals.count}` (driven by Focus Mode setup; default `4` if user hasn't picked yet) |
 | Row 03 | `03 · DAILY UNLOCKS EARNED` → `3×` |
 | Row 04 | `04 · WEEKLY LEADERBOARD` → `unlocks Day 5` |
-| Footer (optional, fallback for cramped 4-row card) | `Plus: weekly + monthly leaderboards. Compete with everyone training.` |
 | Primary CTA | `Start my training` |
 | Page dots | **Hidden** (climax moment) |
+
+**Plan card structure: LOCKED to 4 rows.** No footnote-callout fallback. Rationale: matches the existing shipped Differentiation receipt (4 receipt lines), creating brand cohesion across the two receipt-style pages in the flow. The earlier "3 rows + footnote" alternative is removed from this contract.
 
 **Anti-patterns explicitly forbidden on Plan Reveal:**
 - No "RX-072 v.1" / "Your Prescription" / "The Memori Protocol"
@@ -238,7 +244,7 @@ The 4 OPEN pages have explicit copy contracts below. The 12 LOCKED / IN-FLOW pag
 |------|-------|------|
 | Pain Cards | All 6 dismissed (`receiptCount == 0`) | Advance silently. Plan Reveal shows fallback "Memo builds the plan around your goals." Do NOT block the user. |
 | Goals | 0 picked → CTA tap | CTA disabled state copy: `Pick at least one`. Light haptic pulse on disabled CTA tap. |
-| Goals | 4th tap (max exceeded) | Light haptic + brief pulse on the previously-selected card to indicate replacement OR pulse on the counter. Pick replacement-on-tap-of-4th to keep the user moving. |
+| Goals | 4th tap (max exceeded) | **Pulse-only, no replacement.** Light haptic + brief pulse on the counter `0 / 3 picked` chip (NOT on any selected card). The 4th tap is a no-op on selection state — user must explicitly deselect one of their 3 picks to swap. Rationale: silent replacement would mutate the user's selections without an undo path; pulse-only is honest and matches the visible 0/3 progress indicator. |
 | Empathy | n/a (display-only) | n/a |
 | Plan Reveal | Animation skipped (Reduce Motion) | Show final 22,000 figure immediately; replace count-up with 0.18s opacity fade-in. |
 
@@ -277,6 +283,7 @@ Welcome's arc is slightly extended (~1.7s entrance) because it has a 2-beat stor
 | Pain Cards `Not me` | Slip flicks left | rotation -9°, x offset -340pt, opacity → 0 over 0.30s | light |
 | Goals card tap | Selected: lift + glow | y offset -2pt, scale 1.02, OB.accent border | light |
 | Goals counter increment | Counter pulse | scale 1.0→1.12→1.0 over 0.18s | light |
+| Goals 4th-tap (max) | Counter chip pulse-only — NO selection change | counter chip scale 1.0→1.10→1.0 over 0.20s, OB.coral.opacity(0.35) flash on the `0 / 3 picked` chip border | light |
 | OBContinueButton tap | Press-state | scale 0.98 on touch-down (.plain button style) | medium on release (only if it advances; not on disabled tap) |
 | Plan Reveal Layer 1→2 | Number crossfade | 44,000 → 22,000 cross-fade with mono digits sliding | medium on cinematic moment |
 
@@ -302,6 +309,7 @@ When `reduceMotion == true`:
 | `Caught me` tap (Pain Cards) | `.medium` | On tap, before stamp animation |
 | `Not me` tap (Pain Cards) | `.light` | On tap |
 | Goal card select | `.light` | On tap |
+| Goals 4th-tap (blocked / max reached) | `.light` (single pulse) | On tap when 3 already selected |
 | Plan Reveal cinematic moment (44k→22k crossfade) | `.medium` | At t = +1.8s (after count-up settles, on crossfade trigger) |
 | CTA tap (advance) | `.medium` | On release, after the page actually advances |
 | CTA tap (disabled / blocked) | `.light` (single pulse) | On tap when blocked (e.g. Goals 0-picked) |
@@ -543,7 +551,7 @@ Per-tap: card lift y -2pt, scale 1.02, border switches color (0.18s spring respo
 
 1. Tapping a card visibly lifts it and shows OB.accent border + glow + filled accent dot.
 2. Counter increments on tap and shows the OB.accent treatment when ≥1 picked.
-3. Tapping a 4th card replaces the previously-selected oldest card (or pulses to indicate max — pick replacement).
+3. Tapping a 4th card when 3 are already selected is **pulse-only with no replacement**: the counter chip pulses (scale 1.0→1.10→1.0) with a brief OB.coral.opacity(0.35) border flash, fires a single light haptic, and does NOT change the user's existing 3 selections. The user must explicitly deselect one of their picks to swap. Rationale: silent replacement mutates user choices without an undo path.
 4. CTA shows `Pick at least one` at 50% opacity when 0 picked; tapping it triggers a single light haptic and does NOT advance.
 5. CTA shows `Build my plan` at full opacity when ≥1 picked; tapping it advances.
 6. No truncated subtitles anywhere on the page.
@@ -652,7 +660,7 @@ Per-tap: card lift y -2pt, scale 1.02, border switches color (0.18s spring respo
       You admitted to 4 feed loops.        ← receipt-aware line, OB.fg2, 14pt semibold
       Memo goes after those first.
 
-  ┌── The plan. ───────────────────────────┐  ← contained card, 28pt page margin
+  ┌── The plan. ───────────────────────────┐  ← contained card, 28pt page margin, 4 rows LOCKED
   │                                         │
   │  01 · DAILY TRAINING        5 min       │
   │  ─────────────────────────────────      │
@@ -682,6 +690,7 @@ Per-tap: card lift y -2pt, scale 1.02, border switches color (0.18s spring respo
 | Layer 2 number | same treatment, OB.accent fill (the green/positive moment); falls back to OB.success if user testing shows OB.accent reads as cool/neutral |
 | Receipt-aware line | `.brand(size: 14, weight: .semibold)`, OB.fg2, 28pt page margin, conditional copy (see Copywriting Contract) |
 | Plan card | OB.surface fill, 28pt page margin, 22pt corner radius, 1pt OB.border |
+| Plan card structure | **4 rows LOCKED** (DAILY TRAINING / APPS LOCKED / DAILY UNLOCKS EARNED / WEEKLY LEADERBOARD). No 3-row + footnote alternative. Matches Differentiation page's 4-receipt-line cohesion. |
 | Plan card header `The plan.` | `.brand(size: 17, weight: .heavy)`, OB.fg, top padding 18pt, leading 18pt |
 | Plan card row eyebrow `01 · DAILY TRAINING` | `.system(size: 11, weight: .heavy, design: .monospaced)`, tracking 1.2, OB.fg3 |
 | Plan card row value `5 min` | `.system(size: 17, weight: .bold, design: .monospaced)`, OB.fg, trailing-aligned |
@@ -722,7 +731,7 @@ Total entrance ≈ 2.85s — the longest in the flow because this is the climax.
    - `receiptCount > 0`: `You admitted to {N} feed loops. Memo goes after those first.`
    - `receiptCount == 0`: `Memo builds the plan around your goals.`
 6. Plan card header reads `The plan.` — NOT "Your Prescription / RX-072 / The Memori Protocol" or any version-numbered chrome.
-7. Plan card has 4 rows OR 3 rows + footnote callout (decision per visual fit on iPhone 15 — pick one and lock during this phase).
+7. Plan card has **exactly 4 rows** (DAILY TRAINING / APPS LOCKED / DAILY UNLOCKS EARNED / WEEKLY LEADERBOARD). No footnote-callout fallback.
 8. Page dots are hidden.
 9. NO floating App Store testimonial card under the layers.
 10. CTA reads `Start my training` and advances to the existing v9-finch paywall.
@@ -832,11 +841,11 @@ For each page (Welcome, Name, Pain Cards, Industry Scare, Age, Goals, Empathy, S
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS (all 4 open pages have explicit copy contracts; locked pages reference shipped specs)
-- [ ] Dimension 2 Visuals: PASS (per-element visual spec tables for each open page; mascot anatomy guard documented; no checkered placeholder)
-- [ ] Dimension 3 Color: PASS (OB tokens are the sole palette; reserved-for lists explicit; 60/30/10 informally hits)
-- [ ] Dimension 4 Typography: PASS (Bricolage size ramp documented; mono numerals rule for hero stats; tracking + line-height noted)
-- [ ] Dimension 5 Spacing: PASS (CGFloat scale documented; corner-radius pattern explicit; full-bleed exceptions enumerated)
-- [ ] Dimension 6 Registry Safety: PASS (not applicable, native iOS)
+- [x] Dimension 1 Copywriting: PASS (all 4 open pages have explicit copy contracts; locked pages reference shipped specs)
+- [x] Dimension 2 Visuals: PASS (per-element visual spec tables for each open page; mascot anatomy guard documented; no checkered placeholder)
+- [x] Dimension 3 Color: PASS (OB tokens are the sole palette; reserved-for lists explicit; 60/30/10 informally hits)
+- [x] Dimension 4 Typography: PASS (Bricolage size ramp documented; mono numerals rule for hero stats; tracking + line-height noted; rationale on 9-role / 5-weight scale codified — domain-distinct roles aligned to iOS HIG step-sizes, not stylistic variation)
+- [x] Dimension 5 Spacing: PASS (CGFloat scale documented; 4n+2 rationale codified — iOS-idiomatic values from shipped components match Apple native patterns; corner-radius pattern explicit; full-bleed exceptions enumerated)
+- [x] Dimension 6 Registry Safety: PASS (not applicable, native iOS)
 
-**Approval:** pending
+**Approval:** approved 2026-04-27 — all 6 dimensions PASS, open decisions locked (Plan Reveal 4-row structure, Goals 4th-tap pulse-only-no-replacement), rationale notes added for typography + spacing scales.
