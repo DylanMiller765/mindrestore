@@ -549,6 +549,12 @@ struct OnboardingPersonalSolutionView: View {
 
         revealTask?.cancel()
         revealTask = Task { @MainActor in
+            // 400ms buffer so the count-up doesn't tick during the page
+            // transition's 0.40s dissolve. See:
+            // docs/superpowers/specs/2026-04-28-onboarding-page-transitions-design.md
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+
             withAnimation(.easeOut(duration: 0.36)) {
                 headlineAppeared = true
             }
