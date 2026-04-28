@@ -1352,10 +1352,12 @@ struct OBContinueButton: View {
 
 // MARK: - Pain Cards (NEW)
 //
-// Sits after Goals. Six specific Gen-Z pain statements presented one at a time.
-// User taps "Yep" to confess or "Nah" to dismiss. Each Yep is a sunk-cost
-// moment. Tap-based instead of swipe so gesture conflicts with TabView don't
-// strand the user.
+// Sits after Goals. Six specific Gen-Z pain statements presented one at a time
+// inside a tall "receipt slip" with a torn perforation along its TOP edge. User
+// taps "Caught me" to confess (CAUGHT stamp drops in the lower-right and the
+// slip slides into the saved-receipt back-stack) or "Not me" to flick it away.
+// Tap-based instead of swipe so gesture conflicts with TabView don't strand
+// the user.
 
 struct OnboardingPainCardsView: View {
     let onContinue: (Int) -> Void
@@ -1390,26 +1392,20 @@ struct OnboardingPainCardsView: View {
         return painCards[currentIndex]
     }
 
+    // Cap at 3 visible saved slips (UI-SPEC §"Page 2 — Pain Cards" line ~431).
+    // Empty state: render no back slips when nothing has been caught yet — per
+    // CONTEXT D-01f, ambient filler text is meaningless and should be dropped.
     private var backReceipts: [ReceiptBackItem] {
         let saved = Array(savedReceipts.suffix(3).reversed())
-        if saved.isEmpty {
-            return [
-                ReceiptBackItem(id: "ambient-1", text: "", isAmbient: true),
-                ReceiptBackItem(id: "ambient-2", text: "", isAmbient: true)
-            ]
-        }
-        return saved.enumerated().map { index, text in
-            ReceiptBackItem(id: "saved-\(savedReceipts.count)-\(index)-\(text)", text: text, isAmbient: false)
+        return saved.enumerated().map { index, _ in
+            ReceiptBackItem(id: "saved-\(savedReceipts.count)-\(index)")
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Memo pulled your receipts.")
-                    .font(.brand(size: 15, weight: .heavy))
-                    .foregroundStyle(OB.accent)
-                    .tracking(0.2)
+                OBEyebrow(text: "MEMO FOUND THE RECEIPTS")
 
                 Text("Which ones are yours?")
                     .font(.brand(size: 31, weight: .heavy))
@@ -1417,7 +1413,7 @@ struct OnboardingPainCardsView: View {
                     .lineSpacing(1)
                     .kerning(-0.4)
 
-                Text("Be honest. Memo uses this to build your fight plan.")
+                Text("Tap what feels painfully familiar. Memo uses it to build your fight plan.")
                     .font(.brand(size: 15, weight: .semibold))
                     .foregroundStyle(OB.fg2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1427,23 +1423,14 @@ struct OnboardingPainCardsView: View {
             .opacity(headlineVisible ? 1 : 0)
             .offset(y: headlineVisible ? 0 : 8)
 
-            Spacer(minLength: 34)
+            Spacer(minLength: 28)
 
-            questionHero
-                .padding(.horizontal, 28)
-                .opacity(stackVisible ? cardOpacity : 0)
-                .offset(x: cardOffsetX * 0.18, y: stackVisible ? 0 : 20)
-                .scaleEffect(cardScale, anchor: .leading)
-                .animation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.48, dampingFraction: 0.82), value: currentIndex)
-
-            Spacer(minLength: 24)
-
-            evidencePromptRail
-                .padding(.horizontal, 28)
+            receiptStack
+                .padding(.horizontal, 24)
                 .opacity(stackVisible ? 1 : 0)
                 .offset(y: stackVisible ? 0 : 24)
 
-            Spacer()
+            Spacer(minLength: 0)
 
             HStack(spacing: 12) {
                 Button(action: { handleTap(caught: false) }) {
@@ -1457,7 +1444,7 @@ struct OnboardingPainCardsView: View {
                                 .fill(OB.surface)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.white.opacity(0.12), lineWidth: 1.5)
+                                        .stroke(Color.white.opacity(0.10), lineWidth: 1.5)
                                 )
                                 .shadow(color: .black.opacity(0.5), radius: 0, x: 0, y: 4)
                         )
@@ -1486,6 +1473,7 @@ struct OnboardingPainCardsView: View {
                 .disabled(isAnimating)
             }
             .padding(.horizontal, 28)
+            .padding(.top, 18)
             .padding(.bottom, 18)
             .opacity(buttonsVisible ? 1 : 0)
             .offset(y: buttonsVisible ? 0 : 10)
@@ -1493,70 +1481,62 @@ struct OnboardingPainCardsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(OB.bg.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .onAppear {
             startEntrance()
         }
     }
 
-    private var questionHero: some View {
-        Text(currentCard)
-            .font(.brand(size: 38, weight: .heavy))
-            .foregroundStyle(OB.fg)
-            .lineSpacing(1)
-            .kerning(-0.55)
-            .minimumScaleFactor(0.78)
-            .lineLimit(3)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, minHeight: 156, alignment: .bottomLeading)
-            .accessibilityLabel(currentCard)
-    }
-
-    private var evidencePromptRail: some View {
+    // The receipt stack: dim back slips (capped at 3) + the active front slip,
+    // with the mascot peeking from the bottom-leading edge so its head/glasses
+    // hover behind the stack but never cross into the active confession or
+    // the action buttons below.
+    private var receiptStack: some View {
         ZStack(alignment: .bottomLeading) {
-            ZStack(alignment: .bottom) {
-                evidenceBackStack
+            ZStack(alignment: .top) {
+                receiptBackStack
 
-                EvidenceMiniSlip(
-                    progressText: "\(currentIndex + 1)/\(painCards.count)",
-                    label: "tap what's true",
+                PainReceiptSlip(
+                    progressText: "\(currentIndex + 1) of \(painCards.count)",
+                    label: "current receipt",
+                    confession: currentCard,
                     showCaughtStamp: showCaughtStamp,
                     isActive: true
                 )
-                .scaleEffect(cardScale)
+                .scaleEffect(cardScale, anchor: .center)
                 .rotationEffect(.degrees(cardRotation))
                 .offset(x: cardOffsetX, y: cardOffsetY)
                 .opacity(cardOpacity)
+                .animation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.48, dampingFraction: 0.82), value: currentIndex)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 104)
 
             Image("mascot-thinking")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 74, height: 74)
+                .frame(height: 96)
                 .rotationEffect(.degrees(mascotVisible ? -4 : -7))
                 .scaleEffect(mascotVisible ? 1 : 0.9)
                 .opacity(mascotVisible ? 1 : 0)
-                .offset(x: -8, y: 16)
+                .offset(x: 4, y: 18)
                 .shadow(color: .black.opacity(0.35), radius: 10, y: 8)
                 .accessibilityHidden(true)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 132, alignment: .center)
     }
 
-    private var evidenceBackStack: some View {
+    private var receiptBackStack: some View {
         ZStack {
             let layers = Array(backReceipts.prefix(3).enumerated())
             ForEach(Array(layers.reversed()), id: \.element.id) { index, item in
-                EvidenceMiniSlip(
-                    progressText: item.isAmbient ? "" : "saved",
-                    label: item.isAmbient ? "" : shortReceiptLabel(item.text),
+                PainReceiptSlip(
+                    progressText: "",
+                    label: "saved receipt",
+                    confession: "",
                     showCaughtStamp: false,
                     isActive: false
                 )
-                .scaleEffect(backLayerScale(index))
+                .id(item.id)
                 .rotationEffect(.degrees(backLayerRotation(index)))
                 .offset(x: backLayerX(index), y: backLayerY(index))
                 .opacity(backLayerOpacity(index))
@@ -1567,20 +1547,24 @@ struct OnboardingPainCardsView: View {
 
     private func startEntrance() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
-            withAnimation(.easeOut(duration: 0.38)) { headlineVisible = true }
+            withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .easeOut(duration: 0.38)) {
+                headlineVisible = true
+            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-            withAnimation(.spring(response: 0.50, dampingFraction: 0.82)) {
+            withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.50, dampingFraction: 0.82)) {
                 stackVisible = true
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.48) {
-            withAnimation(.spring(response: 0.46, dampingFraction: 0.80)) {
+            withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.46, dampingFraction: 0.80)) {
                 mascotVisible = true
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.78) {
-            withAnimation(.easeOut(duration: 0.30)) { buttonsVisible = true }
+            withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .easeOut(duration: 0.30)) {
+                buttonsVisible = true
+            }
         }
     }
 
@@ -1591,10 +1575,14 @@ struct OnboardingPainCardsView: View {
         let answeredCard = currentCard
         let nextReceiptCount = receiptCount + (caught ? 1 : 0)
         receiptCount = nextReceiptCount
+        // Haptic fires BEFORE the visual animation per UI-SPEC. Both Reduce
+        // Motion paths preserve haptic feedback (D-11).
         UIImpactFeedbackGenerator(style: caught ? .medium : .light).impactOccurred()
 
         if reduceMotion {
-            showCaughtStamp = caught
+            // Reduce Motion: no scale-pop, no slide. Stamp shows at full scale
+            // via opacity fade-in; slip exits via a 0.18s opacity fade.
+            if caught { showCaughtStamp = true }
             withAnimation(.easeOut(duration: 0.18)) {
                 cardOpacity = 0
             }
@@ -1605,6 +1593,8 @@ struct OnboardingPainCardsView: View {
         }
 
         if caught {
+            // Stamp scale-pop: 0.72 → 1.08 → 1.0 over 0.18s, hold, then slip
+            // slides back into the stack with a +5° rotation.
             withAnimation(.spring(response: 0.18, dampingFraction: 0.62)) {
                 showCaughtStamp = true
             }
@@ -1614,19 +1604,20 @@ struct OnboardingPainCardsView: View {
                     cardOffsetY = 18
                     cardRotation = 5
                     cardScale = 0.94
-                    cardOpacity = 0.54
+                    cardOpacity = 0.78
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.46) {
                 advance(after: answeredCard, caught: true, finalReceiptCount: nextReceiptCount)
             }
         } else {
-            withAnimation(.easeIn(duration: 0.24)) {
+            // Not me: flick left, rotate -9°, fade to 0 over 0.30s.
+            withAnimation(.easeIn(duration: 0.30)) {
                 cardOffsetX = -340
                 cardRotation = -9
                 cardOpacity = 0
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
                 advance(after: answeredCard, caught: false, finalReceiptCount: nextReceiptCount)
             }
         }
@@ -1657,100 +1648,118 @@ struct OnboardingPainCardsView: View {
         }
     }
 
+    // Back-stack geometry per UI-SPEC §"Page 2 — Pain Cards" visual spec table.
+    // Slip 1: rot +5°, y +18, x +10, opacity 0.78
+    // Slip 2: rot -4°, y +36, x -8,  opacity 0.55
+    // Slip 3: rot +8°, y +54, x +14, opacity 0.35  (only if ≥3 caught)
     private func backLayerRotation(_ index: Int) -> Double {
-        [4, -3, 6][min(index, 2)]
+        [5, -4, 8][min(index, 2)]
     }
 
     private func backLayerX(_ index: Int) -> CGFloat {
-        [9, -7, 13][min(index, 2)]
+        [10, -8, 14][min(index, 2)]
     }
 
     private func backLayerY(_ index: Int) -> CGFloat {
-        [12, 24, 36][min(index, 2)]
+        [18, 36, 54][min(index, 2)]
     }
 
     private func backLayerOpacity(_ index: Int) -> Double {
         [0.78, 0.55, 0.35][min(index, 2)]
     }
-
-    private func backLayerScale(_ index: Int) -> CGFloat {
-        [0.98, 0.95, 0.92][min(index, 2)]
-    }
-
-    private func shortReceiptLabel(_ text: String) -> String {
-        guard !text.isEmpty else { return "" }
-        let words = text.split(separator: " ").prefix(3).joined(separator: " ")
-        return words.lowercased()
-    }
 }
 
 private struct ReceiptBackItem {
     let id: String
-    let text: String
-    let isAmbient: Bool
 }
 
-private struct EvidenceMiniSlip: View {
+// MARK: - Pain Receipt Slip
+//
+// Tall receipt slip (210pt min-height) with a dotted perforation line along
+// the TOP edge so the slip reads as a torn-off coupon header rather than a
+// content card with a divider through its middle. Active state shows the
+// confession text large in the body; back-stack state shows ONLY the dim
+// "saved receipt" label — the confession body is intentionally blank to
+// kill the meaningless "feed loop" filler from the first Codex pass (D-01f).
+private struct PainReceiptSlip: View {
     let progressText: String
     let label: String
+    let confession: String
     let showCaughtStamp: Bool
     let isActive: Bool
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            HStack(alignment: .center, spacing: 12) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(progressText)
-                        .font(.brand(size: 15, weight: .heavy))
-                        .foregroundStyle(isActive ? OB.accent : OB.fg3.opacity(0.8))
-                        .frame(width: 42, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                // Micro progress + active label — only render on the active slip.
+                // Brand 11pt semibold, lowercase ("3 of 6") to kill the "1 0F 6"
+                // misread that the first Codex pass shipped with a monospaced +
+                // uppercase treatment (D-01a).
+                if isActive && !progressText.isEmpty {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(progressText)
+                            .font(.brand(size: 11, weight: .semibold))
+                            .foregroundStyle(OB.fg3)
 
-                    Rectangle()
-                        .fill((isActive ? OB.accent : OB.fg3).opacity(isActive ? 0.46 : 0.16))
-                        .frame(width: 1, height: 28)
+                        Text("·")
+                            .font(.brand(size: 11, weight: .semibold))
+                            .foregroundStyle(OB.fg3)
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(isActive ? "receipt saved here" : "saved receipt")
-                            .font(.brand(size: 12, weight: .heavy))
-                            .foregroundStyle(isActive ? OB.fg : OB.fg2)
-
-                        if !label.isEmpty {
-                            Text(label)
-                                .font(.brand(size: 11, weight: .semibold))
-                                .foregroundStyle(OB.fg3)
-                                .lineLimit(1)
-                        }
+                        Text(label)
+                            .font(.brand(size: 12, weight: .medium))
+                            .foregroundStyle(OB.fg3)
                     }
+                } else {
+                    // Back slips: ONLY the dim "saved receipt" label, no body
+                    // text. Empty body is intentional — see D-01f.
+                    Text(label)
+                        .font(.brand(size: 12, weight: .medium))
+                        .foregroundStyle(OB.fg3)
                 }
 
-                Spacer()
+                if isActive {
+                    Text(confession)
+                        .font(.brand(size: 22, weight: .heavy))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(2)
+                        .kerning(-0.4)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel(confession)
+                }
             }
-            .padding(.leading, 18)
-            .padding(.trailing, 16)
-            .frame(maxWidth: .infinity)
-            .frame(height: 68)
+            .padding(.horizontal, 18)
+            .padding(.top, 22) // 18pt vertical + 4pt clearance below the perforation dashes
+            .padding(.bottom, 18)
+            .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
             .background {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(OB.surface)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(isActive ? OB.accent.opacity(0.58) : Color.white.opacity(0.10), lineWidth: isActive ? 1.25 : 1)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(isActive ? OB.accent.opacity(0.45) : Color.white.opacity(0.08),
+                                    lineWidth: isActive ? 1.5 : 1)
                     }
-                    .shadow(color: isActive ? OB.accent.opacity(0.14) : .black.opacity(0.32), radius: isActive ? 18 : 12, y: 9)
-                    .overlay(alignment: .bottom) {
+                    .shadow(color: isActive ? OB.accent.opacity(0.18) : .black.opacity(0.32),
+                            radius: isActive ? 22 : 14, y: 10)
+                    // Perforation rides on the TOP edge — inset 16pt from each
+                    // side, dotted [2,5] white@14% — so the slip reads as a
+                    // torn-off coupon header (D-01e).
+                    .overlay(alignment: .top) {
                         ReceiptPerforation()
-                            .stroke(OB.fg.opacity(isActive ? 0.14 : 0.07), style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
+                            .stroke(Color.white.opacity(0.14),
+                                    style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
                             .frame(height: 1)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 9)
+                            .padding(.top, 11)
                     }
             }
 
-            if showCaughtStamp {
+            if showCaughtStamp && isActive {
                 CaughtStamp()
-                    .scaleEffect(0.72)
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 10)
+                    .padding(.trailing, 18)
+                    .padding(.bottom, 18)
                     .transition(.scale(scale: 0.72).combined(with: .opacity))
             }
         }
@@ -1774,11 +1783,14 @@ private struct CaughtStamp: View {
     }
 }
 
+// Top-edge perforation: draws a horizontal line at y = 0 of the bounding rect.
+// The frame this is rendered into is already inset 16pt from each side and
+// padded 11pt down from the slip's top edge by the parent layout.
 private struct ReceiptPerforation: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        path.move(to: CGPoint(x: rect.minX, y: 0))
+        path.addLine(to: CGPoint(x: rect.maxX, y: 0))
         return path
     }
 }
