@@ -547,41 +547,29 @@ struct ChunkingTrainingView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                TextField("Enter digits...", text: $viewModel.userInput)
-                    .font(.system(size: 28, weight: .semibold, design: .monospaced))
-                    .tracking(3)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .padding(.horizontal, 24)
+                MonoKeypadSlots(
+                    input: viewModel.userInput,
+                    length: viewModel.totalDigits
+                )
+                .padding(.bottom, 4)
 
-                let entered = viewModel.userInput.filter(\.isNumber).count
-                Text("\(entered) / \(viewModel.totalDigits) digits entered")
-                    .font(.caption)
-                    .foregroundStyle(entered == viewModel.totalDigits ? AppColors.teal : .secondary)
-                    .contentTransition(.numericText())
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userInput },
+                        set: { viewModel.userInput = $0 }
+                    ),
+                    maxLength: viewModel.totalDigits,
+                    onSubmit: {
+                        viewModel.submitRecall()
+                    }
+                )
+                .padding(.horizontal, 28)
             }
 
             Spacer()
         }
         .padding(.vertical, 24)
         .modifier(ShakeEffect(animatableData: shakeAmount))
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.submitRecall()
-            } label: {
-                Text("Submit")
-                    .accentButton(color: AppColors.teal)
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 16)
-            .background(AppColors.pageBg)
-        }
     }
 
     // MARK: - Results

@@ -12,6 +12,9 @@ enum QuickAssessmentPhase: Equatable {
     case visualInstructions
     case visualShow
     case visualInput
+    case digitInstructions
+    case digitShow
+    case digitInput
     case calculating
     case done
 }
@@ -37,8 +40,35 @@ final class QuickAssessmentViewModel {
     var visualCorrectRounds: Int = 0
     private var visualTimer: Timer?
 
+    // Number Memory (digit span)
+    // Three rounds, ramping length: 4 → 5 → 6 digits.
+    // Wires real data into the digitScore field that was previously hardcoded
+    // to 50.0 in createResult() — completes the Brain Score formula's three-way split.
+    var digitRound: Int = 0
+    var digitCurrentSequence: [Int] = []
+    var digitDisplayIndex: Int = -1
+    var digitUserInput: String = ""
+    var digitCorrectRounds: Int = 0
+    private var digitTimer: Timer?
+    private let digitSequenceLengths: [Int] = [5, 6, 7]
+
     let totalReactionRounds = 3
     let totalVisualRounds = 3
+    let totalDigitRounds = 3
+
+    var digitCurrentLength: Int {
+        guard digitRound < digitSequenceLengths.count else { return digitSequenceLengths.last ?? 4 }
+        return digitSequenceLengths[digitRound]
+    }
+
+    var digitCurrentDisplayDigit: String {
+        guard digitDisplayIndex >= 0, digitDisplayIndex < digitCurrentSequence.count else { return "" }
+        return "\(digitCurrentSequence[digitDisplayIndex])"
+    }
+
+    var digitIsShowing: Bool {
+        digitDisplayIndex >= 0 && digitDisplayIndex < digitCurrentSequence.count
+    }
 
     // MARK: - Reaction Time
 
@@ -116,7 +146,7 @@ final class QuickAssessmentViewModel {
     }
 
     private func nextVisualRound() {
-        let count = 4 + (visualRound * 2) // Round 0 = 4 cells, Round 1 = 6, Round 2 = 8
+        let count = 5 + (visualRound * 2) // Round 0 = 5 cells, Round 1 = 7, Round 2 = 9
         selectedCells = []
         highlightedCells = Set((0..<(gridSize * gridSize)).shuffled().prefix(count))
         phase = .visualShow
@@ -152,6 +182,82 @@ final class QuickAssessmentViewModel {
 
     private func finishVisual() {
         visualTimer?.invalidate()
+        phase = .digitInstructions
+    }
+
+    // MARK: - Number Memory (digit span)
+
+    func startDigit() {
+        digitRound = 0
+        digitCorrectRounds = 0
+        nextDigitRound()
+    }
+
+    private func nextDigitRound() {
+        let length = digitCurrentLength
+        digitCurrentSequence = (0..<length).map { _ in Int.random(in: 0...9) }
+        digitDisplayIndex = -1
+        digitUserInput = ""
+        phase = .digitShow
+        showNextDigit()
+    }
+
+    private func showNextDigit() {
+        digitTimer?.invalidate()
+        digitDisplayIndex += 1
+
+        if digitDisplayIndex >= digitCurrentSequence.count {
+            digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    self?.digitDisplayIndex = -1
+                    self?.phase = .digitInput
+                }
+            }
+            return
+        }
+
+        // 0.7s feels right — long enough to read, short enough to keep momentum
+        let interval: TimeInterval = 0.7
+        digitTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.showNextDigit()
+            }
+        }
+    }
+
+    func appendDigit(_ digit: Int) {
+        guard digitUserInput.count < digitCurrentSequence.count else { return }
+        digitUserInput.append(String(digit))
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    func deleteDigit() {
+        guard !digitUserInput.isEmpty else { return }
+        digitUserInput.removeLast()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    func submitDigitAnswer() {
+        let correct = digitCurrentSequence.map(String.init).joined()
+        let isCorrect = digitUserInput == correct
+
+        if isCorrect {
+            digitCorrectRounds += 1
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } else {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        }
+        digitRound += 1
+
+        if digitRound < totalDigitRounds {
+            nextDigitRound()
+        } else {
+            finishDigit()
+        }
+    }
+
+    private func finishDigit() {
+        digitTimer?.invalidate()
         phase = .calculating
         scheduleTransition(after: 2.0) { [weak self] in
             self?.phase = .done
@@ -169,8 +275,9 @@ final class QuickAssessmentViewModel {
         // Visual score: correctRounds / totalRounds * 100
         let visualScore = Double(visualCorrectRounds) / Double(totalVisualRounds) * 100.0
 
-        // Digit defaults to 50.0 (median, not tested)
-        let digitScore = 50.0
+        // Digit score: correctRounds / totalRounds * 100. Was previously hardcoded
+        // to 50.0 — now wired to real Number Memory data.
+        let digitScore = Double(digitCorrectRounds) / Double(totalDigitRounds) * 100.0
 
         let brainScore = BrainScoring.compositeBrainScore(digit: digitScore, reaction: reactionScore, visual: visualScore)
         let brainAge = BrainScoring.brainAge(from: brainScore)
@@ -230,10 +337,13 @@ struct QuickAssessmentView: View {
         switch viewModel.phase {
         case .reactionInstructions: return 0
         case .reactionWait, .reactionGo, .reactionTooEarly, .reactionResult:
-            return 0.1 + Double(viewModel.reactionRound) * 0.13
-        case .visualInstructions: return 0.5
+            return 0.05 + Double(viewModel.reactionRound) * 0.09
+        case .visualInstructions: return 0.34
         case .visualShow, .visualInput:
-            return 0.55 + Double(viewModel.visualRound) * 0.13
+            return 0.34 + Double(viewModel.visualRound) * 0.09
+        case .digitInstructions: return 0.67
+        case .digitShow, .digitInput:
+            return 0.67 + Double(viewModel.digitRound) * 0.09
         case .calculating, .done: return 1.0
         }
     }
@@ -259,6 +369,12 @@ struct QuickAssessmentView: View {
                 visualGridView(interactive: false)
             case .visualInput:
                 visualGridView(interactive: true)
+            case .digitInstructions:
+                digitInstructionCard
+            case .digitShow:
+                digitShowView
+            case .digitInput:
+                digitInputView
             case .calculating:
                 calculatingView
             case .done:
@@ -273,8 +389,9 @@ struct QuickAssessmentView: View {
             if !isReactionFullscreen && viewModel.phase != .calculating && viewModel.phase != .done {
                 VStack(spacing: 4) {
                     HStack(spacing: 16) {
-                        assessmentStepLabel("SPD", active: assessmentProgress < 0.5)
-                        assessmentStepLabel("VIS", active: assessmentProgress >= 0.5 && assessmentProgress < 1.0)
+                        assessmentStepLabel("SPD", active: assessmentProgress < 0.34)
+                        assessmentStepLabel("VIS", active: assessmentProgress >= 0.34 && assessmentProgress < 0.67)
+                        assessmentStepLabel("NUM", active: assessmentProgress >= 0.67 && assessmentProgress < 1.0)
                     }
                     .font(.caption2.weight(.bold))
 
@@ -533,6 +650,109 @@ struct QuickAssessmentView: View {
             return AppColors.accent
         }
         return Color.gray.opacity(0.12)
+    }
+
+    // MARK: - Digit Instructions
+
+    private var digitInstructionCard: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "number")
+                .font(.system(size: 64, weight: .heavy))
+                .foregroundStyle(AppColors.accent)
+
+            Text("Number Memory")
+                .font(.title.bold())
+
+            Text("Memorize the digits as they flash, then type them back in order.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            Spacer()
+
+            Button {
+                viewModel.startDigit()
+            } label: {
+                Text("Start")
+                    .gradientButton()
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 16)
+        }
+        .transition(.opacity)
+    }
+
+    // MARK: - Digit Show (digits flash one at a time)
+
+    private var digitShowView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Text("Round \(viewModel.digitRound + 1) of \(viewModel.totalDigitRounds)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Text("Watch carefully")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+
+            Text(viewModel.digitCurrentDisplayDigit)
+                .font(.system(size: 144, weight: .heavy, design: .monospaced))
+                .foregroundStyle(AppColors.accent)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.12), value: viewModel.digitDisplayIndex)
+
+            // Position pips so user knows how far through the sequence we are
+            HStack(spacing: 8) {
+                ForEach(0..<viewModel.digitCurrentSequence.count, id: \.self) { i in
+                    Circle()
+                        .fill(i <= viewModel.digitDisplayIndex ? AppColors.accent : AppColors.cardBorder)
+                        .frame(width: 8, height: 8)
+                }
+            }
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Digit Input (custom keypad)
+
+    private var digitInputView: some View {
+        VStack(spacing: 20) {
+            Spacer().frame(height: 8)
+
+            Text("Round \(viewModel.digitRound + 1) of \(viewModel.totalDigitRounds)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Text("Type the sequence")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            MonoKeypadSlots(
+                input: viewModel.digitUserInput,
+                length: viewModel.digitCurrentSequence.count
+            )
+            .padding(.vertical, 8)
+
+            Spacer()
+
+            MonoKeypad(
+                input: Binding(
+                    get: { viewModel.digitUserInput },
+                    set: { viewModel.digitUserInput = $0 }
+                ),
+                maxLength: viewModel.digitCurrentSequence.count,
+                onSubmit: { viewModel.submitDigitAnswer() }
+            )
+            .padding(.horizontal, 28)
+            .padding(.bottom, 12)
+        }
     }
 
     // MARK: - Calculating

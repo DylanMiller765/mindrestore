@@ -25,7 +25,7 @@ Full rules in `project_brand_voice.md`. The minimum to know:
 
 1. **Informed fear + defiance**, always stacked. Every fear-stat ("$57B spent on engagement engineering") pairs with an agency line ("Memo levels the field" / "You're not weak. You're outgunned.").
 2. **Punch the system, never the user.** Frame the user as outgunned, not addicted. "By design" framing — the apps work as intended, you're not broken.
-3. **Category-level villain only** — "social media giants" / "the algorithm" / "the system." Never name Meta, TikTok, ByteDance directly (App Review will flag).
+3. **Name apps when it lands** — "social media giants" / "the algorithm" / "the system" still work for broad claims, but product UI may name TikTok, Instagram, YouTube, Snap, etc. when concreteness makes the line sharper.
 4. **Round defensible numbers.** $57B not $57.43B. 50,000 A/B tests not "many tests."
 5. **Never wellness-speak.** No "digital wellbeing," "mindfulness," "intentional tech use." The vibe is gen-z + slightly pissed off + funny + competitive.
 6. **One stat per screen max.** Stacking becomes a lecture. Drop-off jumps.
@@ -194,7 +194,7 @@ Tweak variant: if 4 rows visually overcrowds the card, replace with 3 rows + a o
 - New Memo mission poses are allowed for key onboarding moments, with strict palette/anatomy rules
 - Dark mode only — these screens pin `.preferredColorScheme(.dark)`
 - iPhone only (no iPad concerns)
-- No naming Meta / TikTok / ByteDance directly anywhere
+- Specific consumer app names are allowed when they make the screen more concrete; avoid legalistic parent-company callouts unless the stat requires them
 
 ## Output expected
 

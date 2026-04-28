@@ -459,54 +459,36 @@ struct MathSpeedView: View {
 
             Spacer()
 
-            // Input
+            // Input — large mono answer display + custom keypad
             VStack(spacing: 12) {
-                TextField("", text: $viewModel.userAnswer)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 36, weight: .bold, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .focused($inputFocused)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.amber.opacity(0.3), lineWidth: 1.5)
-                    )
-                    .padding(.horizontal, 40)
-                    .onSubmit {
-                        if !viewModel.userAnswer.isEmpty {
-                            viewModel.submitAnswer()
-                        }
-                    }
+                Text(viewModel.userAnswer.isEmpty ? "—" : viewModel.userAnswer)
+                    .font(.system(size: 56, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(viewModel.userAnswer.isEmpty ? AppColors.textTertiary : AppColors.amber)
+                    .frame(height: 70)
+                    .contentTransition(.numericText())
 
-                HStack(spacing: 16) {
-                    Button {
-                        viewModel.skipProblem()
-                    } label: {
-                        Text("Skip")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.gray.opacity(0.12), in: Capsule())
-                    }
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userAnswer },
+                        set: { viewModel.userAnswer = $0 }
+                    ),
+                    submitEnabled: !viewModel.userAnswer.isEmpty,
+                    onSubmit: { viewModel.submitAnswer() }
+                )
+                .padding(.horizontal, 28)
 
-                    Button {
-                        viewModel.submitAnswer()
-                    } label: {
-                        Text("Submit")
-                            .accentButton()
-                    }
-                    .disabled(viewModel.userAnswer.isEmpty)
-                    .opacity(viewModel.userAnswer.isEmpty ? 0.5 : 1)
+                Button {
+                    viewModel.skipProblem()
+                } label: {
+                    Text("Skip")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 8)
                 }
-                .padding(.horizontal, 32)
+                .padding(.top, 4)
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, 16)
         }
         .padding(.vertical, 16)
         .modifier(ShakeEffect(animatableData: shakeAmount))

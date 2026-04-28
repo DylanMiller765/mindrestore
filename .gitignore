@@ -1,3 +1,14 @@
 MindRestore.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcuserstate
 build/
+build-sim/
+
+# macOS junk
+.DS_Store
+
+# Tool / skill caches
+.superpowers/
+.xcodebuildmcp/
+
+# Per-user Xcode state (scheme management, etc.)
+MindRestore.xcodeproj/xcuserdata/

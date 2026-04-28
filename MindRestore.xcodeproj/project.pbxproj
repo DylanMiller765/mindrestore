@@ -44,6 +44,11 @@
 		71A70DFF2F9DA39C009C563D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 71A70DFE2F9DA39C009C563D /* RevenueCat */; };
 		71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
 		71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
+		B91CFF010000000000000001 /* BricolageGrotesque-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */; };
+		B91CFF020000000000000001 /* BricolageGrotesque-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */; };
+		B91CFF030000000000000001 /* BricolageGrotesque-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */; };
+		B91CFF040000000000000001 /* BricolageGrotesque-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */; };
+		B91CFF050000000000000001 /* BricolageGrotesque-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */; };
 		71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
@@ -147,6 +152,7 @@
 		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
 		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
 		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
+		MKEY0001000000000000MK01 /* MonoKeypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = MKEY0002000000000000MK01 /* MonoKeypad.swift */; };
 		V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V15T0001000000000000TS00 /* V1_5FeatureTests.swift */; };
 		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
 		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
@@ -268,6 +274,11 @@
 		71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusOnboardingPages.swift; sourceTree = "<group>"; };
 		71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiveMascotView.swift; sourceTree = "<group>"; };
 		71D9D0C32F87CD4C001C0433 /* memori (1).riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = "memori (1).riv"; sourceTree = "<group>"; };
+		B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Regular.ttf"; path = "Resources/Fonts/BricolageGrotesque-Regular.ttf"; sourceTree = "<group>"; };
+		B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Medium.ttf"; path = "Resources/Fonts/BricolageGrotesque-Medium.ttf"; sourceTree = "<group>"; };
+		B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-SemiBold.ttf"; path = "Resources/Fonts/BricolageGrotesque-SemiBold.ttf"; sourceTree = "<group>"; };
+		B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Bold.ttf"; path = "Resources/Fonts/BricolageGrotesque-Bold.ttf"; sourceTree = "<group>"; };
+		B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-ExtraBold.ttf"; path = "Resources/Fonts/BricolageGrotesque-ExtraBold.ttf"; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedMatchView.swift; sourceTree = "<group>"; };
 		85498D53922848A7B7E5000B /* ReactionTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionTimeView.swift; sourceTree = "<group>"; };
@@ -371,6 +382,7 @@
 		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
+		MKEY0002000000000000MK01 /* MonoKeypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoKeypad.swift; sourceTree = "<group>"; };
 		V15T0001000000000000TS00 /* V1_5FeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V1_5FeatureTests.swift; sourceTree = "<group>"; };
 		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
@@ -519,6 +531,11 @@
 				B7BB27F7C6F96E795347504A /* ContentView.swift */,
 				3EDD34095382917612B530DD /* MindRestore.entitlements */,
 				EA2803E4C219B6D38BE3A296 /* MindRestoreApp.swift */,
+				B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */,
+				B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */,
+				B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */,
+				B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */,
+				B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */,
 				640CC68FC7209CBC86C6E003 /* Content */,
 				25E5FC4509952A03EF3B86CC /* Models */,
 				3FB21F1A039F009995EF6AC7 /* Services */,
@@ -761,6 +778,7 @@
 				GRSV0002000000000000GR01 /* GameResultView.swift */,
 				FPOP0002000000000000FP01 /* FreePlayPopup.swift */,
 				RIRL0002000000000000RI01 /* ReferralInlineRow.swift */,
+				MKEY0002000000000000MK01 /* MonoKeypad.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1130,6 +1148,11 @@
 				71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */,
 				098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */,
 				8ED3241E521BC34D514C4623 /* Configuration.storekit in Resources */,
+				B91CFF010000000000000001 /* BricolageGrotesque-Regular.ttf in Resources */,
+				B91CFF020000000000000001 /* BricolageGrotesque-Medium.ttf in Resources */,
+				B91CFF030000000000000001 /* BricolageGrotesque-SemiBold.ttf in Resources */,
+				B91CFF040000000000000001 /* BricolageGrotesque-Bold.ttf in Resources */,
+				B91CFF050000000000000001 /* BricolageGrotesque-ExtraBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1200,6 +1223,7 @@
 				DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */,
 				GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */,
 				TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */,
+				MKEY0001000000000000MK01 /* MonoKeypad.swift in Sources */,
 				GRSV0001000000000000GR01 /* GameResultView.swift in Sources */,
 				FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */,
 				RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */,

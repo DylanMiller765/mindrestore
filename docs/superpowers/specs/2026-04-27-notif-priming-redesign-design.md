@@ -71,9 +71,9 @@ Both cards: 22pt corner radius, 14pt horizontal padding, 14pt vertical padding, 
 | Background | `OB.surface` with overlay `OB.accent.opacity(0.05)` |
 | Border | `OB.accent.opacity(0.35)`, 1.5pt |
 | Icon | `Image("app-icon")` at 38pt rounded square (corner radius 9) |
-| App name | "Memori" — `.brand(size: 14, weight: .heavy)` in `OB.fg` (matches what iOS will actually show under the app icon — `Info.plist` does not override `CFBundleDisplayName`) |
+| App name | "Memo" — `.brand(size: 14, weight: .heavy)` in `OB.fg`. v2.0 rename ("Memo - Doomscroll Blocker" on the App Store) sets `CFBundleDisplayName` to "Memo" for the home-screen / notification surface. The mockup matches the post-rename state since v2.0 ships with the rename. |
 | Timestamp | "now" — `.brand(size: 12, weight: .medium)` in `OB.fg3` |
-| Body | "Memo earned you 12 min of TikTok. Tap to unlock." — `.brand(size: 14, weight: .heavy)` in `OB.fg`, 2-line clip. App brand = "Memori"; mascot voice in body = "Memo". |
+| Body | "You earned 12 min of TikTok. Tap to unlock." — `.brand(size: 14, weight: .heavy)` in `OB.fg`, 2-line clip. |
 | Whole card | full opacity, `.rotationEffect(+1°)` |
 | Shadow | `OB.accent.opacity(0.32)`, radius 24, y 10 |
 
@@ -87,8 +87,8 @@ Card spacing: 18pt vertical gap between the two cards. Cards do NOT visually ove
 | Headline | `One pulls you in.\nOne pulls you out.` (38pt, heavy, rounded design, `OB.fg`) |
 | Feed app name | `TikTok` |
 | Feed body | `🔥 Your For You page is moving. Come see what you missed.` |
-| Memo app name | `Memori` |
-| Memo body | `Memo earned you 12 min of TikTok. Tap to unlock.` |
+| Memo app name | `Memo` |
+| Memo body | `You earned 12 min of TikTok. Tap to unlock.` |
 | Caption | `The feed nudges to pull you back. Memo nudges to give you time back.` (15pt, semibold, `OB.fg2`) |
 | Privacy line | `🔒 No spam. Just unlocks, streak saves, and patrol reminders.` (12pt, semibold, `OB.fg3`) |
 | Primary CTA | `Let Memo nudge me` (via `OBContinueButton`) |

@@ -399,38 +399,21 @@ struct SequentialMemoryView: View {
                 Text("Enter the sequence")
                     .font(.title3.weight(.semibold))
 
-                TextField("", text: $viewModel.userInput)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 36, weight: .bold, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .focused($inputFocused)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.teal.opacity(0.3), lineWidth: 1.5)
-                    )
-                    .padding(.horizontal, 40)
-                    .onSubmit { viewModel.submitAnswer() }
+                MonoKeypadSlots(
+                    input: viewModel.userInput,
+                    length: viewModel.currentLength
+                )
+                .padding(.bottom, 4)
 
-                Text("\(viewModel.userInput.count) / \(viewModel.currentLength) digits")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.numericText())
-
-                Button {
-                    viewModel.submitAnswer()
-                } label: {
-                    Text("Submit")
-                        .accentButton()
-                }
-                .padding(.horizontal, 32)
-                .disabled(viewModel.userInput.isEmpty)
-                .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userInput },
+                        set: { viewModel.userInput = $0 }
+                    ),
+                    maxLength: viewModel.currentLength,
+                    onSubmit: { viewModel.submitAnswer() }
+                )
+                .padding(.horizontal, 28)
             }
 
             Spacer()
@@ -439,7 +422,6 @@ struct SequentialMemoryView: View {
         .modifier(ShakeEffect(animatableData: shakeAmount))
         .scaleEffect(correctPulse ? 1.03 : 1.0)
         .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
-        .onAppear { inputFocused = true }
     }
 
     // MARK: - Round Result

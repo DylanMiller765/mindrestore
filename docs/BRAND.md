@@ -165,14 +165,15 @@ When one line has to capture both fronts:
 - **Real product differentiator.** Memo has no ads, no data sale, charges a flat subscription. We can credibly punch at ad-supported apps because we're not one.
 - **Not partisan.** This is anti-attention-economy and anti-surveillance — those concerns cross political lines. Stay out of explicit politics.
 
-### Who we never name
+### How we name the enemy
 
-In product UI, never name **Meta, ByteDance, Snap, Google, TikTok, Instagram** directly. Use category-level callouts: *"social media giants," "the algorithm," "the system," "free apps."* Reasons:
-- App Review will flag direct callouts
-- Specific companies change every 18 months — generic framing ages better
-- The user mentally fills in whichever one pissed them off most. The category is more universal than any individual.
+Product UI may name specific consumer apps when the line gets sharper: **TikTok, Instagram, YouTube, Snapchat, X, Reddit**. This works best when the copy is about the user's lived behavior: opening TikTok before bed, getting dragged into Instagram Reels, or earning back the apps they actually use.
 
-In TikTok content (where Apple Review doesn't apply), naming TikTok and Instagram by name is fine and often necessary for the line to land. But product UI stays category-level.
+Still avoid sounding like a legal complaint. **Punch the behavior first, the company second.** The enemy is doomscrolling, dopamine farming, algorithm rot, and ad-supported attention extraction. Named apps are proof points, not the whole personality.
+
+Use category-level language when the claim is broad or strategic: *"social media giants," "the algorithm," "the system," "free apps."* Use specific app names when concreteness makes the moment more screenshot-worthy.
+
+Avoid corporate/legal parent-company names in product UI unless the stat specifically requires them. *"TikTok"* lands. *"ByteDance"* sounds like a deposition.
 
 ---
 
@@ -208,7 +209,7 @@ Full line bank: see `~/.claude/.../memory/project_brand_voice.md`.
 
 | Do say | Don't say |
 |---|---|
-| Social media giants | Meta, TikTok, ByteDance (in product UI) |
+| TikTok, Instagram, YouTube, Snap, social media giants | ByteDance legalese, naming companies without a sharp user-facing reason |
 | Brain rot, doomscrolling, dopamine farming | Toxic apps, addictive platforms |
 | Take your brain back | Reclaim digital wellbeing |
 | Block the noise | Reduce screen time |
@@ -233,7 +234,7 @@ Full line bank: see `~/.claude/.../memory/project_brand_voice.md`.
 ### What NEVER to do
 
 - Make the app a manifesto — it's a useful tool with a sharp opinion, not a protest
-- Name specific companies in product UI (App Review + competitor turnover)
+- Turn every screen into a named-company rant — specific app names are seasoning, not the meal
 - Make every line angry — anger is a hook, not a personality. Funny + sharp + caring beats angry + preachy
 - Lose the competitive sport energy (leaderboards, ranks, Brain Score) — those are the carrot to the resistance stick
 - Use "addiction" or "addicted" without immediately reframing — lands as user-blame

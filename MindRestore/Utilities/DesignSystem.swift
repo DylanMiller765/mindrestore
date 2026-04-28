@@ -569,3 +569,34 @@ struct ShakeEffect: GeometryEffect {
     }
 }
 
+// MARK: - Brand Font (Bricolage Grotesque)
+//
+// Bundled in Resources/Fonts. Use `.brand(size:weight:)` instead of
+// `.system(size:weight:design:.rounded)` for headlines and UI text.
+// Numerals should still use `.monospaced` design (system) for the
+// JetBrains-Mono-ish numeric look on count-ups and stats.
+
+extension Font {
+    /// Memo brand font (Bricolage Grotesque).
+    /// Weights map: regular/medium/semibold/bold/heavy → Regular/Medium/SemiBold/Bold/ExtraBold.
+    /// `.black` and any unsupported weight fall back to ExtraBold.
+    static func brand(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        let postScriptName: String
+        switch weight {
+        case .ultraLight, .thin, .light, .regular:
+            postScriptName = "BricolageGrotesque-Regular"
+        case .medium:
+            postScriptName = "BricolageGrotesque-Medium"
+        case .semibold:
+            postScriptName = "BricolageGrotesque-SemiBold"
+        case .bold:
+            postScriptName = "BricolageGrotesque-Bold"
+        case .heavy, .black:
+            postScriptName = "BricolageGrotesque-ExtraBold"
+        default:
+            postScriptName = "BricolageGrotesque-Regular"
+        }
+        return .custom(postScriptName, size: size)
+    }
+}
+

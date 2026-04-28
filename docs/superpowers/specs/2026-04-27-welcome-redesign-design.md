@@ -137,7 +137,17 @@ private struct WelcomeAppLogo: View {
 }
 ```
 
-No new files. No changes to shared `Components/`. No new dependencies. The existing `OBEyebrow` and `OBContinueButton` are used as-is.
+### One-time visibility change in `OnboardingNewScreens.swift`
+
+The OB design tokens are currently `private` to `OnboardingNewScreens.swift`:
+
+- `private enum OB { ... }` (line 1183)
+- `private struct OBEyebrow` (line 1197)
+- `private struct OBContinueButton` (line 1208)
+
+Welcome lives in `OnboardingView.swift` and must use these to match the OB visual system. Drop the `private` modifier from each so they're module-internal (Swift's default for top-level declarations). No call-site changes needed elsewhere — this is a strict access widening.
+
+No new files. No changes to shared `Components/`. No new dependencies.
 
 ## Out of scope
 

@@ -248,7 +248,7 @@ These views explicitly pin `.preferredColorScheme(.dark)` (or `.environment(\.co
 - No fake testimonials (App Store quotes only — `sjvdheisjsbsis` and `Sana96t` are the real reviewers)
 - No literal brain renders / 3D brain illustrations (use the Memo mascot)
 - No corporate wellness-speak ("digital wellbeing", "mindful tech use") — see brand voice doc
-- No naming Meta/TikTok/ByteDance directly in product UI (App Review + longevity)
+- Specific consumer app names are allowed when they make the user-facing behavior concrete; avoid legalistic parent-company callouts unless the stat requires them
 
 ---
 

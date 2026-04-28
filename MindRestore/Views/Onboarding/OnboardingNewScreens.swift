@@ -119,11 +119,22 @@ struct OnboardingPersonalSolutionView: View {
     let dailyScreenTimeHours: Double
     let projectedScreenTimeHours: Int
     let projectionIsEstimate: Bool
+    let receiptCount: Int
     let onContinue: () -> Void
 
+    private enum RevealBeat {
+        case stakes
+        case withMemo
+        case plan
+    }
+
     @State private var cardsAppeared: [Bool] = [false, false, false, false]
+    @State private var revealBeat: RevealBeat = .stakes
     @State private var headlineAppeared = false
-    @State private var statAppeared = false
+    @State private var animatedProjectionHours = 0
+    @State private var animatedReclaimedHours = 0
+    @State private var revealStarted = false
+    @State private var revealTask: Task<Void, Never>?
 
     /// Top 3 solutions to mirror back. Falls back to a sensible default trio
     /// if the user skipped goal selection (so the page still has substance).
@@ -173,102 +184,303 @@ struct OnboardingPersonalSolutionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer().frame(height: 20)
+        GeometryReader { proxy in
+            ZStack {
+                revealBackdrop(size: proxy.size)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Your projection")
-                    .font(.system(size: 36, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineSpacing(1)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(spacing: 0) {
+                    if revealBeat == .plan {
+                        compactProjectionHeader
+                            .padding(.horizontal, 28)
+                            .padding(.top, 12)
+                            .transition(.move(edge: .top).combined(with: .opacity))
 
-                VStack(alignment: .leading, spacing: 0) {
+                        Spacer().frame(height: 18)
+
+                        planCard
+                            .padding(.horizontal, 24)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+
+                        Text(solutionSummary)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppColors.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 28)
+                            .padding(.top, 16)
+                            .opacity(cardsAppeared[3] ? 1 : 0)
+
+                        Spacer(minLength: 16)
+
+                        unlockPlanButton
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 24)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        cinematicProjectionHero
+                            .padding(.horizontal, 28)
+                            .padding(.top, 38)
+                            .opacity(headlineAppeared ? 1 : 0)
+                            .offset(y: headlineAppeared ? 0 : 10)
+
+                        Spacer(minLength: 22)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        }
+        .animation(.spring(response: 0.68, dampingFraction: 0.86), value: revealBeat)
+        .animation(.spring(response: 0.48, dampingFraction: 0.82), value: headlineAppeared)
+        .onAppear {
+            startRevealAnimation()
+        }
+        .onDisappear {
+            revealTask?.cancel()
+        }
+    }
+
+    private func revealBackdrop(size: CGSize) -> some View {
+        let accent = revealBeat == .stakes ? AppColors.coral : AppColors.accent
+
+        return ZStack {
+            AppColors.pageBg
+
+            Circle()
+                .fill(accent.opacity(revealBeat == .plan ? 0.14 : 0.24))
+                .frame(width: size.width * 0.95, height: size.width * 0.95)
+                .blur(radius: 76)
+                .offset(x: size.width * 0.34, y: revealBeat == .stakes ? size.height * 0.12 : -size.height * 0.05)
+
+            VStack(spacing: 14) {
+                ForEach(0..<5, id: \.self) { row in
+                    HStack(spacing: 14) {
+                        ForEach(0..<4, id: \.self) { column in
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(accent.opacity(revealBeat == .plan ? 0.025 : 0.055))
+                                .frame(width: 42, height: 42)
+                                .overlay {
+                                    Image(systemName: feedTileSymbols[(row + column) % feedTileSymbols.count])
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundStyle(accent.opacity(revealBeat == .plan ? 0.08 : 0.16))
+                                }
+                        }
+                    }
+                    .offset(x: row.isMultiple(of: 2) ? 24 : -12)
+                }
+            }
+            .rotationEffect(.degrees(-8))
+            .offset(x: size.width * 0.2, y: revealBeat == .stakes ? size.height * 0.18 : size.height * 0.08)
+            .opacity(revealBeat == .plan ? 0.45 : 1)
+        }
+        .ignoresSafeArea()
+    }
+
+    private var cinematicProjectionHero: some View {
+        let withMemo = revealBeat == .withMemo
+        let accent = withMemo ? AppColors.accent : AppColors.coral
+
+        return VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(withMemo ? "With Memo" : "Without Memo")
+                        .font(.system(size: 11, weight: .heavy))
+                        .tracking(1.4)
+                        .textCase(.uppercase)
+                        .foregroundStyle(accent)
+
+                    Text(withMemo ? "Cut the damage in half." : "Here's what's at stake.")
+                        .font(.system(size: 39, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            Spacer(minLength: withMemo ? 4 : 36)
+
+            ZStack(alignment: withMemo ? .topLeading : .leading) {
+                if !withMemo {
+                    ghostNumberStack
+                }
+
+                if withMemo {
                     Text(projectedHoursText)
-                        .font(.system(size: 66, weight: .black, design: .rounded))
+                        .font(.system(size: 64, weight: .black, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(AppColors.coral.opacity(0.26))
+                        .minimumScaleFactor(0.56)
+                        .lineLimit(1)
+                        .blur(radius: 0.7)
+                        .offset(y: -22)
+                        .transition(.opacity.combined(with: .scale(scale: 1.06)))
+
+                    Text(reclaimedHoursText)
+                        .font(.system(size: 92, weight: .black, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(AppColors.accent)
+                        .minimumScaleFactor(0.55)
+                        .lineLimit(1)
+                        .shadow(color: AppColors.accent.opacity(0.34), radius: 18, y: 8)
+                        .contentTransition(.numericText(value: Double(animatedReclaimedHours)))
+                        .offset(y: 24)
+                        .transition(.scale(scale: 0.86).combined(with: .opacity))
+                } else {
+                    Text(animatedHoursText)
+                        .font(.system(size: 92, weight: .black, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(AppColors.coral)
-                        .minimumScaleFactor(0.75)
-
-                    Text("\(projectedYearsText) years by 60 if nothing changes")
-                        .font(.system(size: 14, weight: .heavy))
-                        .tracking(0.9)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .textCase(.uppercase)
+                        .minimumScaleFactor(0.55)
+                        .lineLimit(1)
+                        .contentTransition(.numericText(value: Double(animatedProjectionHours)))
+                        .shadow(color: AppColors.coral.opacity(0.28), radius: 18, y: 8)
                 }
-                .opacity(statAppeared ? 1 : 0)
-                .offset(y: statAppeared ? 0 : 12)
+            }
+            .frame(height: withMemo ? 154 : 122, alignment: .leading)
 
-                Text(projectionSubtitle)
-                    .font(.system(size: 16, weight: .semibold))
+            VStack(alignment: .leading, spacing: 8) {
+                Text(withMemo ? "hours back in play" : "\(projectedYearsText) years by 60")
+                    .font(.system(size: 14, weight: .heavy))
+                    .tracking(0.9)
+                    .textCase(.uppercase)
+                    .foregroundStyle(accent)
+
+                Text(withMemo ? "Memo turns scrolling into reps: train first, unlock after." : "That's \(projectedYearsText) years if nothing changes.")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 28)
-            .opacity(headlineAppeared ? 1 : 0)
-            .offset(y: headlineAppeared ? 0 : 8)
 
-            Spacer().frame(height: 18)
+            if withMemo {
+                Spacer(minLength: 16)
 
-            Text("Memo's plan")
-                .font(.system(size: 12, weight: .heavy))
-                .tracking(1.1)
-                .foregroundStyle(AppColors.textTertiary)
+                HStack {
+                    Spacer()
+                    Image("mascot-unlocked")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 132, height: 132)
+                        .shadow(color: AppColors.accent.opacity(0.28), radius: 24, y: 12)
+                        .transition(.scale(scale: 0.78).combined(with: .opacity))
+                }
+            }
+        }
+    }
+
+    private var ghostNumberStack: some View {
+        ZStack(alignment: .leading) {
+            ForEach(0..<3, id: \.self) { index in
+                Text(projectedHoursText)
+                    .font(.system(size: 82, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(AppColors.coral.opacity(0.08 - Double(index) * 0.018))
+                    .minimumScaleFactor(0.55)
+                    .lineLimit(1)
+                    .offset(x: CGFloat(index * 10), y: CGFloat(index * -12))
+                    .blur(radius: CGFloat(index + 1))
+            }
+        }
+        .offset(y: -20)
+    }
+
+    private var compactProjectionHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your projection")
+                .font(.system(size: 11, weight: .heavy))
+                .tracking(1.25)
                 .textCase(.uppercase)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 28)
-                .padding(.bottom, 6)
+                .foregroundStyle(AppColors.textTertiary)
 
-            VStack(spacing: 0) {
-                Divider().overlay(AppColors.cardBorder)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(projectedHoursText)
+                    .font(.system(size: 31, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(AppColors.coral)
+                    .minimumScaleFactor(0.72)
+                    .lineLimit(1)
 
-                planRow(number: "01", title: "Train daily", detail: "5 minutes before the feed", value: "5 min", index: 0)
-                Divider().overlay(AppColors.cardBorder)
-                planRow(number: "02", title: "Lock the noise", detail: appLockDetail, value: appLockValue, index: 1)
-                Divider().overlay(AppColors.cardBorder)
-                planRow(number: "03", title: "Earn unlocks", detail: "Screen time costs reps now", value: "3x", index: 2)
-                Divider().overlay(AppColors.cardBorder)
-                planRow(number: "04", title: "Compete on Brain Score", detail: "Beat the algorithm, then beat the room", value: "Day 5", index: 3)
-                Divider().overlay(AppColors.cardBorder)
-            }
-            .padding(.horizontal, 28)
-
-            if !solutions.isEmpty {
-                Text(solutionSummary)
-                    .font(.system(size: 13, weight: .semibold))
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 18, weight: .heavy))
                     .foregroundStyle(AppColors.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 28)
-                    .padding(.top, 12)
-                    .opacity(cardsAppeared[3] ? 1 : 0)
+
+                Text(reclaimedHoursText)
+                    .font(.system(size: 31, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(AppColors.accent)
+                    .minimumScaleFactor(0.72)
+                    .lineLimit(1)
             }
 
-            Spacer(minLength: 16)
+            HStack(spacing: 10) {
+                Text("hours by 60")
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("with Memo")
+                    .foregroundStyle(AppColors.accent)
+            }
+            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .tracking(0.8)
+            .textCase(.uppercase)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-            Button(action: onContinue) {
-                Text("Put Memo on patrol")
-                    .gradientButton()
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 24)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.4)) { headlineAppeared = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
-                    statAppeared = true
+    private var planCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Memo's plan")
+                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text("Calculated from your picks")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textTertiary)
                 }
+
+                Spacer()
+
+                Image("mascot-thinking")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .offset(y: -20)
+                    .shadow(color: AppColors.accent.opacity(0.18), radius: 12, y: 6)
             }
-            for i in 0..<cardsAppeared.count {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35 + Double(i) * 0.12) {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        if i < cardsAppeared.count { cardsAppeared[i] = true }
-                    }
-                }
-            }
+            .padding(.bottom, 6)
+
+            planCardRow(number: "01", label: "App blocking", detail: "Memo blocks what you pick", value: "pick yours", index: 0)
+            planCardRow(number: "02", label: "Brain training", detail: "Play to earn back screen time", value: "5 min/day", index: 1)
+            planCardRow(number: "03", label: "Earn unlocks", detail: "Beat a brain game", value: "15 min", index: 2)
+            planCardRow(number: "04", label: "Leaderboards", detail: "Weekly · monthly · all-time", value: "live now", index: 3, showDivider: false)
         }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(AppColors.cardElevated)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(AppColors.cardBorder.opacity(0.85), lineWidth: 1)
+                }
+        }
+    }
+
+    private var unlockPlanButton: some View {
+        Button(action: onContinue) {
+            HStack(spacing: 8) {
+                Text("Unlock my plan")
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 15, weight: .heavy))
+            }
+            .font(.system(size: 18, weight: .heavy, design: .rounded))
+            .foregroundStyle(AppColors.textPrimary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(AppColors.textPrimary.opacity(0.2), lineWidth: 1)
+            }
+            .shadow(color: AppColors.accent.opacity(0.34), radius: 22, y: 10)
+        }
+        .buttonStyle(.plain)
     }
 
     private var brainAgeSubtitle: String {
@@ -294,56 +506,143 @@ struct OnboardingPersonalSolutionView: View {
         String(format: "%.1fh", dailyScreenTimeHours)
     }
 
-    private var projectedHoursText: String {
-        let rounded = projectedScreenTimeHours >= 1000
+    private var targetProjectionHours: Int {
+        projectedScreenTimeHours >= 1000
             ? Int((Double(projectedScreenTimeHours) / 1000.0).rounded()) * 1000
             : projectedScreenTimeHours
-        return rounded.formatted()
+    }
+
+    private var projectedHoursText: String {
+        targetProjectionHours.formatted()
+    }
+
+    private var animatedHoursText: String {
+        animatedProjectionHours.formatted()
+    }
+
+    private var reclaimedHoursText: String {
+        max(animatedReclaimedHours, targetProjectionHours / 2).formatted()
+    }
+
+    private var finalReclaimedHoursText: String {
+        (targetProjectionHours / 2).formatted()
     }
 
     private var projectedYearsText: String {
         String(format: "%.1f", Double(projectedScreenTimeHours) / 8760.0)
     }
 
-    private var appLockValue: String {
-        userGoals.isEmpty ? "200+" : "\(max(userGoals.count * 40, 80))+"
-    }
-
-    private var appLockDetail: String {
-        userGoals.isEmpty ? "Distracting apps stay locked" : "Built around what you picked"
-    }
-
     private var solutionSummary: String {
-        "Built around your picks. Training first. Feed second."
+        if receiptCount > 0 {
+            return "You admitted to \(receiptCount) feed \(receiptCount == 1 ? "loop" : "loops"). Memo goes after those first."
+        }
+        return "Memo still builds the plan around your picks."
     }
 
-    private func planRow(number: String, title: String, detail: String, value: String, index: Int) -> some View {
-        let appeared = index < cardsAppeared.count ? cardsAppeared[index] : true
-        return HStack(spacing: 14) {
-            Text(number)
-                .font(.system(size: 13, weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 34, alignment: .leading)
+    private var feedTileSymbols: [String] {
+        ["play.fill", "heart.fill", "message.fill", "bolt.fill", "camera.fill", "number"]
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.primary)
-                Text(detail)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+    private func startRevealAnimation() {
+        guard !revealStarted else { return }
+        revealStarted = true
+
+        revealTask?.cancel()
+        revealTask = Task { @MainActor in
+            withAnimation(.easeOut(duration: 0.36)) {
+                headlineAppeared = true
             }
 
-            Spacer(minLength: 0)
+            await countProjection()
+            guard !Task.isCancelled else { return }
 
-            Text(value)
-                .font(.system(size: 15, weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(index == 0 ? AppColors.accent : AppColors.textPrimary)
+            try? await Task.sleep(for: .milliseconds(260))
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.spring(response: 0.72, dampingFraction: 0.83)) {
+                revealBeat = .withMemo
+            }
+
+            animatedReclaimedHours = targetProjectionHours / 2
+
+            try? await Task.sleep(for: .milliseconds(1250))
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.spring(response: 0.74, dampingFraction: 0.86)) {
+                revealBeat = .plan
+            }
+
+            try? await Task.sleep(for: .milliseconds(180))
+            await revealPlanRows()
         }
-        .padding(.vertical, 12)
+    }
+
+    @MainActor
+    private func countProjection() async {
+        let target = targetProjectionHours
+        let steps = 42
+        for step in 0...steps {
+            guard !Task.isCancelled else { return }
+            let progress = Double(step) / Double(steps)
+            let eased = 1 - pow(1 - progress, 3)
+            animatedProjectionHours = Int((Double(target) * eased).rounded())
+            try? await Task.sleep(for: .milliseconds(24))
+        }
+    }
+
+    @MainActor
+    private func revealPlanRows() async {
+        for i in 0..<cardsAppeared.count {
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                cardsAppeared[i] = true
+            }
+            try? await Task.sleep(for: .milliseconds(86))
+        }
+    }
+
+    private func planCardRow(
+        number: String,
+        label: String,
+        detail: String,
+        value: String,
+        index: Int,
+        showDivider: Bool = true
+    ) -> some View {
+        let appeared = index < cardsAppeared.count ? cardsAppeared[index] : true
+        return VStack(spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(number)
+                    .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(AppColors.accent)
+                    .frame(width: 26, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(label)
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text(detail)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                Text(value)
+                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(index == 0 ? AppColors.accent : AppColors.textPrimary)
+            }
+            .padding(.vertical, 10)
+
+            if showDivider {
+                Rectangle()
+                    .fill(AppColors.cardBorder.opacity(0.82))
+                    .frame(height: 1)
+            }
+        }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
     }
@@ -357,8 +656,11 @@ struct OnboardingPersonalSolutionView: View {
 struct OnboardingNotificationPrimingView: View {
     let onResult: (Bool) -> Void
 
-    @State private var headlineAppeared = false
-    @State private var bulletsAppeared = false
+    @State private var headlineVisible = false
+    @State private var feedCardVisible = false
+    @State private var memoCardVisible = false
+    @State private var captionVisible = false
+    @State private var ctaVisible = false
     @State private var requesting = false
     @State private var permissionTask: Task<Void, Never>?
     @State private var showTimeoutError = false
@@ -367,68 +669,88 @@ struct OnboardingNotificationPrimingView: View {
     @State private var previouslyDenied = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 40)
+        ZStack {
+            OB.bg.ignoresSafeArea()
 
-            // Bell icon with notification dot
-            ZStack {
-                Circle()
-                    .fill(AppColors.coral.opacity(0.12))
-                    .frame(width: 120, height: 120)
+            notifPrimingAtmosphere
 
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 56, weight: .semibold))
-                    .foregroundStyle(AppColors.coral)
-                    .symbolRenderingMode(.hierarchical)
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    OBEyebrow(text: "TWO KINDS OF NUDGES")
+                    Text("One pulls you in.\nOne pulls you out.")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(1)
+                        .kerning(-0.5)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 14)
+                .opacity(headlineVisible ? 1 : 0)
+                .offset(y: headlineVisible ? 0 : 8)
+
+                Spacer(minLength: 28)
+
+                VStack(spacing: 18) {
+                    NotifMockupCard(
+                        variant: .feed,
+                        appIcon: Image("logo-tiktok"),
+                        appName: "TikTok",
+                        bodyText: "🔥 Your For You page is moving. Come see what you missed."
+                    )
+                    .opacity(feedCardVisible ? 0.55 : 0)
+                    .scaleEffect(feedCardVisible ? 0.97 : 0.92)
+                    .rotationEffect(.degrees(feedCardVisible ? -3 : 0))
+                    .offset(y: feedCardVisible ? 0 : -40)
+
+                    NotifMockupCard(
+                        variant: .memo,
+                        appIcon: Image("app-icon"),
+                        appName: "Memo",
+                        bodyText: "You earned 12 min of TikTok. Tap to unlock."
+                    )
+                    .opacity(memoCardVisible ? 1 : 0)
+                    .rotationEffect(.degrees(memoCardVisible ? 1 : 0))
+                    .offset(y: memoCardVisible ? 0 : 30)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 20)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("The feed nudges to pull you back. Memo nudges to give you time back.")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .heavy))
+                        Text("No spam. Just unlocks, streak saves, and patrol reminders.")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(OB.fg3)
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 14)
+                .opacity(captionVisible ? 1 : 0)
+                .offset(y: captionVisible ? 0 : 6)
             }
-
-            VStack(spacing: 10) {
-                Text("Memo can tap\nyour shoulder.")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .opacity(headlineAppeared ? 1 : 0)
-                    .offset(y: headlineAppeared ? 0 : 12)
-
-                Text("Not the algorithm. Just your brain's bouncer.")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .opacity(headlineAppeared ? 1 : 0)
-            }
-
-            VStack(spacing: 14) {
-                primingBullet(icon: "flame.fill", color: AppColors.coral, text: "Streak rescue before midnight")
-                primingBullet(icon: "trophy.fill", color: AppColors.amber, text: "Leaderboard resets before you slip")
-                primingBullet(icon: "shield.fill", color: AppColors.accent, text: "Patrol reminders when apps unlock")
-            }
-            .padding(.horizontal, 32)
-            .padding(.top, 8)
-            .opacity(bulletsAppeared ? 1 : 0)
-            .offset(y: bulletsAppeared ? 0 : 16)
-
-            Spacer()
-
-            HStack(spacing: 6) {
-                Image(systemName: "lock.fill")
-                    .font(.caption2)
-                Text("No spam. No engagement bait. Once a day max.")
-                    .font(.caption)
-            }
-            .foregroundStyle(.tertiary)
-
-            VStack(spacing: 10) {
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 8) {
                 if previouslyDenied {
                     Text("Permission was denied earlier — open Settings to enable.")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
                         .multilineTextAlignment(.center)
-                        .transition(.opacity)
                 } else if showTimeoutError {
                     Text("Couldn't request permission. Tap to retry.")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(AppColors.coral)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.coral)
                         .multilineTextAlignment(.center)
-                        .transition(.opacity)
                 }
 
                 Button {
@@ -444,13 +766,20 @@ struct OnboardingNotificationPrimingView: View {
                         if requesting {
                             ProgressView()
                                 .tint(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 17)
+                                .background(OB.accent, in: RoundedRectangle(cornerRadius: 14))
                         } else {
                             Text(buttonTitle)
-                                .font(.headline.weight(.bold))
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 17)
+                                .background(OB.accent, in: RoundedRectangle(cornerRadius: 14))
                         }
                     }
-                    .gradientButton()
                 }
+                .buttonStyle(.plain)
                 .disabled(requesting)
 
                 Button {
@@ -459,33 +788,66 @@ struct OnboardingNotificationPrimingView: View {
                     onResult(false)
                 } label: {
                     Text("Not now")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(OB.fg2)
+                        .padding(.vertical, 6)
                 }
             }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+            .opacity(ctaVisible ? 1 : 0)
+            .offset(y: ctaVisible ? 0 : 8)
         }
+        .preferredColorScheme(.dark)
         .onDisappear { permissionTask?.cancel() }
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.4)) {
-                headlineAppeared = true
+        .onAppear { startEntrance() }
+    }
+
+    private var notifPrimingAtmosphere: some View {
+        ZStack {
+            Circle()
+                .fill(OB.accent.opacity(0.14))
+                .frame(width: 280, height: 280)
+                .blur(radius: 76)
+                .offset(x: 130, y: -200)
+
+            Circle()
+                .fill(OB.coral.opacity(0.08))
+                .frame(width: 220, height: 220)
+                .blur(radius: 70)
+                .offset(x: -140, y: 220)
+        }
+    }
+
+    private func startEntrance() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+            withAnimation(.easeOut(duration: 0.4)) { headlineVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.40) {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+                feedCardVisible = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                withAnimation(.easeOut(duration: 0.5)) {
-                    bulletsAppeared = true
-                }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+            withAnimation(.spring(response: 0.50, dampingFraction: 0.78)) {
+                memoCardVisible = true
             }
-            // Detect previously-denied so we can offer Settings deep-link instead
-            // of a no-op system prompt.
-            Task {
-                let settings = await UNUserNotificationCenter.current().notificationSettings()
-                await MainActor.run {
-                    previouslyDenied = (settings.authorizationStatus == .denied)
-                }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.30) {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.20) {
+            withAnimation(.easeOut(duration: 0.35)) { captionVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) {
+            withAnimation(.easeOut(duration: 0.4)) { ctaVisible = true }
+        }
+        // Detect previously-denied so we can offer Settings deep-link instead
+        // of a no-op system prompt.
+        Task {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            await MainActor.run {
+                previouslyDenied = (settings.authorizationStatus == .denied)
             }
         }
     }
@@ -494,21 +856,6 @@ struct OnboardingNotificationPrimingView: View {
         if previouslyDenied { return "Open Settings" }
         if showTimeoutError { return "Try Again" }
         return "Let Memo nudge me"
-    }
-
-    private func primingBullet(icon: String, color: Color, text: String) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
-                .background(color, in: RoundedRectangle(cornerRadius: 8))
-
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-
-            Spacer()
-        }
     }
 
     private func requestPermission() {
@@ -545,6 +892,81 @@ struct OnboardingNotificationPrimingView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Notification Card Mockup
+//
+// File-local lock-screen-style notification mockup used by
+// OnboardingNotificationPrimingView. Two variants: dimmed/tilted "feed"
+// (the algorithmic enemy) vs bright "memo" (the bouncer). Built fresh
+// rather than extracted to Components/ — onboarding-only.
+
+private struct NotifMockupCard: View {
+    enum Variant { case feed, memo }
+
+    let variant: Variant
+    let appIcon: Image
+    let appName: String
+    let bodyText: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            appIcon
+                .resizable()
+                .scaledToFill()
+                .frame(width: 38, height: 38)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(appName)
+                        .font(.brand(size: 14, weight: .heavy))
+                        .foregroundStyle(variant == .memo ? OB.fg : OB.fg2)
+
+                    Spacer()
+
+                    Text("now")
+                        .font(.brand(size: 12, weight: .medium))
+                        .foregroundStyle(OB.fg3)
+                }
+
+                Text(bodyText)
+                    .font(.brand(size: 14, weight: variant == .memo ? .bold : .medium))
+                    .foregroundStyle(variant == .memo ? OB.fg : OB.fg2)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(OB.surface)
+
+                if variant == .memo {
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(OB.accent.opacity(0.05))
+                }
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(
+                    variant == .memo
+                        ? OB.accent.opacity(0.35)
+                        : Color.white.opacity(0.06),
+                    lineWidth: variant == .memo ? 1.5 : 1
+                )
+        }
+        .shadow(
+            color: variant == .memo ? OB.accent.opacity(0.32) : .clear,
+            radius: variant == .memo ? 24 : 0,
+            y: variant == .memo ? 10 : 0
+        )
     }
 }
 
@@ -818,6 +1240,7 @@ struct OnboardingBrainAgeReveal: View {
         dailyScreenTimeHours: 4.3,
         projectedScreenTimeHours: 50200,
         projectionIsEstimate: false,
+        receiptCount: 4,
         onContinue: {}
     )
 }
@@ -830,6 +1253,7 @@ struct OnboardingBrainAgeReveal: View {
         dailyScreenTimeHours: 4,
         projectedScreenTimeHours: 51100,
         projectionIsEstimate: true,
+        receiptCount: 0,
         onContinue: {}
     )
 }
@@ -878,3 +1302,1074 @@ struct OnboardingFinaleSequence: View {
 #Preview("Reveal — Bad (55)") {
     OnboardingBrainAgeReveal(brainAge: 55, userAge: 28, onContinue: {}, skipAnimation: true)
 }
+
+// MARK: - Shared Tokens for v2 Onboarding Pages
+//
+// Mirror the FO design tokens from FocusOnboardingPages.swift so the Industry
+// Scare → Empathy → Goals → Pain Cards → … → Plan Reveal arc all reads as one
+// coherent visual system in the dark/cool v2.0 palette.
+
+enum OB {
+    static let bg = Color(red: 0.039, green: 0.039, blue: 0.059)         // #0A0A0F
+    static let surface = Color(red: 0.078, green: 0.078, blue: 0.122)    // #14141F
+    static let border = Color.white.opacity(0.08)
+    static let fg = Color.white.opacity(0.94)
+    static let fg2 = Color.white.opacity(0.62)
+    static let fg3 = Color.white.opacity(0.40)
+    static let accent = Color(red: 0.408, green: 0.565, blue: 0.996)     // #6890FE
+    static let coral = Color(red: 0.980, green: 0.420, blue: 0.349)      // #FA6B59
+    static let memoPurple = Color(red: 0.722, green: 0.341, blue: 0.961) // #B857F5
+    static let success = Color(red: 0.0, green: 0.820, blue: 0.620)      // #00D19E
+    static let amber = Color(red: 1.0, green: 0.761, blue: 0.278)        // #FFC247
+}
+
+struct OBEyebrow: View {
+    let text: String
+    var color: Color = OB.accent
+    var body: some View {
+        Text(text)
+            .font(.brand(size: 13, weight: .bold))
+            .tracking(1.0)
+            .foregroundStyle(color)
+    }
+}
+
+struct OBContinueButton: View {
+    let title: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 17)
+                .background(OB.accent, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Pain Cards (NEW)
+//
+// Sits after Goals. Six specific Gen-Z pain statements presented one at a time.
+// User taps "Yep" to confess or "Nah" to dismiss. Each Yep is a sunk-cost
+// moment. Tap-based instead of swipe so gesture conflicts with TabView don't
+// strand the user.
+
+struct OnboardingPainCardsView: View {
+    let onContinue: (Int) -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var currentIndex: Int = 0
+    @State private var receiptCount: Int = 0
+    @State private var savedReceipts: [String] = []
+    @State private var cardOffsetX: CGFloat = 0
+    @State private var cardOffsetY: CGFloat = 0
+    @State private var cardRotation: Double = 0
+    @State private var cardScale: CGFloat = 1
+    @State private var cardOpacity: Double = 1
+    @State private var headlineVisible = false
+    @State private var stackVisible = false
+    @State private var mascotVisible = false
+    @State private var buttonsVisible = false
+    @State private var showCaughtStamp = false
+    @State private var isAnimating = false
+
+    private let painCards: [String] = [
+        "I check my phone before I check the time",
+        "I forget what I just read on a page",
+        "I uninstall TikTok, then redownload by Friday",
+        "I scroll until 2am even when I know better",
+        "I open the same 4 apps in a loop",
+        "I can't sit through a movie without my phone"
+    ]
+
+    private var currentCard: String {
+        guard currentIndex < painCards.count else { return painCards.last ?? "" }
+        return painCards[currentIndex]
+    }
+
+    private var backReceipts: [ReceiptBackItem] {
+        let saved = Array(savedReceipts.suffix(3).reversed())
+        if saved.isEmpty {
+            return [
+                ReceiptBackItem(id: "ambient-1", text: "", isAmbient: true),
+                ReceiptBackItem(id: "ambient-2", text: "", isAmbient: true)
+            ]
+        }
+        return saved.enumerated().map { index, text in
+            ReceiptBackItem(id: "saved-\(savedReceipts.count)-\(index)-\(text)", text: text, isAmbient: false)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Memo pulled your receipts.")
+                    .font(.brand(size: 15, weight: .heavy))
+                    .foregroundStyle(OB.accent)
+                    .tracking(0.2)
+
+                Text("Which ones are yours?")
+                    .font(.brand(size: 31, weight: .heavy))
+                    .foregroundStyle(OB.fg)
+                    .lineSpacing(1)
+                    .kerning(-0.4)
+
+                Text("Be honest. Memo uses this to build your fight plan.")
+                    .font(.brand(size: 15, weight: .semibold))
+                    .foregroundStyle(OB.fg2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 28)
+            .padding(.top, 16)
+            .opacity(headlineVisible ? 1 : 0)
+            .offset(y: headlineVisible ? 0 : 8)
+
+            Spacer(minLength: 34)
+
+            questionHero
+                .padding(.horizontal, 28)
+                .opacity(stackVisible ? cardOpacity : 0)
+                .offset(x: cardOffsetX * 0.18, y: stackVisible ? 0 : 20)
+                .scaleEffect(cardScale, anchor: .leading)
+                .animation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.48, dampingFraction: 0.82), value: currentIndex)
+
+            Spacer(minLength: 24)
+
+            evidencePromptRail
+                .padding(.horizontal, 28)
+                .opacity(stackVisible ? 1 : 0)
+                .offset(y: stackVisible ? 0 : 24)
+
+            Spacer()
+
+            HStack(spacing: 12) {
+                Button(action: { handleTap(caught: false) }) {
+                    Text("Not me")
+                        .font(.brand(size: 17, weight: .heavy))
+                        .foregroundStyle(OB.fg2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(OB.surface)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1.5)
+                                )
+                                .shadow(color: .black.opacity(0.5), radius: 0, x: 0, y: 4)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(isAnimating)
+
+                Button(action: { handleTap(caught: true) }) {
+                    Text("Caught me")
+                        .font(.brand(size: 17, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(OB.accent)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.white.opacity(0.18), lineWidth: 1.5)
+                                )
+                                .shadow(color: OB.accent.opacity(0.4), radius: 12, y: 4)
+                                .shadow(color: .black.opacity(0.5), radius: 0, x: 0, y: 4)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(isAnimating)
+            }
+            .padding(.horizontal, 28)
+            .padding(.bottom, 18)
+            .opacity(buttonsVisible ? 1 : 0)
+            .offset(y: buttonsVisible ? 0 : 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(OB.bg.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .onAppear {
+            startEntrance()
+        }
+    }
+
+    private var questionHero: some View {
+        Text(currentCard)
+            .font(.brand(size: 38, weight: .heavy))
+            .foregroundStyle(OB.fg)
+            .lineSpacing(1)
+            .kerning(-0.55)
+            .minimumScaleFactor(0.78)
+            .lineLimit(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 156, alignment: .bottomLeading)
+            .accessibilityLabel(currentCard)
+    }
+
+    private var evidencePromptRail: some View {
+        ZStack(alignment: .bottomLeading) {
+            ZStack(alignment: .bottom) {
+                evidenceBackStack
+
+                EvidenceMiniSlip(
+                    progressText: "\(currentIndex + 1)/\(painCards.count)",
+                    label: "tap what's true",
+                    showCaughtStamp: showCaughtStamp,
+                    isActive: true
+                )
+                .scaleEffect(cardScale)
+                .rotationEffect(.degrees(cardRotation))
+                .offset(x: cardOffsetX, y: cardOffsetY)
+                .opacity(cardOpacity)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 104)
+
+            Image("mascot-thinking")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 74, height: 74)
+                .rotationEffect(.degrees(mascotVisible ? -4 : -7))
+                .scaleEffect(mascotVisible ? 1 : 0.9)
+                .opacity(mascotVisible ? 1 : 0)
+                .offset(x: -8, y: 16)
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 8)
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 132, alignment: .center)
+    }
+
+    private var evidenceBackStack: some View {
+        ZStack {
+            let layers = Array(backReceipts.prefix(3).enumerated())
+            ForEach(Array(layers.reversed()), id: \.element.id) { index, item in
+                EvidenceMiniSlip(
+                    progressText: item.isAmbient ? "" : "saved",
+                    label: item.isAmbient ? "" : shortReceiptLabel(item.text),
+                    showCaughtStamp: false,
+                    isActive: false
+                )
+                .scaleEffect(backLayerScale(index))
+                .rotationEffect(.degrees(backLayerRotation(index)))
+                .offset(x: backLayerX(index), y: backLayerY(index))
+                .opacity(backLayerOpacity(index))
+                .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private func startEntrance() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+            withAnimation(.easeOut(duration: 0.38)) { headlineVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            withAnimation(.spring(response: 0.50, dampingFraction: 0.82)) {
+                stackVisible = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.48) {
+            withAnimation(.spring(response: 0.46, dampingFraction: 0.80)) {
+                mascotVisible = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.78) {
+            withAnimation(.easeOut(duration: 0.30)) { buttonsVisible = true }
+        }
+    }
+
+    private func handleTap(caught: Bool) {
+        guard !isAnimating else { return }
+        isAnimating = true
+
+        let answeredCard = currentCard
+        let nextReceiptCount = receiptCount + (caught ? 1 : 0)
+        receiptCount = nextReceiptCount
+        UIImpactFeedbackGenerator(style: caught ? .medium : .light).impactOccurred()
+
+        if reduceMotion {
+            showCaughtStamp = caught
+            withAnimation(.easeOut(duration: 0.18)) {
+                cardOpacity = 0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                advance(after: answeredCard, caught: caught, finalReceiptCount: nextReceiptCount)
+            }
+            return
+        }
+
+        if caught {
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.62)) {
+                showCaughtStamp = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                withAnimation(.easeInOut(duration: 0.26)) {
+                    cardOffsetX = 10
+                    cardOffsetY = 18
+                    cardRotation = 5
+                    cardScale = 0.94
+                    cardOpacity = 0.54
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.46) {
+                advance(after: answeredCard, caught: true, finalReceiptCount: nextReceiptCount)
+            }
+        } else {
+            withAnimation(.easeIn(duration: 0.24)) {
+                cardOffsetX = -340
+                cardRotation = -9
+                cardOpacity = 0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                advance(after: answeredCard, caught: false, finalReceiptCount: nextReceiptCount)
+            }
+        }
+    }
+
+    private func advance(after answeredCard: String, caught: Bool, finalReceiptCount: Int) {
+        if caught {
+            savedReceipts.append(answeredCard)
+        }
+
+        if currentIndex < painCards.count - 1 {
+            currentIndex += 1
+            showCaughtStamp = false
+            cardRotation = 0
+            cardScale = reduceMotion ? 1 : 0.98
+            cardOffsetX = 0
+            cardOffsetY = reduceMotion ? 0 : 24
+            cardOpacity = 0
+            withAnimation(reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.45, dampingFraction: 0.82)) {
+                cardOffsetY = 0
+                cardScale = 1
+                cardOpacity = 1
+            }
+            isAnimating = false
+        } else {
+            Analytics.onboardingStep(step: "painCards")
+            onContinue(finalReceiptCount)
+        }
+    }
+
+    private func backLayerRotation(_ index: Int) -> Double {
+        [4, -3, 6][min(index, 2)]
+    }
+
+    private func backLayerX(_ index: Int) -> CGFloat {
+        [9, -7, 13][min(index, 2)]
+    }
+
+    private func backLayerY(_ index: Int) -> CGFloat {
+        [12, 24, 36][min(index, 2)]
+    }
+
+    private func backLayerOpacity(_ index: Int) -> Double {
+        [0.78, 0.55, 0.35][min(index, 2)]
+    }
+
+    private func backLayerScale(_ index: Int) -> CGFloat {
+        [0.98, 0.95, 0.92][min(index, 2)]
+    }
+
+    private func shortReceiptLabel(_ text: String) -> String {
+        guard !text.isEmpty else { return "" }
+        let words = text.split(separator: " ").prefix(3).joined(separator: " ")
+        return words.lowercased()
+    }
+}
+
+private struct ReceiptBackItem {
+    let id: String
+    let text: String
+    let isAmbient: Bool
+}
+
+private struct EvidenceMiniSlip: View {
+    let progressText: String
+    let label: String
+    let showCaughtStamp: Bool
+    let isActive: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(progressText)
+                        .font(.brand(size: 15, weight: .heavy))
+                        .foregroundStyle(isActive ? OB.accent : OB.fg3.opacity(0.8))
+                        .frame(width: 42, alignment: .leading)
+
+                    Rectangle()
+                        .fill((isActive ? OB.accent : OB.fg3).opacity(isActive ? 0.46 : 0.16))
+                        .frame(width: 1, height: 28)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(isActive ? "receipt saved here" : "saved receipt")
+                            .font(.brand(size: 12, weight: .heavy))
+                            .foregroundStyle(isActive ? OB.fg : OB.fg2)
+
+                        if !label.isEmpty {
+                            Text(label)
+                                .font(.brand(size: 11, weight: .semibold))
+                                .foregroundStyle(OB.fg3)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.leading, 18)
+            .padding(.trailing, 16)
+            .frame(maxWidth: .infinity)
+            .frame(height: 68)
+            .background {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(OB.surface)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .stroke(isActive ? OB.accent.opacity(0.58) : Color.white.opacity(0.10), lineWidth: isActive ? 1.25 : 1)
+                    }
+                    .shadow(color: isActive ? OB.accent.opacity(0.14) : .black.opacity(0.32), radius: isActive ? 18 : 12, y: 9)
+                    .overlay(alignment: .bottom) {
+                        ReceiptPerforation()
+                            .stroke(OB.fg.opacity(isActive ? 0.14 : 0.07), style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
+                            .frame(height: 1)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 9)
+                    }
+            }
+
+            if showCaughtStamp {
+                CaughtStamp()
+                    .scaleEffect(0.72)
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 10)
+                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct CaughtStamp: View {
+    var body: some View {
+        Text("CAUGHT")
+            .font(.system(size: 22, weight: .heavy, design: .monospaced))
+            .tracking(1.8)
+            .foregroundStyle(OB.coral)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(OB.coral.opacity(0.72), lineWidth: 2)
+            }
+            .rotationEffect(.degrees(-8))
+    }
+}
+
+private struct ReceiptPerforation: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return path
+    }
+}
+
+// MARK: - Comparison (NEW)
+//
+// Sits after Brain Age Reveal. Two-column WITHOUT/WITH contrast personalized
+// using the user's pickup count, daily hours, and brain age from earlier
+// pages. Makes the cost of inaction concrete in their own terms.
+
+struct OnboardingComparisonView: View {
+    let pickupCount: Int
+    let dailyHours: Double
+    let brainAge: Int?
+    let onContinue: () -> Void
+
+    @State private var headlineVisible = false
+    @State private var rowsVisible: [Bool] = [false, false, false, false]
+    @State private var footerVisible = false
+
+    private struct Row { let without: String; let with: String }
+
+    private var rows: [Row] {
+        let pickups = max(pickupCount, 80)
+        let hrs = max(dailyHours, 1)
+        let halved = max(hrs / 2, 0.5)
+        let brainAgeLine = brainAge.map { "Brain Age \($0) drifts up" } ?? "Brain rot keeps compounding"
+        return [
+            Row(without: "Open the same apps \(pickups)\u{00D7}", with: "Open after training"),
+            Row(without: "\(formatHrs(hrs)) leaks into the feed", with: "\(formatHrs(halved)) back in play"),
+            Row(without: brainAgeLine, with: "Train the score down"),
+            Row(without: "You're the product", with: "You're the customer")
+        ]
+    }
+
+    private func formatHrs(_ h: Double) -> String {
+        let rounded = h.rounded()
+        if abs(h - rounded) < 0.05 { return "\(Int(rounded))h" }
+        return String(format: "%.1fh", h)
+    }
+
+    var body: some View {
+        ZStack {
+            OB.bg.ignoresSafeArea()
+
+            comparisonAtmosphere
+
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Same phone.\nDifferent rules.")
+                        .font(.system(size: 37, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(1)
+                        .kerning(-0.5)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Without Memo, the feed wins by default. With Memo, every open costs reps.")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 24)
+                .opacity(headlineVisible ? 1 : 0)
+                .offset(y: headlineVisible ? 0 : 8)
+
+                Spacer().frame(height: 26)
+
+                splitLedger
+                    .padding(.horizontal, 24)
+
+                Spacer()
+
+                Text("Memo doesn't ask for more willpower. It changes the rules.")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 34)
+                    .padding(.bottom, 14)
+                    .opacity(footerVisible ? 1 : 0)
+                    .offset(y: footerVisible ? 0 : 6)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OBContinueButton(title: "Why Memo wins", action: {
+                Analytics.onboardingStep(step: "comparison")
+                onContinue()
+            })
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+        }
+        .preferredColorScheme(.dark)
+        .onAppear { startEntrance() }
+    }
+
+    private var comparisonAtmosphere: some View {
+        ZStack {
+            Circle()
+                .fill(OB.coral.opacity(0.12))
+                .frame(width: 260, height: 260)
+                .blur(radius: 64)
+                .offset(x: -150, y: -160)
+
+            Circle()
+                .fill(OB.accent.opacity(0.15))
+                .frame(width: 300, height: 300)
+                .blur(radius: 70)
+                .offset(x: 160, y: 140)
+        }
+    }
+
+    private var splitLedger: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Text("Without Memo")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.coral)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("With Memo")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.accent)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .textCase(.uppercase)
+            .tracking(1.1)
+            .padding(.bottom, 13)
+
+            Rectangle()
+                .fill(OB.border)
+                .frame(height: 1)
+
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                comparisonRow(index: index, row: row)
+                if index < rows.count - 1 {
+                    Rectangle()
+                        .fill(OB.border)
+                        .frame(height: 1)
+                }
+            }
+        }
+    }
+
+    private func comparisonRow(index: Int, row: Row) -> some View {
+        let isVisible = index < rowsVisible.count && rowsVisible[index]
+
+        return HStack(alignment: .center, spacing: 0) {
+            Text(row.without)
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .foregroundStyle(index == 3 ? OB.coral : OB.fg.opacity(0.82))
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.trailing, 14)
+
+            ZStack {
+                Rectangle()
+                    .fill(OB.border)
+                    .frame(width: 1)
+
+                Circle()
+                    .fill(index == 3 ? OB.accent : OB.bg)
+                    .frame(width: 9, height: 9)
+                    .overlay {
+                        Circle()
+                            .stroke(index == 3 ? OB.accent : OB.border, lineWidth: 1)
+                    }
+            }
+            .frame(width: 22)
+
+            Text(row.with)
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .foregroundStyle(index == 3 ? OB.accent : OB.fg)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.leading, 14)
+        }
+        .padding(.vertical, 18)
+        .opacity(isVisible ? 1 : 0)
+        .offset(y: isVisible ? 0 : 12)
+    }
+
+    private func startEntrance() {
+        rowsVisible = Array(repeating: false, count: rows.count)
+        footerVisible = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.4)) { headlineVisible = true }
+        }
+        for i in 0..<rows.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.42 + Double(i) * 0.12) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                    rowsVisible[i] = true
+                }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.08) {
+            withAnimation(.easeOut(duration: 0.4)) { footerVisible = true }
+        }
+    }
+}
+
+// MARK: - Social Proof / Founder (NEW)
+//
+// Pivoted from "testimonials" to David vs Goliath since Memori has no v2 reviews
+// yet. The indie founder origin + leaderboard preview together make the
+// social-proof case stronger than fake testimonials would. Surfaces the
+// Compete tab existence which is currently buried.
+
+struct OnboardingSocialProofView: View {
+    let onContinue: () -> Void
+
+    @State private var headlineVisible = false
+    @State private var quoteVisible = false
+    @State private var leaderboardVisible = false
+    @State private var taglineVisible = false
+
+    private let leaderboardPreview: [(rank: Int, name: String, score: Int)] = [
+        (1, "sarah_m_", 921),
+        (2, "noahduke", 887),
+        (3, "luc.codes", 852),
+        (47, "you?", 0)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                OBEyebrow(text: "NOT A CORPORATION")
+
+                (Text("Built by ") + Text("one developer").foregroundColor(OB.accent) + Text("."))
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .lineSpacing(1)
+                    .kerning(-0.4)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Up against an industry spending $57B/year on you.")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(OB.fg2)
+                    .padding(.top, 4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 28)
+            .padding(.top, 24)
+            .opacity(headlineVisible ? 1 : 0)
+            .offset(y: headlineVisible ? 0 : 8)
+
+            Spacer().frame(height: 22)
+
+            // Founder pull-quote
+            HStack(alignment: .top, spacing: 14) {
+                Rectangle()
+                    .fill(OB.accent)
+                    .frame(width: 2)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\u{201C}I built Memo because I couldn't put TikTok down either. No VC. No ads. Just an app on your side.\u{201D}")
+                        .font(.system(size: 16, weight: .medium).italic())
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("\u{2014} Dylan, founder")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(OB.fg3)
+                }
+            }
+            .padding(.horizontal, 28)
+            .opacity(quoteVisible ? 1 : 0)
+            .offset(y: quoteVisible ? 0 : 6)
+
+            Spacer().frame(height: 24)
+
+            // Leaderboard preview
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    OBEyebrow(text: "LEADERBOARDS")
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Circle().fill(OB.success).frame(width: 6, height: 6)
+                            .shadow(color: OB.success, radius: 3)
+                        Text("LIVE")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .tracking(1.2)
+                            .foregroundStyle(OB.success)
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().fill(OB.success.opacity(0.12)))
+                }
+
+                VStack(spacing: 0) {
+                    ForEach(Array(leaderboardPreview.enumerated()), id: \.offset) { i, entry in
+                        leaderboardRow(rank: entry.rank, name: entry.name, score: entry.score, isYou: entry.name == "you?")
+                        if i < leaderboardPreview.count - 1 {
+                            Divider().overlay(OB.border)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(OB.surface)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(OB.border, lineWidth: 1)
+                        )
+                )
+            }
+            .padding(.horizontal, 28)
+            .opacity(leaderboardVisible ? 1 : 0)
+            .offset(y: leaderboardVisible ? 0 : 8)
+
+            Spacer()
+
+            Text("Compete weekly. Climb monthly. Live now.")
+                .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(OB.fg3)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 14)
+                .opacity(taglineVisible ? 1 : 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(OB.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) {
+            OBContinueButton(title: "Continue", action: {
+                Analytics.onboardingStep(step: "socialProof")
+                onContinue()
+            })
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+        }
+        .preferredColorScheme(.dark)
+        .onAppear { startEntrance() }
+    }
+
+    private func leaderboardRow(rank: Int, name: String, score: Int, isYou: Bool) -> some View {
+        HStack(spacing: 12) {
+            Text("\(rank)")
+                .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                .foregroundStyle(isYou ? OB.accent : OB.fg2)
+                .frame(width: 28, alignment: .leading)
+
+            Text(name)
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .foregroundStyle(isYou ? OB.accent : OB.fg)
+
+            Spacer()
+
+            if isYou {
+                Text("waiting on you")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(OB.fg3)
+            } else {
+                Text("\(score)")
+                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(OB.fg)
+            }
+        }
+        .padding(.vertical, 10)
+    }
+
+    private func startEntrance() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.4)) { headlineVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeOut(duration: 0.45)) { quoteVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+                leaderboardVisible = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(.easeOut(duration: 0.4)) { taglineVisible = true }
+        }
+    }
+}
+
+// MARK: - Differentiation / Paid Because You're The Customer
+//
+// Final objection-handler before paywall. This is not a values list; it is a
+// pricing-positioning argument with one receipt artifact users can remember.
+
+struct OnboardingDifferentiationView: View {
+    let onContinue: () -> Void
+
+    @State private var headlineVisible = false
+    @State private var receiptVisible = false
+    @State private var receiptLinesVisible: [Bool] = [false, false, false, false]
+    @State private var taglineVisible = false
+
+    private let receiptLines = [
+        "NO ADS",
+        "NO DATA SOLD",
+        "10% TO FIGHT BIG TECH",
+        "TRAIN BEFORE YOU SCROLL"
+    ]
+
+    var body: some View {
+        ZStack {
+            OB.bg.ignoresSafeArea()
+
+            differentiationAtmosphere
+
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    (Text("Free apps\nsell you.\n") + Text("Memo works\nfor you.").foregroundColor(OB.accent))
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(1)
+                        .kerning(-0.5)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Social media is free because your attention pays the bill. Memo is paid because you're the customer.")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 24)
+                .opacity(headlineVisible ? 1 : 0)
+                .offset(y: headlineVisible ? 0 : 8)
+
+                Spacer().frame(height: 28)
+
+                receiptArtifact
+                    .padding(.horizontal, 28)
+                    .opacity(receiptVisible ? 1 : 0)
+                    .scaleEffect(receiptVisible ? 1 : 0.96)
+                    .rotationEffect(.degrees(receiptVisible ? -1.2 : 0))
+
+                Spacer()
+
+                HStack(alignment: .top, spacing: 12) {
+                    Image("mascot-thinking")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 54, height: 54)
+                        .accessibilityHidden(true)
+
+                    Text("Built by one developer who got tired of losing to the feed too.")
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 14)
+                .opacity(taglineVisible ? 1 : 0)
+                .offset(y: taglineVisible ? 0 : 6)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OBContinueButton(title: "See my offer", action: {
+                Analytics.onboardingStep(step: "differentiation")
+                onContinue()
+            })
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+        }
+        .preferredColorScheme(.dark)
+        .onAppear { startEntrance() }
+    }
+
+    private var differentiationAtmosphere: some View {
+        ZStack {
+            Circle()
+                .fill(OB.accent.opacity(0.15))
+                .frame(width: 300, height: 300)
+                .blur(radius: 78)
+                .offset(x: 150, y: -180)
+
+            Circle()
+                .fill(OB.memoPurple.opacity(0.10))
+                .frame(width: 250, height: 250)
+                .blur(radius: 72)
+                .offset(x: -150, y: 180)
+        }
+    }
+
+    private var receiptArtifact: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Memo")
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+
+                Spacer()
+
+                Text("PAID, NOT FARMED")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .tracking(1.0)
+                    .foregroundStyle(OB.fg3)
+            }
+            .padding(.bottom, 16)
+
+            Rectangle()
+                .fill(OB.border)
+                .frame(height: 1)
+
+            ForEach(Array(receiptLines.enumerated()), id: \.offset) { index, line in
+                receiptLine(index: index, text: line)
+                if index < receiptLines.count - 1 {
+                    Rectangle()
+                        .fill(OB.border)
+                        .frame(height: 1)
+                }
+            }
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 18)
+                .fill(OB.surface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(OB.border.opacity(1.4), lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.45), radius: 24, y: 16)
+        }
+    }
+
+    private func receiptLine(index: Int, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: index == 3 ? "bolt.fill" : "checkmark")
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(index == 2 ? OB.amber : OB.accent)
+                .frame(width: 18, height: 18)
+
+            Text(text)
+                .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                .tracking(0.5)
+                .foregroundStyle(index == 2 ? OB.amber : OB.fg)
+
+            Spacer()
+        }
+        .padding(.vertical, 15)
+        .opacity(receiptLinesVisible[index] ? 1 : 0)
+        .offset(x: receiptLinesVisible[index] ? 0 : -10)
+    }
+
+    private func startEntrance() {
+        receiptLinesVisible = Array(repeating: false, count: receiptLines.count)
+        receiptVisible = false
+        taglineVisible = false
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.4)) { headlineVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            withAnimation(.spring(response: 0.58, dampingFraction: 0.82)) {
+                receiptVisible = true
+            }
+        }
+        for i in 0..<receiptLines.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.62 + Double(i) * 0.11) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                    receiptLinesVisible[i] = true
+                }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
+            withAnimation(.easeOut(duration: 0.4)) { taglineVisible = true }
+        }
+    }
+}
+
+#if DEBUG
+#Preview("Pain Cards") {
+    OnboardingPainCardsView(onContinue: { _ in })
+}
+
+#Preview("Comparison") {
+    OnboardingComparisonView(pickupCount: 287, dailyHours: 4.2, brainAge: 38, onContinue: {})
+}
+
+#Preview("Social Proof") {
+    OnboardingSocialProofView(onContinue: {})
+}
+
+#Preview("Differentiation") {
+    OnboardingDifferentiationView(onContinue: {})
+}
+#endif
