@@ -115,7 +115,6 @@ struct FocusOnboardIndustryScare: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var slugVisible = false
     @State private var headlineVisible = false
     @State private var tapeProgress: CGFloat = 0
     @State private var rowsVisible: [Bool] = Array(repeating: false, count: 4)
@@ -135,15 +134,6 @@ struct FocusOnboardIndustryScare: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Case-file slug (replaces the old blue marketing eyebrow)
-            Text("CASE FILE · 04 OF 04")
-                .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                .tracking(1.6)
-                .foregroundStyle(OB.fg3)
-                .padding(.top, 12)
-                .opacity(slugVisible ? 1 : 0)
-                .offset(y: slugVisible ? 0 : 8)
-
             // Headline + detective Memo side by side — Memo is examining the case file.
             HStack(alignment: .top, spacing: 12) {
                 Text("memo found\nthe suspects.")
@@ -166,7 +156,7 @@ struct FocusOnboardIndustryScare: View {
                     .scaleEffect(mascotVisible ? 1 : 0.88, anchor: .center)
                     .accessibilityHidden(true)
             }
-            .padding(.top, 8)
+            .padding(.top, 24)
 
             // Caution-tape divider (full-bleed via negative horizontal margins)
             cautionTape
@@ -263,7 +253,6 @@ struct FocusOnboardIndustryScare: View {
 
     private func startSequence() {
         // Reset every appearance so re-entry replays the cinema.
-        slugVisible = false
         headlineVisible = false
         tapeProgress = 0
         rowsVisible = Array(repeating: false, count: 4)
@@ -279,7 +268,6 @@ struct FocusOnboardIndustryScare: View {
                 // Reduce Motion path — single 0.18s opacity fade, $57B set immediately.
                 displayedNumber = 57
                 withAnimation(.easeOut(duration: 0.18)) {
-                    slugVisible = true
                     headlineVisible = true
                     tapeProgress = 1
                     rowsVisible = Array(repeating: true, count: 4)
@@ -298,7 +286,6 @@ struct FocusOnboardIndustryScare: View {
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.40)) {
-                slugVisible = true
                 headlineVisible = true
             }
             withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
