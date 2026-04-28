@@ -83,9 +83,13 @@ struct OnboardingView: View {
                 .animation(.easeInOut(duration: 0.3), value: currentPage)
 
             VStack(spacing: 0) {
-                if currentPage != 9 {
-                    onboardingProgressHeader
-                }
+                // Progress header is always rendered; visibility controlled by
+                // progressHeaderOpacity so it fades on entry/exit of full-bleed
+                // editorial pages (Empathy 4, Quick Assessment 9, Plan Reveal 10)
+                // instead of snapping when a conditional flips.
+                onboardingProgressHeader
+                    .opacity(progressHeaderOpacity)
+                    .animation(.easeInOut(duration: 0.30), value: currentPage)
 
                 pageContent
                     .id(currentPage)
