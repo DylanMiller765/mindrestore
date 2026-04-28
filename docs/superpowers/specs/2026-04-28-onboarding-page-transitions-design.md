@@ -121,17 +121,65 @@ The existing `onChange(of: currentPage)` handler that:
 
 The `.scrollDisabled(true)` modifier disappears (TabView is gone, swipe-to-advance is no longer in scope). Not a regression — swipe-to-advance was already disabled in the current implementation.
 
-## Per-page entrance animations
+## Per-page entrance animations + transition overlap
 
-Each page already has `.onAppear` blocks that stagger the page's internal elements (e.g., welcome bouncer's app-pile cascade, Pain Cards' receipt-slip stack, Industry Scare's caution-tape roll-in, Plan Reveal's count-up). These remain untouched.
+**Important correction from initial draft.** With `.id(currentPage)` driving the swap, SwiftUI fires the incoming page's `.onAppear` AS SOON AS the view is inserted — which is at the START of the dissolve transition, not after it completes. The page's internal entrance Task starts immediately, while the page itself is still ramping from opacity 0 → 1.
 
-The new container transition fires FIRST (~0.40s), then the page's `.onAppear` triggers and the page's internal entrance arc plays. There's a slight perceptual sequencing — the page slides into existence, THEN its contents animate in. This is intentional and matches Cal AI / Headway / Stoic's pattern.
+For most pages this is fine. Each page's first entrance beat (welcome bouncer headline, Pain Cards receipt header, etc.) is itself a 0.30–0.40s opacity fade, and seeing two opacity ramps overlap layers naturally — the result still reads as "page lands, contents animate."
+
+**Two cases need a 400ms initial-delay buffer to avoid jank:**
+
+- **Industry Scare** — the $57B count-up. If it starts at t=100ms, the user sees the number ticking from 0 → 57 while the page is still ~75% opacity. The animation hits its final value before the user clearly sees it. Bump Industry Scare's first `Task.sleep` from 100ms to 400ms so the count-up starts AFTER the dissolve completes.
+- **Plan Reveal** — Layer 1 + Layer 2 count-ups (44k → 22k). Same problem. Bump initial delay accordingly.
+
+For other pages with non-numeric entrance arcs (Welcome bouncer, Pain Cards receipt stack, Goals card stagger), the natural overlap is fine and may even feel more cinematic.
+
+This is a per-page tuning concern in the implementation, not a transition-system architectural issue. The spec acknowledges it; the implementation plan handles it page-by-page.
+
+## Page 9 (Quick Assessment) special-case handling
+
+Quick Assessment is the only page that violates the "dark `OB.bg` everywhere" baseline:
+
+- Background: `(currentPage == 9 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()` — animated via `quickAssessmentBgColor` shifts during the assessment.
+- Progress header: hidden when `currentPage == 9` (and now also on `4` Empathy + `10` Plan Reveal per recent eyebrow-sweep iteration).
+
+With the new `Group { switch }` + `.id(currentPage)` container:
+
+- The **background ternary** already has `.animation(.easeInOut(duration: 0.3), value: currentPage)` attached at the outer ZStack level. Verify this animation still applies after refactor; the value (`currentPage`) hasn't changed so it should keep working. If it doesn't, wrap the background `Color` in an explicit `.animation(.easeInOut(duration: 0.30), value: currentPage)` modifier.
+- The **progress header** is currently rendered conditionally with `if currentPage != 9 && currentPage != 4 && currentPage != 10`. A conditional `if` swap is INSTANT — the header would snap in/out as the user enters/leaves these pages, which clashes with the dissolve. Fix: ALWAYS render the progress header, control visibility via `.opacity(progressHeaderOpacity).animation(.easeInOut(duration: 0.30), value: currentPage)` where `progressHeaderOpacity` is a computed `Double` that returns 0 when `currentPage` is in the hidden set, else 1.
+
+This makes the progress bar gracefully fade out as the user enters Empathy / Quick Assessment / Plan Reveal, and gracefully fade back in when they leave.
+
+## Central `goToPage(_:)` helper
+
+Currently every page's CTA does its own `withAnimation { currentPage = N }`. To make page-movement a system (and so future tuning of the transition curve doesn't require hunting 20 callsites), route every transition through a single helper:
+
+```swift
+private func goToPage(_ page: Int) {
+    withAnimation(.easeInOut(duration: 0.40)) {
+        currentPage = page
+    }
+}
+```
+
+Implementation plan covers replacing every existing `withAnimation { currentPage = N }` callsite (and `currentPage -= 1` from the back-chevron) with `goToPage(N)`. Single point of change for future transition tweaks.
+
+## zIndex protection
+
+During a `.transition`, SwiftUI's default rendering order between insertion and removal isn't guaranteed — outgoing views can briefly draw above incoming on certain device/iOS combos, causing ghosting. Belt-and-suspenders fix: tag the page content with `.zIndex(Double(currentPage))` so the incoming view's higher index always renders above any lingering outgoing view.
+
+```swift
+pageContent
+    .id(currentPage)
+    .zIndex(Double(currentPage))
+    .transition(...)
+```
 
 ## Failure modes considered
 
 - **Stutter on slow devices.** A 0.96 → 1.0 scale combined with opacity is cheap; runs at 60fps on every iPhone Apple still supports. No GPU concern.
 - **Reduce Motion.** Page transitions should be lighter under Reduce Motion. The `.transition` modifier respects `accessibilityReduceMotion` automatically only when using `.transition(.opacity)` alone. Custom transitions don't auto-reduce. Add explicit handling: when `reduceMotion == true`, replace the transition with `.transition(.opacity.animation(.easeInOut(duration: 0.18)))` — strip the scale + offset.
-- **Memory.** SwiftUI's `.id(currentPage)` causes the outgoing page to deallocate. The pages each carry their own `@State` (entrance booleans, etc.). Not a concern; in fact this is a memory improvement over TabView, which keeps all 16 pages allocated.
+- **Memory.** SwiftUI's `.id(currentPage)` deallocates the outgoing page when the new identity replaces it (timing controlled by SwiftUI internals, not guaranteed instant). TabView's caching behavior is opaque too — depending on iOS version and tabViewStyle, it may keep some or all pages allocated. The new pattern is no worse than what we have, but the spec doesn't promise it's strictly better. No memory concern either way; the entire onboarding flow is small.
 - **Re-entry from back swipe.** Each page's `.onAppear` already resets its entrance state and re-fires its animation arc. Going back to a previously-visited page will re-play its entrance animation. Verified pattern in `welcomePage`'s `startWelcomeEntrance()`.
 
 ## Reduce Motion fallback
@@ -169,6 +217,12 @@ Reduce Motion users get a clean opacity-only crossfade. Same intent (deliberate,
 - Reduce Motion ON → opacity-only crossfade with no scale/offset, ~0.18s.
 - All 16 pages still render (each via the switch). No page is silently broken by the container swap.
 - Existing in-page animations (welcome bouncer, Pain Cards receipts, Industry Scare suspect lineup, Plan Reveal count-up, etc.) continue to play correctly on `.onAppear`.
+- **Industry Scare $57B count-up doesn't visibly tick from 0 during the dissolve** — initial delay buffer (400ms minimum) is in place.
+- **Plan Reveal Layer 1 + Layer 2 count-ups don't visibly tick during the dissolve** — same buffer applied.
+- **Progress bar fades smoothly out/in** as the user enters/leaves Empathy (4) / Quick Assessment (9) / Plan Reveal (10) — no snap.
+- **Quick Assessment background color** continues to animate the existing `quickAssessmentBgColor` shifts. Page 9 entry/exit doesn't snap the bg color.
+- **No ghosting** during transitions — incoming page renders cleanly above outgoing per `.zIndex(Double(currentPage))`.
+- **Every page transition routes through `goToPage(_:)`** — no remaining raw `withAnimation { currentPage = N }` callsites in `OnboardingView.swift` after refactor.
 - Keyboard dismiss + bullet reset behavior preserved (the `onChange` handler moves to the new ZStack).
 - Re-entry from back-chevron replays each page's entrance animation arc.
 
