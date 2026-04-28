@@ -58,10 +58,57 @@ private struct FOContinueButton: View {
 
 // MARK: - Industry Scare ($57B engineering spend)
 //
-// Sequenced entrance: eyebrow → number count-up (with haptic ticks) → subtitle
-// → callout slide-in → mascot spring → defiance headline → equalizer line.
-// Total ~2.3s. Static text was failing to "hit" — the count-up gives the number
-// weight and the staggered reveal forces a reading rhythm instead of a wall.
+// Case-file lineup. Pain Cards = your receipts (confessions). Industry Scare
+// = their receipts (crimes). Sequel to "memo found the receipts" — same
+// metaphor extended, different target. Five visible elements: case slug,
+// headline, caution-tape divider, four-row suspect lineup, $57B aggregate.
+// Total entrance arc ~3.0s.
+
+private struct SuspectRow: View {
+    let logoAsset: String
+    let suspect: String
+    let parent: String
+    let role: String
+    let visible: Bool
+    let isLast: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Image(logoAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(suspect)
+                        .font(.brand(size: 13, weight: .heavy))
+                        .foregroundStyle(OB.fg)
+                    Text(parent)
+                        .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                        .tracking(0.8)
+                        .foregroundStyle(OB.fg2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(role)
+                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(OB.coral)
+            }
+            .padding(.vertical, 10)
+
+            if !isLast {
+                Rectangle()
+                    .fill(Color.white.opacity(0.10))
+                    .frame(height: 1)
+            }
+        }
+        .opacity(visible ? 1 : 0)
+        .offset(y: visible ? 0 : 8)
+    }
+}
 
 struct FocusOnboardIndustryScare: View {
     var onContinue: () -> Void
