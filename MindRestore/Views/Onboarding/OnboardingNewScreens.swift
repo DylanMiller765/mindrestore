@@ -259,106 +259,52 @@ struct OnboardingPersonalSolutionView: View {
 
     private var cinematicProjectionHero: some View {
         let isReclaim = revealBeat == .reclaim
-        let accent = isReclaim ? AppColors.accent : AppColors.coral
+        let eyebrowAccent = isReclaim ? AppColors.accent : AppColors.coral
+        let numberAccent: Color = isReclaim
+            ? AppColors.accent
+            : AppColors.coral.interpolated(with: AppColors.coralDeep, by: countProgress)
 
-        return VStack(alignment: .leading, spacing: 22) {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(isReclaim ? "With Memo" : "Without Memo")
-                        .font(.system(size: 11, weight: .heavy))
-                        .tracking(1.4)
-                        .textCase(.uppercase)
-                        .foregroundStyle(accent)
-
-                    Text(isReclaim ? "Memo cuts the damage in half." : "You're giving social\nmedia giants")
-                        .font(.system(size: isReclaim ? 32 : 28, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.92))
-                        .lineSpacing(1)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
+        return VStack(alignment: .leading, spacing: 16) {
+            // Screen Time provenance pill — only on stakes
+            if !isReclaim {
+                screenTimeSourcePill
+                    .transition(.opacity)
             }
 
-            Spacer(minLength: isReclaim ? 4 : 36)
+            // Eyebrow
+            Text(isReclaim ? "RECLAIMED" : "WITHOUT MEMO")
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(eyebrowAccent)
+                .contentTransition(.opacity)
 
-            ZStack(alignment: isReclaim ? .topLeading : .leading) {
-                if !isReclaim {
-                    ghostNumberStack
-                }
-
-                if isReclaim {
-                    Text(projectedHoursText)
-                        .font(.system(size: 64, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(AppColors.coral.opacity(0.26))
-                        .minimumScaleFactor(0.56)
-                        .lineLimit(1)
-                        .blur(radius: 0.7)
-                        .offset(y: -22)
-                        .transition(.opacity.combined(with: .scale(scale: 1.06)))
-
-                    Text(reclaimedHoursText)
-                        .font(.system(size: 92, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(AppColors.accent)
-                        .minimumScaleFactor(0.55)
-                        .lineLimit(1)
-                        .shadow(color: AppColors.accent.opacity(0.34), radius: 18, y: 8)
-                        .contentTransition(.numericText(value: Double(animatedReclaimedHours)))
-                        .offset(y: 24)
-                        .transition(.scale(scale: 0.86).combined(with: .opacity))
-                } else {
-                    // Stakes number — color deepens coral → coralDeep as the
-                    // count climbs. The slash capsule overlays the number
-                    // briefly during the cut and then fades out.
-                    Text(animatedHoursText)
-                        .font(.system(size: 92, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(AppColors.coral.interpolated(with: AppColors.coralDeep, by: countProgress))
-                        .minimumScaleFactor(0.55)
-                        .lineLimit(1)
-                        .contentTransition(.numericText(value: Double(animatedProjectionHours)))
-                        .shadow(color: AppColors.coral.opacity(0.28), radius: 18, y: 8)
-                        .overlay(alignment: .leading) {
-                            // Slash capsule — sweeps in left → right via
-                            // scaleEffect on a leading anchor, then fades out.
-                            // Sized at half the number's nominal cap height so
-                            // the cut reads but doesn't dominate.
-                            GeometryReader { proxy in
-                                Capsule()
-                                    .fill(AppColors.accent)
-                                    .frame(width: proxy.size.width, height: 8)
-                                    .scaleEffect(x: slashProgress, y: 1, anchor: .leading)
-                                    .offset(y: proxy.size.height / 2 - 4)
-                                    .opacity(slashOpacity)
-                                    .shadow(color: AppColors.accent.opacity(0.55), radius: 10, y: 0)
-                            }
-                            .allowsHitTesting(false)
-                        }
-                }
+            // Stakes-only headline ("You're giving social media giants").
+            // Fades out at the cut.
+            if !isReclaim {
+                Text("You're giving social\nmedia giants")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.92))
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .frame(height: isReclaim ? 154 : 122, alignment: .leading)
 
+            Spacer(minLength: isReclaim ? 4 : 30)
+
+            // The hero number. Same screen position across stakes → reclaim.
+            // During stakes: animatedHoursText (climbs).
+            // During .reclaim + .hours: reclaimedHoursText (snapped, e.g. "38,000").
+            // During .reclaim + .breakdown: savedBreakdownText (e.g. "4 YEARS · 132 DAYS").
+            heroNumber(numberAccent: numberAccent)
+                .frame(height: 122, alignment: .leading)
+
+            // Subtitle stack
             if isReclaim {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("hours back in play")
-                        .font(.system(size: 14, weight: .heavy))
-                        .tracking(0.9)
-                        .textCase(.uppercase)
-                        .foregroundStyle(accent)
-
-                    Text("Memo turns scrolling into reps: train first, unlock after.")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text("hours back in your life")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.7))
+                    .transition(.opacity)
             } else {
-                // Stakes subtitle stack — clean. The big number breathes;
-                // the HOURS caption + climbing years/days breakdown does
-                // the felt-stakes work without a competing bar. The bar
-                // (and the brand-voice question) move to the plan beat
-                // where they fight for the reclaim, not the loss.
                 VStack(alignment: .leading, spacing: 10) {
                     Text("HOURS")
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))
@@ -372,37 +318,73 @@ struct OnboardingPersonalSolutionView: View {
                         .contentTransition(.numericText(value: Double(animatedProjectionHours)))
                 }
             }
+        }
+    }
 
-            if isReclaim {
-                Spacer(minLength: 16)
+    /// The hero number block with the slash overlay. Two visual states:
+    /// - hours form (during stakes count-up AND immediately post-cut):
+    ///   shows `animatedHoursText` while .stakes, `reclaimedHoursText` while
+    ///   .reclaim + .hours.
+    /// - breakdown form (post-dwell): shows `savedBreakdownText`.
+    @ViewBuilder
+    private func heroNumber(numberAccent: Color) -> some View {
+        ZStack(alignment: .leading) {
+            if heroFormat == .hours || revealBeat == .stakes {
+                let displayText = revealBeat == .stakes ? animatedHoursText : reclaimedHoursText
+                let numericValue = revealBeat == .stakes
+                    ? Double(animatedProjectionHours)
+                    : Double(savedHoursTotal)
 
-                HStack {
-                    Spacer()
-                    Image("mascot-unlocked")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 132, height: 132)
-                        .shadow(color: AppColors.accent.opacity(0.28), radius: 24, y: 12)
-                        .transition(.scale(scale: 0.78).combined(with: .opacity))
-                }
+                Text(displayText)
+                    .font(.system(size: 92, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(numberAccent)
+                    .minimumScaleFactor(0.55)
+                    .lineLimit(1)
+                    .contentTransition(.numericText(value: numericValue))
+                    .shadow(
+                        color: (revealBeat == .stakes ? AppColors.coral : AppColors.accent).opacity(0.28),
+                        radius: 18, y: 8
+                    )
+                    .overlay(alignment: .leading) {
+                        GeometryReader { proxy in
+                            Capsule()
+                                .fill(AppColors.accent)
+                                .frame(width: proxy.size.width, height: 8)
+                                .scaleEffect(x: slashProgress, y: 1, anchor: .leading)
+                                .offset(y: proxy.size.height / 2 - 4)
+                                .opacity(slashOpacity)
+                                .shadow(color: AppColors.accent.opacity(0.55), radius: 10, y: 0)
+                        }
+                        .allowsHitTesting(false)
+                    }
+                    .transition(.opacity)
+            } else {
+                // .reclaim + .breakdown — drop the slash, show breakdown text.
+                Text(savedBreakdownText)
+                    .font(.system(size: 39, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                    .shadow(color: AppColors.accent.opacity(0.32), radius: 16, y: 8)
+                    .transition(.opacity)
             }
         }
     }
 
-    private var ghostNumberStack: some View {
-        ZStack(alignment: .leading) {
-            ForEach(0..<3, id: \.self) { index in
-                Text(projectedHoursText)
-                    .font(.system(size: 82, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(AppColors.coral.opacity(0.08 - Double(index) * 0.018))
-                    .minimumScaleFactor(0.55)
-                    .lineLimit(1)
-                    .offset(x: CGFloat(index * 10), y: CGFloat(index * -12))
-                    .blur(radius: CGFloat(index + 1))
-            }
+    /// Small "● from your Screen Time" / "● estimated from your input"
+    /// pill above the stakes eyebrow. Builds trust at the count-up moment.
+    /// Driven by the existing `projectionIsEstimate` input.
+    private var screenTimeSourcePill: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(AppColors.accent)
+                .frame(width: 5, height: 5)
+            Text(projectionIsEstimate ? "estimated from your input" : "from your Screen Time")
+                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(AppColors.textPrimary.opacity(0.4))
         }
-        .offset(y: -20)
     }
 
     /// Rev 4 plan-beat layout. Reframes the page from "Memo halves your
