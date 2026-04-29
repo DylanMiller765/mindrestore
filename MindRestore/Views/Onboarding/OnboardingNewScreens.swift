@@ -536,7 +536,7 @@ struct OnboardingPersonalSolutionView: View {
             .opacity(cardsAppeared[3] ? 1 : 0)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 28)
+        .padding(.top, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .safeAreaInset(edge: .bottom) {
             unlockPlanButton
@@ -571,7 +571,7 @@ struct OnboardingPersonalSolutionView: View {
                 color: AppColors.accent,
                 label: "Earn",
                 detail: "15 min unlocked per win",
-                value: "15 min",
+                value: "your call",
                 index: 1
             )
             planCardRow(
@@ -594,7 +594,7 @@ struct OnboardingPersonalSolutionView: View {
     private var unlockPlanButton: some View {
         Button(action: onContinue) {
             HStack(spacing: 8) {
-                Text("Show what changes")
+                Text("Take my brain back")
                 Image(systemName: "arrow.right")
                     .font(.system(size: 15, weight: .heavy))
             }
