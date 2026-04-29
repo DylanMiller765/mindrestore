@@ -124,7 +124,7 @@ struct OnboardingPersonalSolutionView: View {
 
     private enum RevealBeat {
         case stakes
-        case withMemo
+        case reclaim   // was .withMemo — Beat 1: post-cut hero + corporate punch + CTA
         case plan
     }
 
@@ -135,6 +135,27 @@ struct OnboardingPersonalSolutionView: View {
     @State private var animatedReclaimedHours = 0
     @State private var revealStarted = false
     @State private var revealTask: Task<Void, Never>?
+    /// Drives the backdrop's recoil + drift fade-out + opacity drop in a
+    /// single animatable scalar. 0 = stakes (apps alive), 1 = reclaim
+    /// (apps pushed back). Animated via withAnimation so the TimelineView
+    /// inside PlanRevealBackdrop sees a smoothly interpolated value.
+    @State private var recoilProgress: CGFloat = 0
+    /// Slash sweep: capsule scale-x from 0 → 1 as the brand-blue cut beam
+    /// crosses the projected number. Separate from slashOpacity so the
+    /// capsule can fade out independently after the sweep completes.
+    @State private var slashProgress: CGFloat = 0
+    @State private var slashOpacity: CGFloat = 0
+    /// Tracks count progress 0 → 1 so the projected-number color can
+    /// interpolate coral → coralDeep continuously instead of step-by-step.
+    @State private var countProgress: Double = 0
+    /// Plan-beat life-bar draw-in. Animates 0 → 1 with easeOut once the
+    /// plan beat appears so the 2-color bar fills in from the leading edge
+    /// (saved blue → residual coral) instead of snapping in fully drawn.
+    @State private var planBarProgress: CGFloat = 0
+    /// Per-row glow trigger for plan-card numbers. Each row pulses brand-
+    /// blue when it appears so the plan reads as "unsealed" instead of
+    /// "printed."
+    @State private var cardGlowing: [Bool] = [false, false, false, false]
 
     /// Top 3 solutions to mirror back. Falls back to a sensible default trio
     /// if the user skipped goal selection (so the page still has substance).
@@ -188,41 +209,20 @@ struct OnboardingPersonalSolutionView: View {
             ZStack {
                 revealBackdrop(size: proxy.size)
 
-                VStack(spacing: 0) {
+                Group {
                     if revealBeat == .plan {
-                        compactProjectionHeader
-                            .padding(.horizontal, 28)
-                            .padding(.top, 12)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-
-                        Spacer().frame(height: 18)
-
-                        planCard
-                            .padding(.horizontal, 24)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-
-                        Text(solutionSummary)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(AppColors.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 28)
-                            .padding(.top, 16)
-                            .opacity(cardsAppeared[3] ? 1 : 0)
-
-                        Spacer(minLength: 16)
-
-                        unlockPlanButton
-                            .padding(.horizontal, 32)
-                            .padding(.bottom, 24)
+                        planBeatLayout
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
-                        cinematicProjectionHero
-                            .padding(.horizontal, 28)
-                            .padding(.top, 38)
-                            .opacity(headlineAppeared ? 1 : 0)
-                            .offset(y: headlineAppeared ? 0 : 10)
+                        VStack(spacing: 0) {
+                            cinematicProjectionHero
+                                .padding(.horizontal, 28)
+                                .padding(.top, 38)
+                                .opacity(headlineAppeared ? 1 : 0)
+                                .offset(y: headlineAppeared ? 0 : 10)
 
-                        Spacer(minLength: 22)
+                            Spacer(minLength: 22)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -239,71 +239,46 @@ struct OnboardingPersonalSolutionView: View {
     }
 
     private func revealBackdrop(size: CGSize) -> some View {
-        let accent = revealBeat == .stakes ? AppColors.coral : AppColors.accent
-
-        return ZStack {
-            AppColors.pageBg
-
-            Circle()
-                .fill(accent.opacity(revealBeat == .plan ? 0.14 : 0.24))
-                .frame(width: size.width * 0.95, height: size.width * 0.95)
-                .blur(radius: 76)
-                .offset(x: size.width * 0.34, y: revealBeat == .stakes ? size.height * 0.12 : -size.height * 0.05)
-
-            VStack(spacing: 14) {
-                ForEach(0..<5, id: \.self) { row in
-                    HStack(spacing: 14) {
-                        ForEach(0..<4, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(accent.opacity(revealBeat == .plan ? 0.025 : 0.055))
-                                .frame(width: 42, height: 42)
-                                .overlay {
-                                    Image(systemName: feedTileSymbols[(row + column) % feedTileSymbols.count])
-                                        .font(.system(size: 16, weight: .bold))
-                                        .foregroundStyle(accent.opacity(revealBeat == .plan ? 0.08 : 0.16))
-                                }
-                        }
-                    }
-                    .offset(x: row.isMultiple(of: 2) ? 24 : -12)
-                }
-            }
-            .rotationEffect(.degrees(-8))
-            .offset(x: size.width * 0.2, y: revealBeat == .stakes ? size.height * 0.18 : size.height * 0.08)
-            .opacity(revealBeat == .plan ? 0.45 : 1)
-        }
-        .ignoresSafeArea()
+        PlanRevealBackdrop(
+            isStakes: revealBeat == .stakes,
+            isPlan: revealBeat == .plan,
+            recoilProgress: recoilProgress,
+            size: size,
+            logos: feedTileLogos
+        )
     }
 
     private var cinematicProjectionHero: some View {
-        let withMemo = revealBeat == .withMemo
-        let accent = withMemo ? AppColors.accent : AppColors.coral
+        let isReclaim = revealBeat == .reclaim
+        let accent = isReclaim ? AppColors.accent : AppColors.coral
 
         return VStack(alignment: .leading, spacing: 22) {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(withMemo ? "With Memo" : "Without Memo")
+                    Text(isReclaim ? "With Memo" : "Without Memo")
                         .font(.system(size: 11, weight: .heavy))
                         .tracking(1.4)
                         .textCase(.uppercase)
                         .foregroundStyle(accent)
 
-                    Text(withMemo ? "Cut the damage in half." : "Here's what's at stake.")
-                        .font(.system(size: 39, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary)
+                    Text(isReclaim ? "Memo cuts the damage in half." : "You're giving social\nmedia giants")
+                        .font(.system(size: isReclaim ? 32 : 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.92))
+                        .lineSpacing(1)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
             }
 
-            Spacer(minLength: withMemo ? 4 : 36)
+            Spacer(minLength: isReclaim ? 4 : 36)
 
-            ZStack(alignment: withMemo ? .topLeading : .leading) {
-                if !withMemo {
+            ZStack(alignment: isReclaim ? .topLeading : .leading) {
+                if !isReclaim {
                     ghostNumberStack
                 }
 
-                if withMemo {
+                if isReclaim {
                     Text(projectedHoursText)
                         .font(.system(size: 64, weight: .black, design: .rounded))
                         .monospacedDigit()
@@ -325,32 +300,71 @@ struct OnboardingPersonalSolutionView: View {
                         .offset(y: 24)
                         .transition(.scale(scale: 0.86).combined(with: .opacity))
                 } else {
+                    // Stakes number — color deepens coral → coralDeep as the
+                    // count climbs. The slash capsule overlays the number
+                    // briefly during the cut and then fades out.
                     Text(animatedHoursText)
                         .font(.system(size: 92, weight: .black, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(AppColors.coral)
+                        .foregroundStyle(AppColors.coral.interpolated(with: AppColors.coralDeep, by: countProgress))
                         .minimumScaleFactor(0.55)
                         .lineLimit(1)
                         .contentTransition(.numericText(value: Double(animatedProjectionHours)))
                         .shadow(color: AppColors.coral.opacity(0.28), radius: 18, y: 8)
+                        .overlay(alignment: .leading) {
+                            // Slash capsule — sweeps in left → right via
+                            // scaleEffect on a leading anchor, then fades out.
+                            // Sized at half the number's nominal cap height so
+                            // the cut reads but doesn't dominate.
+                            GeometryReader { proxy in
+                                Capsule()
+                                    .fill(AppColors.accent)
+                                    .frame(width: proxy.size.width, height: 8)
+                                    .scaleEffect(x: slashProgress, y: 1, anchor: .leading)
+                                    .offset(y: proxy.size.height / 2 - 4)
+                                    .opacity(slashOpacity)
+                                    .shadow(color: AppColors.accent.opacity(0.55), radius: 10, y: 0)
+                            }
+                            .allowsHitTesting(false)
+                        }
                 }
             }
-            .frame(height: withMemo ? 154 : 122, alignment: .leading)
+            .frame(height: isReclaim ? 154 : 122, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(withMemo ? "hours back in play" : "\(projectedYearsText) years by 60")
-                    .font(.system(size: 14, weight: .heavy))
-                    .tracking(0.9)
-                    .textCase(.uppercase)
-                    .foregroundStyle(accent)
+            if isReclaim {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("hours back in play")
+                        .font(.system(size: 14, weight: .heavy))
+                        .tracking(0.9)
+                        .textCase(.uppercase)
+                        .foregroundStyle(accent)
 
-                Text(withMemo ? "Memo turns scrolling into reps: train first, unlock after." : "That's \(projectedYearsText) years if nothing changes.")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text("Memo turns scrolling into reps: train first, unlock after.")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                // Stakes subtitle stack — clean. The big number breathes;
+                // the HOURS caption + climbing years/days breakdown does
+                // the felt-stakes work without a competing bar. The bar
+                // (and the brand-voice question) move to the plan beat
+                // where they fight for the reclaim, not the loss.
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("HOURS")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(1.2)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.4))
+
+                    Text(lifeBreakdownText)
+                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .tracking(0.8)
+                        .foregroundStyle(AppColors.coral)
+                        .contentTransition(.numericText(value: Double(animatedProjectionHours)))
+                }
             }
 
-            if withMemo {
+            if isReclaim {
                 Spacer(minLength: 16)
 
                 HStack {
@@ -382,45 +396,112 @@ struct OnboardingPersonalSolutionView: View {
         .offset(y: -20)
     }
 
-    private var compactProjectionHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Your projection")
-                .font(.system(size: 11, weight: .heavy))
-                .tracking(1.25)
-                .textCase(.uppercase)
-                .foregroundStyle(AppColors.textTertiary)
+    /// Rev 4 plan-beat layout. Reframes the page from "Memo halves your
+    /// damage (still 3 years lost)" to "Memo reclaims 4Y 132D — backed by
+    /// behavioral science — want the last bit too?". The hero is the
+    /// reclaim total; the 2-color life bar shows saved (blue) vs residual
+    /// (coral); the explainer makes the 75% claim defensible; the
+    /// residual footnote + question set up the paywall as the answer to
+    /// "want it all back?".
+    private var planBeatLayout: some View {
+        let lifeBarWidth: CGFloat = 280
 
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(projectedHoursText)
-                    .font(.system(size: 31, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(AppColors.coral)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(1)
+        return ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 22) {
+                // RECLAIMED hero
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("RECLAIMED")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(1.4)
+                        .foregroundStyle(AppColors.accent)
 
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 18, weight: .heavy))
-                    .foregroundStyle(AppColors.textTertiary)
+                    Text(savedBreakdownText)
+                        .font(.system(size: 39, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.accent)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                        .shadow(color: AppColors.accent.opacity(0.32), radius: 16, y: 8)
 
-                Text(reclaimedHoursText)
-                    .font(.system(size: 31, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(AppColors.accent)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(1)
+                    Text("back in your life.")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.7))
+                }
+
+                // Two-color life bar (saved blue / residual coral) with
+                // TODAY · AGE 60 markers tight to the bar's edges.
+                VStack(alignment: .leading, spacing: 8) {
+                    LifeBar(
+                        savedFraction: CGFloat(Self.memoReductionFraction),
+                        progress: planBarProgress,
+                        width: lifeBarWidth,
+                        height: 14
+                    )
+
+                    HStack {
+                        Text("TODAY")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .tracking(1.0)
+                            .foregroundStyle(AppColors.textPrimary.opacity(0.4))
+                        Spacer()
+                        Text("AGE 60")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .tracking(1.0)
+                            .foregroundStyle(AppColors.textPrimary.opacity(0.4))
+                    }
+                    .frame(width: lifeBarWidth)
+                }
+
+                // Plan card (rev 3 elevations preserved).
+                planCard
+
+                // HOW IT WORKS — defensibility for the 75% claim.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("HOW IT WORKS")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(1.3)
+                        .foregroundStyle(AppColors.textTertiary)
+
+                    Text("Backed by behavioral science: friction beats willpower. Memo bounces 3 of 4 app opens — every unlock costs 5 min of training.")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.78))
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .opacity(cardsAppeared[3] ? 1 : 0)
+
+                // Residual footnote + brand-voice punch.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("still: \(residualBreakdownText) on the table.")
+                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                        .tracking(0.6)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.5))
+
+                    Text("want it all back?")
+                        .font(.system(size: 17, weight: .heavy, design: .rounded))
+                        .italic()
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.7))
+                }
+                .opacity(cardsAppeared[3] ? 1 : 0)
             }
-
-            HStack(spacing: 10) {
-                Text("hours by 60")
-                    .foregroundStyle(AppColors.textTertiary)
-                Text("with Memo")
-                    .foregroundStyle(AppColors.accent)
-            }
-            .font(.system(size: 10, weight: .heavy, design: .monospaced))
-            .tracking(0.8)
-            .textCase(.uppercase)
+            .padding(.horizontal, 24)
+            .padding(.top, 18)
+            .padding(.bottom, 24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .safeAreaInset(edge: .bottom) {
+            unlockPlanButton
+                .padding(.horizontal, 32)
+                .padding(.bottom, 16)
+                .padding(.top, 8)
+                .background(
+                    LinearGradient(
+                        colors: [AppColors.pageBg.opacity(0), AppColors.pageBg.opacity(0.85), AppColors.pageBg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea(edges: .bottom)
+                )
+        }
     }
 
     private var planCard: some View {
@@ -428,11 +509,13 @@ struct OnboardingPersonalSolutionView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Memo's plan")
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .font(.system(size: 22, weight: .black, design: .rounded))
                         .foregroundStyle(AppColors.textPrimary)
-                    Text("Calculated from your picks")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textTertiary)
+                    Text("Engineered to outlast the algorithm.")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(0.6)
+                        .textCase(.uppercase)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.45))
                 }
 
                 Spacer()
@@ -465,7 +548,7 @@ struct OnboardingPersonalSolutionView: View {
     private var unlockPlanButton: some View {
         Button(action: onContinue) {
             HStack(spacing: 8) {
-                Text("Unlock my plan")
+                Text("Show what changes")
                 Image(systemName: "arrow.right")
                     .font(.system(size: 15, weight: .heavy))
             }
@@ -520,32 +603,94 @@ struct OnboardingPersonalSolutionView: View {
         animatedProjectionHours.formatted()
     }
 
+    /// Memo's reduction claim — single source of truth across this view AND
+    /// the comparison page (next page in the funnel). Bumped from 0.50 →
+    /// 0.75 so the user sees an aspirational reclaim, not "still wasting 3
+    /// years." Industry baseline is 70-90% (Opal, Brick, ScreenZen) — 0.75
+    /// is conservative even by category standard.
+    static let memoReductionFraction: Double = 0.75
+
+    /// Hours Memo gives back when the user follows the plan. This is the
+    /// hero number on the plan beat — "RECLAIMED X YEARS Y DAYS."
+    private var savedHoursTotal: Int {
+        Int(Double(targetProjectionHours) * Self.memoReductionFraction)
+    }
+
+    /// Hours still given to social media giants under the Memo plan.
+    /// Surfaced as a small footnote ("still: X YEARS Y DAYS on the table")
+    /// so the user feels there's more to take back.
+    private var residualHoursTotal: Int {
+        targetProjectionHours - savedHoursTotal
+    }
+
     private var reclaimedHoursText: String {
-        max(animatedReclaimedHours, targetProjectionHours / 2).formatted()
+        max(animatedReclaimedHours, savedHoursTotal).formatted()
     }
 
     private var finalReclaimedHoursText: String {
-        (targetProjectionHours / 2).formatted()
+        savedHoursTotal.formatted()
+    }
+
+    /// "4 YEARS · 132 DAYS" — what Memo reclaims. Hero on the plan beat.
+    private var savedYears: Int { (savedHoursTotal / 24) / 365 }
+    private var savedRemainingDays: Int { (savedHoursTotal / 24) - (savedYears * 365) }
+    private var savedBreakdownText: String {
+        "\(savedYears) YEARS · \(savedRemainingDays) DAYS"
+    }
+
+    /// "1 YEAR · 166 DAYS" — what's still on the table. Plan-beat footnote.
+    private var residualYears: Int { (residualHoursTotal / 24) / 365 }
+    private var residualRemainingDays: Int { (residualHoursTotal / 24) - (residualYears * 365) }
+    private var residualBreakdownText: String {
+        "\(residualYears) \(residualYears == 1 ? "YEAR" : "YEARS") · \(residualRemainingDays) DAYS"
     }
 
     private var projectedYearsText: String {
         String(format: "%.1f", Double(projectedScreenTimeHours) / 8760.0)
     }
 
-    private var solutionSummary: String {
-        if receiptCount > 0 {
-            return "You admitted to \(receiptCount) feed \(receiptCount == 1 ? "loop" : "loops"). Memo goes after those first."
-        }
-        return "Memo still builds the plan around your picks."
+    /// Years portion of the live-counting hours total. Updates in lockstep
+    /// with the count-up so the bar + breakdown line all climb together.
+    /// Ignores leap years (~0.07% off, invisible at this scale).
+    private var animatedYears: Int {
+        let totalDays = animatedProjectionHours / 24
+        return totalDays / 365
     }
 
-    private var feedTileSymbols: [String] {
-        ["play.fill", "heart.fill", "message.fill", "bolt.fill", "camera.fill", "number"]
+    /// Remainder days after subtracting whole years.
+    private var animatedRemainingDays: Int {
+        let totalDays = animatedProjectionHours / 24
+        return totalDays - (animatedYears * 365)
+    }
+
+    /// "5 YEARS · 292 DAYS" — climbs alongside the projected number.
+    private var lifeBreakdownText: String {
+        "\(animatedYears) YEARS · \(animatedRemainingDays) DAYS"
+    }
+
+    /// Real social-app logos for the backdrop tile grid. Twelve brands now
+    /// (six original PNGs + six color SVGs) — enough variety that the 77-tile
+    /// grid reads as a feed wall, not a wallpaper pattern.
+    private var feedTileLogos: [String] {
+        [
+            "logo-tiktok", "logo-instagram", "logo-youtube",
+            "logo-snapchat", "logo-reddit", "logo-x",
+            "logo-facebook", "logo-pinterest", "logo-threads",
+            "logo-discord", "logo-twitch", "logo-bluesky"
+        ]
     }
 
     private func startRevealAnimation() {
         guard !revealStarted else { return }
         revealStarted = true
+
+        // Reset siege-animation state so a re-entry replays cleanly.
+        recoilProgress = 0
+        slashProgress = 0
+        slashOpacity = 0
+        countProgress = 0
+        planBarProgress = 0
+        cardGlowing = [false, false, false, false]
 
         revealTask?.cancel()
         revealTask = Task { @MainActor in
@@ -562,20 +707,63 @@ struct OnboardingPersonalSolutionView: View {
             await countProjection()
             guard !Task.isCancelled else { return }
 
-            try? await Task.sleep(for: .milliseconds(260))
+            // 600ms hold post-climb (down from 900ms). The drift continues
+            // and the number's color settles to full coralDeep — motion stays
+            // present, no dead frames.
+            try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
-            withAnimation(.spring(response: 0.72, dampingFraction: 0.83)) {
-                revealBeat = .withMemo
+            // The cut. Slower than rev 2 — drama lives in the breathing room.
+            // (1) slash sweeps left → right (0.5s easeOut)
+            // (2) at 0.8s, number + bar halve in lockstep (0.3s cross-fade)
+            // (3) apps recoil + drift fade-out (1.2s spring, concurrent)
+            // (4) slash fades out (0.4s) — never permanent on the final number
+            // Total slash visible: ~1.4s.
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+            withAnimation(.easeOut(duration: 0.5)) {
+                slashProgress = 1.0
+                slashOpacity = 1.0
+            }
+            // Apps recoil concurrently with the slash sweep.
+            withAnimation(.spring(response: 1.2, dampingFraction: 0.86)) {
+                revealBeat = .reclaim
+                recoilProgress = 1.0
             }
 
-            animatedReclaimedHours = targetProjectionHours / 2
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
 
-            try? await Task.sleep(for: .milliseconds(1250))
+            // Number cuts to the saved total under the slash. 0.3s cross-
+            // fade. Memo's reduction claim (memoReductionFraction = 0.75) is
+            // the single source of truth — the cut snaps the projected hours
+            // to savedHoursTotal so the rev 4 reclaim arc stays consistent.
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                animatedReclaimedHours = savedHoursTotal
+            }
+
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+
+            // Slash fades out — never permanent on the final number.
+            withAnimation(.easeIn(duration: 0.4)) {
+                slashOpacity = 0
+            }
+
+            // 1500ms hold on the halved number (was 1100ms). Gives the
+            // user space to absorb the with-Memo state before pivoting.
+            try? await Task.sleep(for: .milliseconds(1500))
             guard !Task.isCancelled else { return }
 
             withAnimation(.spring(response: 0.74, dampingFraction: 0.86)) {
                 revealBeat = .plan
+            }
+
+            // 2-color life bar draws in from the leading edge — saved
+            // (blue) first, residual (coral) trailing. Runs concurrently
+            // with the plan-row reveals so the page blooms as one piece.
+            withAnimation(.easeOut(duration: 0.6)) {
+                planBarProgress = 1
             }
 
             try? await Task.sleep(for: .milliseconds(180))
@@ -586,22 +774,58 @@ struct OnboardingPersonalSolutionView: View {
     @MainActor
     private func countProjection() async {
         let target = targetProjectionHours
-        let steps = 42
+        // ~5.0s total count-up (was ~4.0s). 209 steps × 24ms — the rev 4
+        // reframe leans on the climb to *earn* the cut, so it gets more
+        // breathing room. Tick frequency (step % 24) still gives ~7
+        // drumbeat haptics across the climb.
+        let steps = 209
+        let lightTick = UIImpactFeedbackGenerator(style: .light)
+        lightTick.prepare()
+
         for step in 0...steps {
             guard !Task.isCancelled else { return }
             let progress = Double(step) / Double(steps)
             let eased = 1 - pow(1 - progress, 3)
             animatedProjectionHours = Int((Double(target) * eased).rounded())
+            // countProgress drives the projected-number color blend
+            // (coral → coralDeep) via cinematicProjectionHero.
+            countProgress = eased
+
+            // Light haptic tick every 24 steps — ~7 taps across the climb.
+            // Spaces them out enough that they read as drumbeats, not buzz.
+            if step > 0 && step % 24 == 0 {
+                lightTick.impactOccurred(intensity: 0.4)
+            }
+
             try? await Task.sleep(for: .milliseconds(24))
         }
     }
 
     @MainActor
     private func revealPlanRows() async {
+        // Soft success haptic when the first plan row lands — completes
+        // the haptic arc: light ticks during climb → medium impact at cut →
+        // soft success at the counterattack reveal.
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         for i in 0..<cardsAppeared.count {
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
                 cardsAppeared[i] = true
+                if i < cardGlowing.count {
+                    cardGlowing[i] = true
+                }
+            }
+            // Each row's leading number pulses brand-blue for ~250ms then
+            // settles. Gives the rows an "unsealed" feel rather than a
+            // static printed list.
+            Task { @MainActor [i] in
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.4)) {
+                    if i < cardGlowing.count {
+                        cardGlowing[i] = false
+                    }
+                }
             }
             try? await Task.sleep(for: .milliseconds(86))
         }
@@ -616,6 +840,7 @@ struct OnboardingPersonalSolutionView: View {
         showDivider: Bool = true
     ) -> some View {
         let appeared = index < cardsAppeared.count ? cardsAppeared[index] : true
+        let glowing = index < cardGlowing.count ? cardGlowing[index] : false
         return VStack(spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(number)
@@ -623,6 +848,10 @@ struct OnboardingPersonalSolutionView: View {
                     .monospacedDigit()
                     .foregroundStyle(AppColors.accent)
                     .frame(width: 26, alignment: .leading)
+                    // Glow pulse — when this row first appears, the leading
+                    // number flashes brand-blue with a radial blur shadow,
+                    // then settles. Reads as "unsealed" rather than printed.
+                    .shadow(color: AppColors.accent.opacity(glowing ? 0.85 : 0), radius: glowing ? 8 : 0, y: 0)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(label)
@@ -651,6 +880,226 @@ struct OnboardingPersonalSolutionView: View {
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+    }
+}
+
+// MARK: - LifeBar
+//
+// Two-color life bar shown on the plan beat. The leading section is brand
+// blue (what Memo reclaims, sized via `savedFraction`); the trailing section
+// is muted coral (what's still on the table). Both sections are scaled by
+// `progress` (0 → 1) so the bar draws in from the leading edge after the
+// plan beat appears.
+
+private struct LifeBar: View {
+    let savedFraction: CGFloat
+    let progress: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        let p = max(0, min(1, progress))
+        let saved = max(0, min(1, savedFraction))
+        let savedWidth = width * saved * p
+        let residualWidth = width * (1 - saved) * p
+
+        return HStack(spacing: 0) {
+            LinearGradient(
+                colors: [AppColors.accent.opacity(0.85), AppColors.accent],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: savedWidth, height: height)
+
+            AppColors.coral.opacity(0.55)
+                .frame(width: residualWidth, height: height)
+
+            Spacer(minLength: 0)
+        }
+        .frame(width: width, height: height, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: height / 2, style: .continuous)
+                .fill(Color.white.opacity(0.10))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: height / 2, style: .continuous))
+        .shadow(color: .black.opacity(0.28), radius: 2, y: 1)
+    }
+}
+
+// MARK: - PlanRevealBackdrop ("The Siege")
+//
+// Single-TimelineView backdrop for the plan-reveal page. Renders a 7×5 grid
+// of social-app logos with three behaviors:
+//
+// 1. **Drift** — per-tile sin/cos offsets driven from one timeline value
+//    (no 35 independent state animations). Reads as the algorithm always-on.
+// 2. **Pulse** — smooth ~1.5s sine-wave opacity breath, phase-shifted per tile
+//    so the wave rolls across the grid instead of all tiles flashing in sync.
+// 3. **Recoil** — when `recoilProgress` animates 0 → 1 (driven by the parent's
+//    withAnimation block on the stakes → reclaim transition), tiles push
+//    outward from center, drift fades, opacity halves, saturation drops.
+//
+// Tile depth is a continuous gradient (not three discrete bands) by
+// distance from grid center — front-most tiles are sharp + opaque, edge
+// tiles are dim + blurred. Reads as "feed wall in the fog."
+
+private struct PlanRevealBackdrop: View {
+    let isStakes: Bool
+    let isPlan: Bool
+    /// 0 = full drift / pulse / opacity (apps alive). 1 = recoiled, halved
+    /// opacity, drift muted (apps defeated). Animated by the parent.
+    let recoilProgress: CGFloat
+    let size: CGSize
+    let logos: [String]
+
+    private let rows = 11
+    private let cols = 7
+    private let tileSpacing: CGFloat = 10
+    private let nominalTileSize: CGFloat = 28
+
+    /// Deterministic permutation of the logo array, expanded to fill all
+    /// `rows * cols` tiles. Replaces a naive `index % logos.count` mapping
+    /// (which produced visible row/column patterns) with a shuffled
+    /// sequence seeded from a fixed value, so the same view re-renders
+    /// identically across frames but reads as varied across the grid.
+    private var permutedLogos: [String] {
+        let total = rows * cols
+        var rng = LinearCongruentialRNG(seed: 0xA17C0DE)
+        var output: [String] = []
+        output.reserveCapacity(total)
+        var pool: [String] = []
+        while output.count < total {
+            if pool.isEmpty {
+                pool = logos.shuffled(using: &rng)
+            }
+            output.append(pool.removeLast())
+        }
+        return output
+    }
+
+    private var maxDist: Double {
+        let centerRow = Double(rows - 1) / 2.0
+        let centerCol = Double(cols - 1) / 2.0
+        return sqrt(centerRow * centerRow + centerCol * centerCol)
+    }
+
+    private var accent: Color {
+        isStakes ? AppColors.coral : AppColors.accent
+    }
+
+    var body: some View {
+        ZStack {
+            AppColors.pageBg
+
+            // Glow halo behind the grid — color shifts from coral (stakes)
+            // to accent (reclaim / plan).
+            Circle()
+                .fill(accent.opacity(isPlan ? 0.14 : 0.24))
+                .frame(width: size.width * 0.95, height: size.width * 0.95)
+                .blur(radius: 76)
+                .offset(x: size.width * 0.34, y: isStakes ? size.height * 0.12 : -size.height * 0.05)
+
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                tileGrid(at: t)
+            }
+            .rotationEffect(.degrees(-8))
+            .offset(x: size.width * 0.2, y: isStakes ? size.height * 0.18 : size.height * 0.08)
+            .opacity(isPlan ? 0.45 : 1)
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private func tileGrid(at t: Double) -> some View {
+        // 6s drift period for x; 7.5s for y (slightly off so the pattern
+        // never looks like rigid linear motion). 1.5s breath for pulse.
+        let driftFreqX = 2.0 * .pi / 6.0
+        let driftFreqY = 2.0 * .pi / 7.5
+        let breathFreq = 2.0 * .pi / 1.5
+        let centerRow = Double(rows - 1) / 2.0
+        let centerCol = Double(cols - 1) / 2.0
+        let permuted = permutedLogos
+
+        VStack(spacing: tileSpacing) {
+            ForEach(0..<rows, id: \.self) { row in
+                HStack(spacing: tileSpacing) {
+                    ForEach(0..<cols, id: \.self) { col in
+                        tile(row: row, col: col, t: t,
+                             logoName: permuted[row * cols + col],
+                             driftFreqX: driftFreqX,
+                             driftFreqY: driftFreqY,
+                             breathFreq: breathFreq,
+                             centerRow: centerRow,
+                             centerCol: centerCol)
+                    }
+                }
+                .offset(x: row.isMultiple(of: 2) ? 12 : -6)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tile(
+        row: Int,
+        col: Int,
+        t: Double,
+        logoName: String,
+        driftFreqX: Double,
+        driftFreqY: Double,
+        breathFreq: Double,
+        centerRow: Double,
+        centerCol: Double
+    ) -> some View {
+        let dx = Double(row) - centerRow
+        let dy = Double(col) - centerCol
+        let dist = sqrt(dx * dx + dy * dy)
+        let normDist = dist / maxDist  // 0 (center) → 1 (corner)
+
+        // Continuous depth gradient — front tiles are sharp + opaque,
+        // edge tiles fade into atmosphere. Rev 4 trim: peak drops 0.55 →
+        // 0.40 so stakes copy reads cleanly without the grid muddying it.
+        let baseOpacity = 0.40 - normDist * 0.27     // 0.40 → 0.13
+        let baseBlur = normDist * 2.2                // 0pt → 2.2pt
+        let baseScale = 1.0 - normDist * 0.15        // 1.0 → 0.85
+
+        // Per-tile phase so motion isn't synchronized across the grid.
+        let phase = Double(row * cols + col) * 0.7
+
+        // Drift fades as recoil takes over — at recoilProgress=1 there's
+        // effectively no drift left.
+        let driftMul = max(0.0, 1.0 - Double(recoilProgress) * 1.5)
+        let stakesGate = isStakes ? 1.0 : 0.0
+        let driftX = sin(t * driftFreqX + phase) * 4.0 * driftMul * stakesGate
+        let driftY = cos(t * driftFreqY + phase) * 3.0 * driftMul * stakesGate
+
+        // Pulse fades on the same curve as drift — apps stop breathing
+        // when defeated.
+        let pulse = sin(t * breathFreq + phase * 0.3) * 0.08 * driftMul * stakesGate
+
+        // Recoil: push outward from center by 30pt × normDist × progress.
+        let unitX = dist > 0.001 ? dy / dist : 0     // dy = column delta = horizontal axis
+        let unitY = dist > 0.001 ? dx / dist : 0     // dx = row delta = vertical axis
+        let recoilX = unitX * 30.0 * normDist * Double(recoilProgress)
+        let recoilY = unitY * 30.0 * normDist * Double(recoilProgress)
+
+        // Combined opacity: base × pulse × recoil-halve × plan-fade.
+        let recoilOpacityMul = 1.0 - 0.5 * Double(recoilProgress)
+        // Rev 4: plan beat pushes the grid further into the background
+        // (0.45 → 0.20) so the new RECLAIMED hero + 2-color life bar own
+        // the focus. Effective max ~0.40 × 0.20 = 0.08.
+        let planOpacityMul = isPlan ? 0.20 : 1.0
+        let opacity = (baseOpacity + pulse) * recoilOpacityMul * planOpacityMul
+
+        Image(logoName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: nominalTileSize, height: nominalTileSize)
+            .scaleEffect(baseScale)
+            .opacity(opacity)
+            .blur(radius: baseBlur + Double(recoilProgress) * 0.8)
+            .saturation(1.0 - Double(recoilProgress) * 0.45)
+            .offset(x: CGFloat(driftX + recoilX), y: CGFloat(driftY + recoilY))
     }
 }
 
@@ -1820,11 +2269,14 @@ struct OnboardingComparisonView: View {
     private var rows: [Row] {
         let pickups = max(pickupCount, 80)
         let hrs = max(dailyHours, 1)
-        let halved = max(hrs / 2, 0.5)
+        // Mirrors OnboardingPersonalSolutionView.memoReductionFraction
+        // (0.75) — the comparison row must claim the same reclaim as the
+        // plan-reveal page right before it, or the funnel reads off-key.
+        let saved = max(hrs * 0.75, 0.5)
         let brainAgeLine = brainAge.map { "Brain Age \($0) drifts up" } ?? "Brain rot keeps compounding"
         return [
             Row(without: "Open the same apps \(pickups)\u{00D7}", with: "Open after training"),
-            Row(without: "\(formatHrs(hrs)) leaks into the feed", with: "\(formatHrs(halved)) back in play"),
+            Row(without: "\(formatHrs(hrs)) leaks into the feed", with: "\(formatHrs(saved)) back in play"),
             Row(without: brainAgeLine, with: "Train the score down"),
             Row(without: "You're the product", with: "You're the customer")
         ]
@@ -2389,3 +2841,23 @@ struct OnboardingDifferentiationView: View {
     OnboardingDifferentiationView(onContinue: {})
 }
 #endif
+
+// MARK: - Linear Congruential RNG
+//
+// Tiny deterministic RandomNumberGenerator used by PlanRevealBackdrop's
+// permuted logo grid. Same seed → same shuffle every render, so SwiftUI
+// re-renders the grid identically across frames while still breaking the
+// modulo-based row/column patterns. Not crypto-grade — just enough to
+// scatter 6 logos across 77 tiles without visible repetition lines.
+
+private struct LinearCongruentialRNG: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) { self.state = seed == 0 ? 1 : seed }
+
+    mutating func next() -> UInt64 {
+        // Numerical Recipes constants — fast, well-distributed.
+        state = state &* 6364136223846793005 &+ 1442695040888963407
+        return state
+    }
+}
