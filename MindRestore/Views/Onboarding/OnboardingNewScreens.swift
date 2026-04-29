@@ -221,23 +221,37 @@ struct OnboardingPersonalSolutionView: View {
                 Group {
                     switch revealBeat {
                     case .stakes:
-                        VStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: 0) {
                             cinematicProjectionHero
-                                .padding(.horizontal, 28)
                                 .padding(.top, 38)
                                 .opacity(headlineAppeared ? 1 : 0)
                                 .offset(y: headlineAppeared ? 0 : 10)
-                            Spacer(minLength: 22)
+
+                            Spacer(minLength: 24)
+
+                            heroNumberBlock
+                                .opacity(headlineAppeared ? 1 : 0)
+
+                            Spacer(minLength: 24)
                         }
+                        .padding(.horizontal, 28)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     case .reclaim:
-                        VStack(alignment: .leading, spacing: 26) {
-                            cinematicProjectionHero
-                            beat1Extras
+                        VStack(alignment: .leading, spacing: 0) {
                             Spacer(minLength: 0)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                cinematicProjectionHero
+                                heroNumberBlock
+                            }
+
+                            Spacer(minLength: 24)
+
+                            beat1Extras
                         }
                         .padding(.horizontal, 28)
                         .padding(.top, 38)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                         .safeAreaInset(edge: .bottom) {
                             beat1CTAButton
                                 .padding(.horizontal, 32)
@@ -281,14 +295,15 @@ struct OnboardingPersonalSolutionView: View {
         )
     }
 
+    /// Top-anchored content for the stakes/reclaim states. Pill +
+    /// eyebrow + headline. The number + caption block lives in
+    /// `heroNumberBlock`, which the parent positions independently
+    /// (centered for stakes, tight under this view for reclaim).
     private var cinematicProjectionHero: some View {
         let isReclaim = revealBeat == .reclaim
         let eyebrowAccent = isReclaim ? AppColors.accent : AppColors.coral
-        let numberAccent: Color = isReclaim
-            ? AppColors.accent
-            : AppColors.coral.interpolated(with: AppColors.coralDeep, by: countProgress)
 
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: 10) {
             // Screen Time provenance pill — only on stakes
             if !isReclaim {
                 screenTimeSourcePill
@@ -312,24 +327,32 @@ struct OnboardingPersonalSolutionView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
+        }
+    }
 
-            Spacer(minLength: isReclaim ? 4 : 30)
+    /// The hero number + caption stack. On stakes: animated count-up
+    /// in coral with HOURS + climbing breakdown subtitle. On reclaim
+    /// + .hours: snapped reclaimedHoursText with "hours back in your
+    /// life" subtitle. On reclaim + .breakdown: savedBreakdownText
+    /// with the same subtitle. The parent body chooses where this
+    /// view sits relative to `cinematicProjectionHero` — vertically
+    /// centered for stakes, tight under the eyebrow for reclaim.
+    private var heroNumberBlock: some View {
+        let isReclaim = revealBeat == .reclaim
+        let numberAccent: Color = isReclaim
+            ? AppColors.accent
+            : AppColors.coral.interpolated(with: AppColors.coralDeep, by: countProgress)
 
-            // The hero number. Same screen position across stakes → reclaim.
-            // During stakes: animatedHoursText (climbs).
-            // During .reclaim + .hours: reclaimedHoursText (snapped, e.g. "38,000").
-            // During .reclaim + .breakdown: savedBreakdownText (e.g. "4 YEARS · 132 DAYS").
+        return VStack(alignment: .leading, spacing: 6) {
             heroNumber(numberAccent: numberAccent)
-                .frame(height: 122, alignment: .leading)
 
-            // Subtitle stack
             if isReclaim {
                 Text("hours back in your life")
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColors.textPrimary.opacity(0.7))
                     .transition(.opacity)
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("HOURS")
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))
                         .tracking(1.2)
@@ -347,13 +370,18 @@ struct OnboardingPersonalSolutionView: View {
 
     /// The hero number block with the slash overlay. Two visual states:
     /// - hours form (during stakes count-up AND immediately post-cut):
-    ///   shows `animatedHoursText` while .stakes, `reclaimedHoursText` while
-    ///   .reclaim + .hours.
-    /// - breakdown form (post-dwell): shows `savedBreakdownText`.
+    ///   shows `animatedHoursText` while .stakes, `reclaimedHoursText`
+    ///   while .reclaim + .hours. Frame height locks to 122pt so the
+    ///   slash overlay has consistent room across the cut animation.
+    /// - breakdown form (post-dwell): shows `savedBreakdownText`. No
+    ///   slash. Height is intrinsic so the subtitle sits directly
+    ///   under the number — no residual 80pt of empty space.
     @ViewBuilder
     private func heroNumber(numberAccent: Color) -> some View {
+        let useHoursForm = heroFormat == .hours || revealBeat == .stakes
+
         ZStack(alignment: .leading) {
-            if heroFormat == .hours || revealBeat == .stakes {
+            if useHoursForm {
                 let displayText = revealBeat == .stakes ? animatedHoursText : reclaimedHoursText
                 let numericValue = revealBeat == .stakes
                     ? Double(animatedProjectionHours)
@@ -394,6 +422,7 @@ struct OnboardingPersonalSolutionView: View {
                     .transition(.opacity)
             }
         }
+        .frame(height: useHoursForm ? 122 : nil, alignment: .leading)
     }
 
     /// Small "● from your Screen Time" / "● estimated from your input"
