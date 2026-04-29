@@ -705,61 +705,59 @@ struct OnboardingPersonalSolutionView: View {
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
-            // The cut. Slower than rev 2 — drama lives in the breathing room.
-            // (1) slash sweeps left → right (0.5s easeOut)
-            // (2) at 0.8s, number + bar halve in lockstep (0.3s cross-fade)
-            // (3) apps recoil + drift fade-out (1.2s spring, concurrent)
-            // (4) slash fades out (0.4s) — never permanent on the final number
-            // Total slash visible: ~1.4s.
+            // The cut. Rev 5 sequence:
+            // (1) recoil + slash sweep at slash-start (concurrent, no revealBeat change yet)
+            // (2) at +0.8s, number snaps AND revealBeat flips to .reclaim in same withAnimation block
+            // (3) at +1.10s, slash fades + planBarProgress draws in + Beat 1 elements enter
+            // (4) at +1.50s, heroFormat flips to .breakdown
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
+            // Slash + recoil — independent of revealBeat. Apps recoil while the
+            // hero block is still showing the stakes count.
             withAnimation(.easeOut(duration: 0.5)) {
                 slashProgress = 1.0
                 slashOpacity = 1.0
             }
-            // Apps recoil concurrently with the slash sweep.
             withAnimation(.spring(response: 1.2, dampingFraction: 0.86)) {
-                revealBeat = .reclaim
                 recoilProgress = 1.0
             }
 
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
 
-            // Number cuts to the saved total under the slash. 0.3s cross-
-            // fade. Memo's reduction claim (memoReductionFraction = 0.75) is
-            // the single source of truth — the cut snaps the projected hours
-            // to savedHoursTotal so the rev 4 reclaim arc stays consistent.
+            // Number snap + layout swap to .reclaim in the SAME withAnimation
+            // block — the eyebrow / subtitle / headline crossfades all ride
+            // this spring. heroFormat stays .hours so the snapped number
+            // renders as `38,000` (continuity with the count-up).
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                 animatedReclaimedHours = savedHoursTotal
+                revealBeat = .reclaim
             }
 
+            // 300ms breath, then slash fades + Beat 1 elements draw in
+            // (lifeBar via planBarProgress). See spec animation table at
+            // t=7.12s relative to page-enter.
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
 
-            // Slash fades out — never permanent on the final number.
             withAnimation(.easeIn(duration: 0.4)) {
                 slashOpacity = 0
             }
-
-            // 1500ms hold on the halved number (was 1100ms). Gives the
-            // user space to absorb the with-Memo state before pivoting.
-            try? await Task.sleep(for: .milliseconds(1500))
-            guard !Task.isCancelled else { return }
-
-            withAnimation(.spring(response: 0.74, dampingFraction: 0.86)) {
-                revealBeat = .plan
-            }
-
-            // 2-color life bar draws in from the leading edge — saved
-            // (blue) first, residual (coral) trailing. Runs concurrently
-            // with the plan-row reveals so the page blooms as one piece.
             withAnimation(.easeOut(duration: 0.6)) {
                 planBarProgress = 1
             }
 
-            try? await Task.sleep(for: .milliseconds(180))
-            await revealPlanRows()
+            // 400ms more — slash fade is finishing — then flip the hero
+            // number from .hours to .breakdown. Total post-snap dwell = 700ms.
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.easeInOut(duration: 0.4)) {
+                heroFormat = .breakdown
+            }
+
+            // startRevealAnimation EXITS here — Beat 1 dwells until user
+            // taps "See the plan →", which calls advanceToPlan().
         }
     }
 
