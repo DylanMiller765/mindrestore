@@ -241,7 +241,7 @@ struct OnboardingPersonalSolutionView: View {
     private func revealBackdrop(size: CGSize) -> some View {
         PlanRevealBackdrop(
             isStakes: revealBeat == .stakes,
-            isPlan: revealBeat == .plan,
+            isDefeated: revealBeat != .stakes,   // Beat 1 + Beat 2 share defeated grid
             recoilProgress: recoilProgress,
             size: size,
             logos: feedTileLogos
@@ -945,7 +945,7 @@ private struct LifeBar: View {
 
 private struct PlanRevealBackdrop: View {
     let isStakes: Bool
-    let isPlan: Bool
+    let isDefeated: Bool   // true when revealBeat != .stakes — apps recoiled, dim grid
     /// 0 = full drift / pulse / opacity (apps alive). 1 = recoiled, halved
     /// opacity, drift muted (apps defeated). Animated by the parent.
     let recoilProgress: CGFloat
@@ -994,7 +994,7 @@ private struct PlanRevealBackdrop: View {
             // Glow halo behind the grid — color shifts from coral (stakes)
             // to accent (reclaim / plan).
             Circle()
-                .fill(accent.opacity(isPlan ? 0.14 : 0.24))
+                .fill(accent.opacity(isDefeated ? 0.14 : 0.24))
                 .frame(width: size.width * 0.95, height: size.width * 0.95)
                 .blur(radius: 76)
                 .offset(x: size.width * 0.34, y: isStakes ? size.height * 0.12 : -size.height * 0.05)
@@ -1005,7 +1005,7 @@ private struct PlanRevealBackdrop: View {
             }
             .rotationEffect(.degrees(-8))
             .offset(x: size.width * 0.2, y: isStakes ? size.height * 0.18 : size.height * 0.08)
-            .opacity(isPlan ? 0.45 : 1)
+            .opacity(isDefeated ? 0.45 : 1)
         }
         .ignoresSafeArea()
     }
@@ -1088,7 +1088,7 @@ private struct PlanRevealBackdrop: View {
         // Rev 4: plan beat pushes the grid further into the background
         // (0.45 → 0.20) so the new RECLAIMED hero + 2-color life bar own
         // the focus. Effective max ~0.40 × 0.20 = 0.08.
-        let planOpacityMul = isPlan ? 0.20 : 1.0
+        let planOpacityMul = isDefeated ? 0.20 : 1.0
         let opacity = (baseOpacity + pulse) * recoilOpacityMul * planOpacityMul
 
         Image(logoName)
