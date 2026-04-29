@@ -231,6 +231,9 @@ struct SpeedMatchView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = SpeedMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
@@ -284,6 +287,10 @@ struct SpeedMatchView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {

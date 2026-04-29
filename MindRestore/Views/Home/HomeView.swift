@@ -191,55 +191,6 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Free Exercise Counter
-
-    private var freeExerciseCounter: some View {
-        let remaining = paywallTrigger.freeExercisesRemaining
-        let total = Constants.Defaults.freeExercisesPerDay
-        let used = paywallTrigger.exercisesToday
-
-        return HStack(spacing: 12) {
-            // Dot indicators
-            HStack(spacing: 6) {
-                ForEach(0..<total, id: \.self) { i in
-                    Circle()
-                        .fill(i < used ? AppColors.accent : AppColors.accent.opacity(0.2))
-                        .frame(width: 10, height: 10)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(remaining) of \(total) free exercises left")
-                    .font(.caption.weight(.semibold))
-                Text("Upgrade for unlimited training")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                showingPaywall = true
-            } label: {
-                Text("Go Pro")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(AppColors.accent, in: Capsule())
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AppColors.accent.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
-                )
-        )
-    }
-
     // MARK: - Level Bar
 
     private func levelBar(_ user: User) -> some View {

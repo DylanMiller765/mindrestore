@@ -44,6 +44,12 @@ struct FocusModeSetupView: View {
     /// because the outer onboarding flow renders its own progress indicator.
     private var isEmbeddedInOnboarding: Bool { onComplete != nil }
 
+    private var currentSelectionExceedsFreeLimit: Bool {
+        focusModeService.activitySelection.applicationTokens.count > 1 ||
+        !focusModeService.activitySelection.categoryTokens.isEmpty ||
+        !focusModeService.activitySelection.webDomainTokens.isEmpty
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -129,7 +135,8 @@ struct FocusModeSetupView: View {
             // Selected apps summary
             let appCount = focusModeService.activitySelection.applicationTokens.count
             let catCount = focusModeService.activitySelection.categoryTokens.count
-            let totalSelected = appCount + catCount
+            let webCount = focusModeService.activitySelection.webDomainTokens.count
+            let totalSelected = appCount + catCount + webCount
 
             Button {
                 showingAppPicker = true
@@ -142,7 +149,7 @@ struct FocusModeSetupView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(totalSelected > 0 ? "\(totalSelected) targets picked" : "Choose Memo's targets")
                             .font(.system(size: 16, weight: .semibold))
-                        Text(totalSelected > 0 ? "Tap to change the hit list" : "Pick apps and categories to lock")
+                        Text(totalSelected > 0 ? "Tap to change the hit list" : "Pick one app free, or go Pro for the feed")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -166,8 +173,7 @@ struct FocusModeSetupView: View {
             Spacer()
 
             continueButton(disabled: totalSelected == 0) {
-                let exceedsLimit = appCount > 1 || catCount > 0
-                if !storeService.isProUser && exceedsLimit {
+                if !storeService.isProUser && currentSelectionExceedsFreeLimit {
                     showingProPaywall = true
                 } else {
                     currentStep = 2
@@ -179,7 +185,18 @@ struct FocusModeSetupView: View {
         .frame(maxWidth: .infinity)
         .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
             get: { focusModeService.activitySelection },
-            set: { focusModeService.updateActivitySelection($0) }
+            set: { newSelection in
+                let exceedsFreeLimit = newSelection.applicationTokens.count > 1 ||
+                    !newSelection.categoryTokens.isEmpty ||
+                    !newSelection.webDomainTokens.isEmpty
+
+                if !storeService.isProUser && exceedsFreeLimit {
+                    showingProPaywall = true
+                    return
+                }
+
+                focusModeService.updateActivitySelection(newSelection)
+            }
         ))
         .sheet(isPresented: $showingProPaywall) {
             PaywallView(triggerSource: "focus_mode_limit")
@@ -380,6 +397,11 @@ struct FocusModeSetupView: View {
 
             // Enable Focus Mode CTA
             Button {
+                if !storeService.isProUser && currentSelectionExceedsFreeLimit {
+                    showingProPaywall = true
+                    return
+                }
+
                 Task {
                     await focusModeService.requestAuthorization()
                     focusModeService.setUnlockDuration(unlockDuration)

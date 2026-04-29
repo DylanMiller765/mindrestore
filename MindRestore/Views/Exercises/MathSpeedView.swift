@@ -220,6 +220,9 @@ struct MathSpeedView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = MathSpeedViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
@@ -273,6 +276,10 @@ struct MathSpeedView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
+                viewModel.startGame()
             }
         }
         .onChange(of: viewModel.phase) { _, newPhase in

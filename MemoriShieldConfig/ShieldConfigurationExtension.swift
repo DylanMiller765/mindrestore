@@ -43,7 +43,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
             icon: mascotIcon,
             title: ShieldConfiguration.Label(text: title, color: .white),
             subtitle: ShieldConfiguration.Label(text: subtitle, color: UIColor(white: 0.6, alpha: 1.0)),
-            primaryButtonLabel: ShieldConfiguration.Label(text: "Play a game", color: .white),
+            primaryButtonLabel: ShieldConfiguration.Label(text: "Train your brain", color: .white),
             primaryButtonBackgroundColor: UIColor(red: 0.29, green: 0.50, blue: 0.90, alpha: 1.0),
             secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay focused", color: UIColor(white: 0.5, alpha: 1.0))
         )

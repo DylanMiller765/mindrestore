@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - App Theme
 
@@ -63,11 +64,14 @@ enum AppColors {
     static let teal = Color(red: 0.20, green: 0.60, blue: 0.56)             // sage teal
     static let indigo = Color(red: 0.38, green: 0.36, blue: 0.70)           // muted indigo
     static let coral = Color(red: 0.85, green: 0.40, blue: 0.35)            // dusty coral
+    static let coralDeep = Color(red: 0.78, green: 0.22, blue: 0.20)        // danger-escalation red — pairs with coral as a "things got worse" signal
     static let violet = Color(red: 0.55, green: 0.38, blue: 0.75)           // dusty violet
     static let sky = Color(red: 0.35, green: 0.58, blue: 0.82)              // slate blue
     static let mint = Color(red: 0.25, green: 0.68, blue: 0.55)             // sage green
     static let rose = Color(red: 0.78, green: 0.35, blue: 0.48)             // dusty rose
     static let amber = Color(red: 0.85, green: 0.65, blue: 0.25)            // warm amber
+    static let periwinkle = Color(red: 0.49, green: 0.55, blue: 1.00)       // Memo chart periwinkle
+    static let electricViolet = Color(red: 0.65, green: 0.42, blue: 1.00)   // Memo chart violet
 
     // Reaction time phase colors
     static let reactionWait = Color(red: 0.8, green: 0.15, blue: 0.15)
@@ -600,3 +604,22 @@ extension Font {
     }
 }
 
+extension Color {
+    /// Linearly interpolates between this color and another by `t` ∈ [0, 1].
+    /// Routes through UIColor to extract RGBA components since SwiftUI's
+    /// Color doesn't expose them directly. Used by the plan reveal page to
+    /// blend coral → coralDeep as the projected number climbs.
+    func interpolated(with other: Color, by t: Double) -> Color {
+        let clamped = CGFloat(max(0.0, min(1.0, t)))
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        UIColor(self).getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        UIColor(other).getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        return Color(
+            red: Double(r1 + (r2 - r1) * clamped),
+            green: Double(g1 + (g2 - g1) * clamped),
+            blue: Double(b1 + (b2 - b1) * clamped),
+            opacity: Double(a1 + (a2 - a1) * clamped)
+        )
+    }
+}

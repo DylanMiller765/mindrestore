@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var showQuickGame = false
     @State private var focusUnlockPending = false
     @State private var focusUnlockExercise: ExerciseType?
+    @State private var focusUnlockExerciseAutoStart = false
     @State private var showFocusUnlockToast = false
 
     // Toast state
@@ -140,7 +141,10 @@ struct ContentView: View {
                     .tag(0)
                     .accessibilityLabel("Home tab")
 
-                TrainingView(externalExercise: $focusUnlockExercise)
+                TrainingView(
+                    externalExercise: $focusUnlockExercise,
+                    externalExerciseAutoStart: $focusUnlockExerciseAutoStart
+                )
                     .tabItem {
                         Label("Train", systemImage: "dumbbell.fill")
                     }
@@ -284,6 +288,7 @@ struct ContentView: View {
                 let randomGame = activeGames.randomElement()!
                 Analytics.focusUnlockGameStarted(gameType: randomGame.rawValue)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    focusUnlockExerciseAutoStart = true
                     focusUnlockExercise = randomGame
                 }
                 deepLinkRouter.pendingDestination = nil
@@ -339,10 +344,14 @@ struct ContentView: View {
                 }
             }
         }
-        // If the user backs out of the focus-unlock game without completing it, clear
-        // the pending flag so a later, unrelated game completion can't trigger a free unlock.
-        .onChange(of: focusUnlockExercise) { oldValue, newValue in
-            if oldValue != nil && newValue == nil && focusUnlockPending {
+        // Reset the pending flag when the user navigates away from the Train tab
+        // without completing. This is a safer trigger than watching
+        // focusUnlockExercise — that binding is reset to nil immediately after
+        // navigation as part of the standard binding-passthrough pattern, which
+        // caused the previous reset logic to fire before the game could even
+        // start (the unlock toast then never fired on completion).
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab != 1 && focusUnlockPending {
                 focusUnlockPending = false
             }
         }
@@ -681,9 +690,14 @@ struct TrainingView: View {
 
     /// External trigger for focus unlock — set by ContentView to navigate to a specific game
     @Binding var externalExercise: ExerciseType?
+    /// When the external trigger fires, indicates the game should skip its setup screen.
+    /// Captured into `pendingAutoStart` on the externalExercise transition; the binding
+    /// is reset to false immediately to keep ContentView's source-of-truth clean.
+    @Binding var externalExerciseAutoStart: Bool
 
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
+    @State private var pendingAutoStart = false
     @AppStorage("has_seen_free_play_popup") private var hasSeenFreePlayPopup = false
     @State private var showFreePlayPopup = false
 
@@ -809,6 +823,11 @@ struct TrainingView: View {
                 }
                 .navigationDestination(item: $selectedExercise) { type in
                     exerciseDestination(for: type)
+                        // Clear the auto-start flag once the destination owns it.
+                        // Defers to onAppear so the destination's init has already
+                        // consumed pendingAutoStart for ReactionTime; subsequent
+                        // navigations to any game start with a clean flag.
+                        .onAppear { pendingAutoStart = false }
                 }
                 // Daily challenge hidden for now
                 .padding(.top, 8)
@@ -820,8 +839,10 @@ struct TrainingView: View {
             .navigationTitle("Train")
             .onChange(of: externalExercise) { _, newValue in
                 if let game = newValue {
+                    pendingAutoStart = externalExerciseAutoStart
                     selectedExercise = game
                     externalExercise = nil
+                    externalExerciseAutoStart = false
                 }
             }
             .sheet(isPresented: $showingPaywall) {
@@ -939,35 +960,35 @@ struct TrainingView: View {
         case .spacedRepetition:
             SpacedRepetitionView(category: .numbers)
         case .dualNBack:
-            DualNBackView()
+            DualNBackView(autoStart: pendingAutoStart)
         case .activeRecall:
             ActiveRecallView()
         case .chunkingTraining:
-            ChunkingTrainingView()
+            ChunkingTrainingView(autoStart: pendingAutoStart)
         case .prospectiveMemory:
             ProspectiveMemoryView()
         case .memoryPalace:
             MemoryPalaceView()
         case .reactionTime:
-            ReactionTimeView()
+            ReactionTimeView(autoStart: pendingAutoStart)
         case .sequentialMemory:
-            SequentialMemoryView()
+            SequentialMemoryView(autoStart: pendingAutoStart)
         case .mathSpeed:
-            MathSpeedView()
+            MathSpeedView(autoStart: pendingAutoStart)
         case .colorMatch:
-            ColorMatchView()
+            ColorMatchView(autoStart: pendingAutoStart)
         case .speedMatch:
-            SpeedMatchView()
+            SpeedMatchView(autoStart: pendingAutoStart)
         case .visualMemory:
-            VisualMemoryView()
+            VisualMemoryView(autoStart: pendingAutoStart)
         case .wordScramble:
             WordScrambleView()
         case .memoryChain:
             MemoryChainView()
         case .chimpTest:
-            ChimpTestView()
+            ChimpTestView(autoStart: pendingAutoStart)
         case .verbalMemory:
-            VerbalMemoryView()
+            VerbalMemoryView(autoStart: pendingAutoStart)
         }
     }
 

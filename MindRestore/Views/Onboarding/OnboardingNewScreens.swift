@@ -311,7 +311,7 @@ struct OnboardingPersonalSolutionView: View {
             }
 
             // Eyebrow
-            Text(isReclaim ? "RECLAIMED" : "WITHOUT MEMO")
+            Text(isReclaim ? "WITH MEMO" : "WITHOUT MEMO")
                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .tracking(1.4)
                 .foregroundStyle(eyebrowAccent)
@@ -347,10 +347,18 @@ struct OnboardingPersonalSolutionView: View {
             heroNumber(numberAccent: numberAccent)
 
             if isReclaim {
-                Text("hours back in your life")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary.opacity(0.7))
-                    .transition(.opacity)
+                if heroFormat == .hours {
+                    Text("HOURS BACK")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(1.2)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.48))
+                        .transition(.opacity)
+                } else {
+                    Text("back in your life")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.7))
+                        .transition(.opacity)
+                }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("HOURS")
@@ -440,46 +448,18 @@ struct OnboardingPersonalSolutionView: View {
         }
     }
 
-    /// Beat 1 elements that enter under the hero after the cut: the 2-color
-    /// life bar with TODAY/AGE 60 markers, and the corporate-attack
-    /// punchline. Each element uses a SwiftUI transition with a small
-    /// per-element delay so they enter sequentially, not as a wall.
+    /// Beat 2 elements that enter under the reclaimed-time hero after the cut:
+    /// the corporate-attack punchline that tees up the plan.
     private var beat1Extras: some View {
-        let lifeBarWidth: CGFloat = 280
-
-        return VStack(alignment: .leading, spacing: 22) {
-            // 2-color life bar
-            VStack(alignment: .leading, spacing: 8) {
-                LifeBar(
-                    savedFraction: CGFloat(Self.memoReductionFraction),
-                    progress: planBarProgress,
-                    width: lifeBarWidth,
-                    height: 14
-                )
-
-                HStack {
-                    Text("TODAY")
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                        .tracking(1.0)
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.4))
-                    Spacer()
-                    Text("AGE 60")
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                        .tracking(1.0)
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.4))
-                }
-                .frame(width: lifeBarWidth)
-            }
-            .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-            // Corporate punch — the brand-voice rev 5 anchor.
+        return VStack(alignment: .leading, spacing: 0) {
+            // Corporate punch — the brand-voice anchor after the reclaimed time lands.
             VStack(alignment: .leading, spacing: 4) {
                 Text("Big tech is colonizing\nyour attention.")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.textPrimary.opacity(0.94))
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Memo fights back.")
+                Text("Memo helps you take it back.")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .italic()
                     .foregroundStyle(AppColors.accent)
@@ -493,7 +473,7 @@ struct OnboardingPersonalSolutionView: View {
     private var beat1CTAButton: some View {
         Button(action: advanceToPlan) {
             HStack(spacing: 8) {
-                Text("See the plan")
+                Text("Show me how")
                 Image(systemName: "arrow.right")
                     .font(.system(size: 15, weight: .heavy))
             }
@@ -525,23 +505,23 @@ struct OnboardingPersonalSolutionView: View {
     private var planBeatLayout: some View {
         VStack(alignment: .leading, spacing: 18) {
             // Eyebrow
-            Text("MEMO'S PLAYBOOK")
+            Text("YOUR COUNTERATTACK")
                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .tracking(1.4)
                 .foregroundStyle(AppColors.textPrimary.opacity(0.4))
 
             // Hero — brain-trainer USP
             VStack(alignment: .leading, spacing: 0) {
-                Text("Brain training")
+                Text("Train first.")
                     .font(.system(size: 26, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.textPrimary.opacity(0.94))
-                Text("that pays you in time.")
+                Text("Unlock time after.")
                     .font(.system(size: 26, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.accent)
             }
 
             // Supporting subhead
-            Text("Beat a brain game. Earn back screen time. The only blocker that trains your brain while it locks the noise.")
+            Text("Beat brain games, earn screen time, and keep the feed boxed out.")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary.opacity(0.55))
                 .lineSpacing(2)
@@ -592,28 +572,28 @@ struct OnboardingPersonalSolutionView: View {
             planCardRow(
                 color: AppColors.violet,
                 label: "Train",
-                detail: "brain games · 5 min a day",
+                detail: "5 min brain games",
                 value: "5 min/day",
                 index: 0
             )
             planCardRow(
                 color: AppColors.accent,
                 label: "Earn",
-                detail: "15 min unlocked per win",
+                detail: "unlock time back",
                 value: "your call",
                 index: 1
             )
             planCardRow(
                 color: AppColors.coral,
                 label: "Block",
-                detail: "apps stay shielded until you train",
+                detail: "apps stay sealed",
                 value: "pick yours",
                 index: 2
             )
             planCardRow(
                 color: AppColors.amber,
                 label: "Compete",
-                detail: "leaderboards · live now",
+                detail: "climb the board",
                 value: "live",
                 index: 3
             )

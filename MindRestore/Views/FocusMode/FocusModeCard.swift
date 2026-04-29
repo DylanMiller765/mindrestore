@@ -6,6 +6,7 @@ import DeviceActivity
 extension DeviceActivityReport.Context {
     /// Mirrors the context declared in the FocusUnlocksReport extension target.
     static let screenTime = Self("Screen Time")
+    static let screenTimeWeekly = Self("Screen Time Weekly")
 }
 
 // MARK: - Design tokens (matches Claude Design spec for Focus Mode)
@@ -45,6 +46,12 @@ struct FocusModeCard: View {
     @State private var showingProPaywall = false
 
     private enum CardState { case notSetUp, idle, active, cooldown, unlocked, scheduled }
+
+    private var currentSelectionExceedsFreeLimit: Bool {
+        focusModeService.activitySelection.applicationTokens.count > 1 ||
+        !focusModeService.activitySelection.categoryTokens.isEmpty ||
+        !focusModeService.activitySelection.webDomainTokens.isEmpty
+    }
 
     private var cardState: CardState {
         if focusModeService.isTemporarilyUnlocked { return .unlocked }
@@ -155,7 +162,13 @@ struct FocusModeCard: View {
     // MARK: - 01 · Idle (off — tension)
 
     private var idleCard: some View {
-        Button { focusModeService.enable() } label: {
+        Button {
+            if !storeService.isProUser && currentSelectionExceedsFreeLimit {
+                showingProPaywall = true
+            } else {
+                focusModeService.enable()
+            }
+        } label: {
             VStack(alignment: .leading, spacing: 0) {
                 // eyebrow
                 HStack(spacing: 8) {
@@ -203,7 +216,11 @@ struct FocusModeCard: View {
                     .padding(.bottom, 18)
 
                 ctaButton(title: "Put Memo to Work", showArrow: true) {
-                    focusModeService.enable()
+                    if !storeService.isProUser && currentSelectionExceedsFreeLimit {
+                        showingProPaywall = true
+                    } else {
+                        focusModeService.enable()
+                    }
                 }
             }
             .padding(.horizontal, 20)

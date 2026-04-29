@@ -16,5 +16,11 @@ struct FocusUnlocksReport: DeviceActivityReportExtension {
         ScreenTimeReport { hours in
             ScreenTimeView(hours: hours)
         }
+        ScreenTimeAverageReport { hours in
+            ScreenTimeView(hours: hours)
+        }
+        ScreenTimeWeeklyReport { hoursByDay in
+            WeeklyScreenTimeChartView(hoursByDay: hoursByDay)
+        }
     }
 }

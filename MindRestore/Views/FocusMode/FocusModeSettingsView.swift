@@ -8,6 +8,12 @@ struct FocusModeSettingsView: View {
     @State private var showingAppPicker = false
     @State private var showingProPaywall = false
 
+    private var currentSelectionExceedsFreeLimit: Bool {
+        focusModeService.activitySelection.applicationTokens.count > 1 ||
+        !focusModeService.activitySelection.categoryTokens.isEmpty ||
+        !focusModeService.activitySelection.webDomainTokens.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -65,6 +71,15 @@ struct FocusModeSettingsView: View {
                         Spacer()
                         Text("\(focusModeService.blockedAppCount)")
                             .foregroundStyle(.secondary)
+                    }
+
+                    if !storeService.isProUser {
+                        HStack(spacing: 8) {
+                            Image(systemName: currentSelectionExceedsFreeLimit ? "lock.fill" : "checkmark.circle.fill")
+                                .foregroundStyle(currentSelectionExceedsFreeLimit ? AppColors.amber : AppColors.accent)
+                            Text(currentSelectionExceedsFreeLimit ? "Reduce to 1 app or upgrade to Pro" : "Free plan blocks 1 app")
+                                .foregroundStyle(currentSelectionExceedsFreeLimit ? AppColors.amber : .secondary)
+                        }
                     }
                 }
 
@@ -169,9 +184,9 @@ struct FocusModeSettingsView: View {
                         return
                     }
 
-                    let appCount = newSelection.applicationTokens.count
-                    let catCount = newSelection.categoryTokens.count
-                    let exceedsLimit = appCount > 1 || catCount > 0
+                    let exceedsLimit = newSelection.applicationTokens.count > 1 ||
+                        !newSelection.categoryTokens.isEmpty ||
+                        !newSelection.webDomainTokens.isEmpty
                     if !storeService.isProUser && exceedsLimit {
                         showingProPaywall = true
                     } else {

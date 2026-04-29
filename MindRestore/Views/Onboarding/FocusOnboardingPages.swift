@@ -6,6 +6,7 @@ import UIKit
 extension DeviceActivityReport.Context {
     /// Must match the context name declared in the `FocusUnlocksReport` extension target.
     static let unlocks = Self("Unlocks Count")
+    static let screenTimeAverage = Self("Screen Time Daily Average")
 }
 
 // Design tokens for Focus Mode onboarding pages (matches Claude Design spec)
@@ -898,12 +899,21 @@ struct FocusOnboardPersonalUnlocks: View {
                 .textCase(.uppercase)
                 .padding(.top, 12)
 
+            if authorized {
+                Text("Most people call it \"a few checks.\" Your phone kept receipts.")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(FO.fg2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 14)
+            }
+
             // quote or auth prompt
             Group {
                 if authorized {
                     HStack(spacing: 0) {
                         Rectangle().fill(FO.accent).frame(width: 2)
-                        Text("Every unlock is another shot for the feed to pull you back.")
+                        Text("Every unlock is another opening for the feed to pull you back.")
                             .font(.system(size: 18, weight: .semibold))
                             .kerning(-0.2)
                             .foregroundStyle(FO.fg)
@@ -977,8 +987,8 @@ struct FocusOnboardPersonalUnlocks: View {
     }
 
     private var ctaTitle: String {
-        if authorized { return "Start Brain Age Test" }
-        if previouslyDenied { return "Continue" }
+        if authorized { return "Test my Brain Age" }
+        if previouslyDenied { return "Keep going" }
         return "Unlock the Real Numbers"
     }
 

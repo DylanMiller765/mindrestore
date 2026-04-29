@@ -80,7 +80,7 @@ final class QuickAssessmentViewModel {
 
     private func nextReactionRound() {
         phase = .reactionWait
-        let delay = Double.random(in: 1.5...4.0)
+        let delay = Double.random(in: 1.0...3.0)
         reactionTimer?.invalidate()
         reactionTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in
@@ -108,9 +108,9 @@ final class QuickAssessmentViewModel {
         reactionRound += 1
         phase = .reactionResult
 
-        // Auto-advance after 1.5 seconds
+        // Auto-advance after 0.8 seconds
         autoAdvanceTimer?.invalidate()
-        autoAdvanceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
+        autoAdvanceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 guard self?.phase == .reactionResult else { return }
                 self?.tapReactionResult()
@@ -259,7 +259,7 @@ final class QuickAssessmentViewModel {
     private func finishDigit() {
         digitTimer?.invalidate()
         phase = .calculating
-        scheduleTransition(after: 2.0) { [weak self] in
+        scheduleTransition(after: 1.2) { [weak self] in
             self?.phase = .done
         }
     }
@@ -313,15 +313,22 @@ final class QuickAssessmentViewModel {
 
 struct QuickAssessmentView: View {
     @Binding var backgroundColor: Color
+    @Binding var isInFullscreenPhase: Bool
     let onComplete: (BrainScoreResult) -> Void
 
     @State private var viewModel = QuickAssessmentViewModel()
+    @State private var reactionIntroVisible = false
+    @State private var reactionBoltPulsing = false
 
     private var isReactionFullscreen: Bool {
         switch viewModel.phase {
         case .reactionWait, .reactionGo, .reactionTooEarly: return true
         default: return false
         }
+    }
+
+    private var shouldShowAssessmentHeader: Bool {
+        !isReactionFullscreen && viewModel.phase != .calculating && viewModel.phase != .done
     }
 
     private var phaseBgColor: Color {
@@ -386,7 +393,7 @@ struct QuickAssessmentView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            if !isReactionFullscreen && viewModel.phase != .calculating && viewModel.phase != .done {
+            if shouldShowAssessmentHeader {
                 VStack(spacing: 4) {
                     HStack(spacing: 16) {
                         assessmentStepLabel("SPD", active: assessmentProgress < 0.34)
@@ -401,11 +408,20 @@ struct QuickAssessmentView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 .background(phaseBgColor)
+                .transition(.identity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .transaction { transaction in
+            if isReactionFullscreen {
+                transaction.animation = nil
+            }
+        }
+        .onAppear {
+            isInFullscreenPhase = isReactionFullscreen
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             backgroundColor = phaseBackgroundColor(for: newPhase)
+            isInFullscreenPhase = isReactionFullscreen
         }
     }
 
@@ -427,21 +443,49 @@ struct QuickAssessmentView: View {
     // MARK: - Reaction Instructions
 
     private var reactionInstructionCard: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 22) {
             Spacer()
 
-            Image(systemName: "bolt.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.yellow)
+            Text("SPEED TEST")
+                .font(.caption.weight(.heavy))
+                .tracking(2)
+                .foregroundStyle(AppColors.accent)
+                .opacity(reactionIntroVisible ? 1 : 0)
+                .offset(y: reactionIntroVisible ? 0 : 8)
+
+            ZStack {
+                Circle()
+                    .fill(AppColors.amber.opacity(0.13))
+                    .frame(width: 132, height: 132)
+                    .scaleEffect(reactionBoltPulsing ? 1.08 : 0.94)
+                    .opacity(reactionBoltPulsing ? 0.35 : 0.85)
+
+                Circle()
+                    .stroke(AppColors.amber.opacity(0.24), lineWidth: 2)
+                    .frame(width: 104, height: 104)
+                    .scaleEffect(reactionBoltPulsing ? 1.04 : 0.98)
+
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 66, weight: .bold))
+                    .foregroundStyle(AppColors.amber)
+                    .shadow(color: AppColors.amber.opacity(0.45), radius: 18)
+                    .scaleEffect(reactionBoltPulsing ? 1.05 : 0.98)
+            }
+            .opacity(reactionIntroVisible ? 1 : 0)
+            .offset(y: reactionIntroVisible ? 0 : 16)
 
             Text("Reaction Time")
                 .font(.title.bold())
+                .opacity(reactionIntroVisible ? 1 : 0)
+                .offset(y: reactionIntroVisible ? 0 : 10)
 
-            Text("Tap as fast as you can when the screen turns green")
+            Text("Tap the instant the screen turns green. Memo is checking how fast your attention snaps back.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+                .opacity(reactionIntroVisible ? 1 : 0)
+                .offset(y: reactionIntroVisible ? 0 : 10)
 
             Spacer()
 
@@ -453,8 +497,22 @@ struct QuickAssessmentView: View {
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
+            .opacity(reactionIntroVisible ? 1 : 0)
+            .offset(y: reactionIntroVisible ? 0 : 18)
         }
         .transition(.opacity)
+        .onAppear {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+                reactionIntroVisible = true
+            }
+
+            withAnimation(.easeInOut(duration: 1.45).repeatForever(autoreverses: true)) {
+                reactionBoltPulsing = true
+            }
+        }
+        .onDisappear {
+            reactionBoltPulsing = false
+        }
     }
 
     // MARK: - Reaction Wait
@@ -699,13 +757,16 @@ struct QuickAssessmentView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            Text(viewModel.digitCurrentDisplayDigit)
-                .font(.system(size: 144, weight: .heavy, design: .monospaced))
-                .foregroundStyle(AppColors.accent)
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .contentTransition(.opacity)
-                .animation(.easeOut(duration: 0.12), value: viewModel.digitDisplayIndex)
+            ZStack {
+                Text(viewModel.digitCurrentDisplayDigit)
+                    .font(.system(size: 144, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(AppColors.accent)
+                    .id(viewModel.digitDisplayIndex)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            }
+            .frame(height: 180)
+            .frame(maxWidth: .infinity)
+            .animation(.easeOut(duration: 0.16), value: viewModel.digitDisplayIndex)
 
             // Position pips so user knows how far through the sequence we are
             HStack(spacing: 8) {

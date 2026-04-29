@@ -246,6 +246,9 @@ struct VerbalMemoryView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = VerbalMemoryViewModel()
     @State private var shareImage: UIImage?
     @State private var showingShareSheet = false
@@ -283,6 +286,10 @@ struct VerbalMemoryView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.verbalMemory.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {

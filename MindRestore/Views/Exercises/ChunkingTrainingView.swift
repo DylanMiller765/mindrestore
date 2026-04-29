@@ -234,6 +234,9 @@ struct ChunkingTrainingView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the intro screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = ChunkingViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
@@ -292,6 +295,10 @@ struct ChunkingTrainingView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .intro {
+                Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
+                viewModel.startFromIntro()
             }
         }
         .onDisappear {

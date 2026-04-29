@@ -133,6 +133,12 @@ struct ReactionTimeView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// When true, skip the setup screen on appear and jump straight into the
+    /// game after a brief "get ready" overlay. Used for Focus unlock launches
+    /// where the user already pressed "Train" — landing on a Tap-to-Begin
+    /// screen is one step too many.
+    var autoStart: Bool = false
+
     @State private var viewModel = ReactionTimeViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
@@ -194,6 +200,10 @@ struct ReactionTimeView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {

@@ -13,6 +13,10 @@ struct DualNBackView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    /// Auto-starts at the user's currently selected N (defaults to 1).
+    var autoStart: Bool = false
+
     @State private var viewModel = DualNBackViewModel()
     @State private var selectedN: Int = 1
     @State private var gameStarted = false
@@ -66,6 +70,11 @@ struct DualNBackView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && !gameStarted && !viewModel.showResults {
+                Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
+                gameStarted = true
+                viewModel.startGame(n: selectedN, dual: true)
             }
         }
         .onDisappear {

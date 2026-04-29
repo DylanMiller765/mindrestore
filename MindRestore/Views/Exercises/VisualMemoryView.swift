@@ -13,7 +13,7 @@ final class VisualMemoryViewModel {
     var level = 1
     var highlightedCells: Set<Int> = []
     var selectedCells: Set<Int> = []
-    var gridSize: Int = 3
+    var gridSize: Int = 4
     var highlightCount: Int = 3
     var challengeSeed: Int?
     private var rng: SeededGenerator?
@@ -42,12 +42,11 @@ final class VisualMemoryViewModel {
         max(0.6, 1.5 - Double(level - 1) * 0.1)
     }
 
-    // Grid grows: levels 1-3 = 3x3, levels 4-6 = 4x4, levels 7+ = 5x5
+    // Grid grows: levels 1-3 = 4x4 (matches onboarding assessment), levels 4+ = 5x5.
+    // No 3x3 entry tier — Visual Memory is intentionally non-trivial.
     private func updateGridForLevel() {
         switch level {
         case 1...3:
-            gridSize = 3
-        case 4...6:
             gridSize = 4
         default:
             gridSize = 5
@@ -110,20 +109,16 @@ final class VisualMemoryViewModel {
         guard phase == .input else { return }
 
         if selectedCells == highlightedCells {
-            // Correct — advance
+            // Correct — advance straight to the next level. No "Passed Level X"
+            // interstitial — the next level's squares flashing IS the success
+            // signal, and the haptic + sound register the win without burning
+            // a second on a green-checkmark screen.
             levelsCompleted = level
             SoundService.shared.playCorrect()
             HapticService.correct()
-
-            phase = .correct
-            showTimer?.invalidate()
-            showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    HapticService.levelUp()
-                    self?.level += 1
-                    self?.startLevel()
-                }
-            }
+            HapticService.levelUp()
+            level += 1
+            startLevel()
         } else {
             // Wrong — show correct answer, then game over
             SoundService.shared.playWrong()
@@ -166,6 +161,12 @@ struct VisualMemoryView: View {
     @Environment(GameCenterService.self) private var gameCenterService
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
+
+    /// When true, skip the setup screen on appear and jump straight into the
+    /// game after a brief "get ready" overlay. Used for Focus unlock launches
+    /// where the user already pressed "Train" — landing on a Tap-to-Begin
+    /// screen is one step too many.
+    var autoStart: Bool = false
 
     @State private var viewModel = VisualMemoryViewModel()
     @State private var showingPaywall = false
@@ -230,6 +231,10 @@ struct VisualMemoryView: View {
             if let challenge = deepLinkRouter.pendingChallenge {
                 viewModel.challengeSeed = challenge.seed
                 activeChallenge = challenge
+            }
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {

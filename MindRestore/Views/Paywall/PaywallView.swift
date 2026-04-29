@@ -100,7 +100,7 @@ struct PaywallView: View {
                 PW.bg.ignoresSafeArea()
                 brandGlow
                 content(width: proxy.size.width)
-                closeButton
+                closeButton(safeTop: proxy.safeAreaInsets.top)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -280,24 +280,29 @@ struct PaywallView: View {
     private var featuresList: some View {
         VStack(spacing: 16) {
             featureRow(
-                icon: "brain.head.profile",
-                title: "Unlimited brain training",
-                body: "Train memory, attention, speed, flexibility, and problem solving — no daily limits, no caps."
+                icon: "shield.fill",
+                title: "Block more than one app",
+                body: "Free users can bounce one app. Pro lets Memo block the whole feed."
             )
             featureRow(
-                icon: "lock.fill",
-                title: "Block distracting apps",
-                body: "Lock TikTok, Instagram, and anything else. They stay locked until you train."
+                icon: "brain.head.profile",
+                title: "Train before you scroll",
+                body: "Blocked apps stay locked until you put in a brain-training rep."
             )
             featureRow(
                 icon: "timer",
-                title: "Earn screen time, daily",
+                title: "Earn unlocks",
                 body: "Each brain game unlocks 5–60 minutes of screen time. You set the rules."
             )
             featureRow(
                 icon: "chart.line.uptrend.xyaxis",
-                title: "Track your brain's progress",
-                body: "See how your performance trends across memory, speed, attention, and more."
+                title: "Detailed Brain Score insights",
+                body: "See how your memory, speed, attention, and screen-time defense trend."
+            )
+            featureRow(
+                icon: "receipt.fill",
+                title: "Paid, not farmed",
+                body: "No ads. No data sold. 10% to fight Big Tech."
             )
         }
     }
@@ -428,7 +433,7 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var closeButton: some View {
+    private func closeButton(safeTop: CGFloat) -> some View {
         HStack {
             Spacer()
             Button {
@@ -441,20 +446,25 @@ struct PaywallView: View {
                     exitOfferShownCount += 1
                 }
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(PW.fg)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        Circle()
-                            .fill(PW.surface2)
-                            .overlay(Circle().stroke(PW.line, lineWidth: 1))
-                    )
+                ZStack {
+                    Circle()
+                        .fill(PW.surface2)
+                        .overlay(Circle().stroke(PW.line, lineWidth: 1))
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(PW.fg)
+                }
+                .frame(width: 48, height: 48)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close")
+            .accessibilityHint(isHighIntent ? "Shows the exit offer or closes the paywall" : "Closes the paywall")
         }
-        .padding(.top, 4)
-        .padding(.trailing, 16)
+        .padding(.top, max(14, safeTop + 10))
+        .padding(.trailing, 12)
     }
 
     // MARK: Purchase
@@ -476,6 +486,13 @@ struct PaywallView: View {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             SoundService.shared.playComplete()
             dismiss()
+            // Highest-commitment positive interaction we'll ever get — they paid.
+            // Delay long enough that the paywall sheet finishes dismissing and
+            // the host view's success state has rendered before iOS overlays
+            // its native review alert.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                ReviewPromptService.requestForNewSubscriber()
+            }
         }
     }
 }
@@ -641,7 +658,7 @@ struct ExitOfferSheet: View {
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
 
-                Text("Pro members train unlimited — no daily\nlimits holding you back.")
+                Text("Pro keeps Memo on patrol — more apps\nblocked, more unlocks earned.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

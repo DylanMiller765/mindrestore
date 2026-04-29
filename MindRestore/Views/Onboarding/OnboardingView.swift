@@ -3,6 +3,8 @@ import SwiftData
 import UIKit
 import FamilyControls
 import DeviceActivity
+import AVKit
+import AVFoundation
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,6 +20,7 @@ struct OnboardingView: View {
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     @State private var commitmentCompleted = false
+    @State private var onboardingCompletionQueued = false
     @State private var welcomeHeadlineVisible = false
     @State private var welcomeAppsVisible: [Bool] = Array(repeating: false, count: 6)
     @State private var welcomeAppsLeaning = false
@@ -28,6 +31,15 @@ struct OnboardingView: View {
     @State private var welcomeMemoEnlarged = false
     @State private var welcomeSublineVisible = false
     @State private var welcomeCTAVisible = false
+    /// After the bouncer hero animation completes, the bezel demo materializes
+    /// in the same screen area. Only flips to true if the demo asset is
+    /// bundled — otherwise the bouncer stays as the hero.
+    @State private var welcomeBezelVisible = false
+    /// Becomes true once the bezel has finished scaling in (or, when the demo
+    /// asset is missing, at the equivalent point in time). Gates the "Let's
+    /// go" CTA so reflexive tappers can't blow past the entrance before the
+    /// bezel has even materialized.
+    @State private var welcomeCTATappable = false
     @State private var commitmentBullet1Visible = false
     @State private var commitmentBullet2Visible = false
     @State private var commitmentBullet3Visible = false
@@ -42,12 +54,15 @@ struct OnboardingView: View {
     @State private var empathyCTAVisible = false
     @State private var focusModeWasSetUp = false
     @State private var quickAssessmentBgColor: Color = AppColors.pageBg
+    @State private var quickAssessmentIsFullscreen = false
     @State private var screenTimeAuthorized = false
     @State private var isRequestingScreenTimeAccess = false
     @State private var screenTimeEstimateHours: Double = 4
     @State private var measuredScreenTimeHours: Double?
     @State private var useScreenTimeEstimate = false
     @State private var showingScreenTimeEstimateSheet = false
+    @State private var screenTimeCacheRefreshTask: Task<Void, Never>?
+    @State private var screenTimeReceiptVisible = false
     @State private var agePageAppeared = false
     @State private var receiptCount: Int = 0
     /// Single-slot cover state. iOS 17 SwiftUI silently no-ops the second of two
@@ -63,7 +78,13 @@ struct OnboardingView: View {
 
     var onComplete: () -> Void
 
-    private let totalPages = 16
+    private let totalPages = 15
+
+    init(startPage: Int = 0, previewName: String = "", onComplete: @escaping () -> Void) {
+        self.onComplete = onComplete
+        _currentPage = State(initialValue: startPage)
+        _enteredName = State(initialValue: previewName)
+    }
 
     var body: some View {
         ZStack {
@@ -71,7 +92,7 @@ struct OnboardingView: View {
             // directly so light-mode iPhones don't bleed cream pageBg through
             // the chrome around the TabView. Quick Assessment keeps its
             // dynamic bg color (the assessment animates color shifts).
-            (currentPage == 9 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()
+            (currentPage == 8 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()
 
             // Page-specific atmosphere lifted out of individual pages so
             // blurs/glows extend behind the progress bar instead of clipping
@@ -113,13 +134,15 @@ struct OnboardingView: View {
                             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         }
                         nameFieldFocused = false
+                        #if !DEBUG
                         if newPage == 1 {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                                 nameFieldFocused = true
                             }
                         }
+                        #endif
                         // Reset commitment typewriter bullets when navigating away
-                        if newPage != 15 {
+                        if newPage != 14 {
                             commitmentBullet1Visible = false
                             commitmentBullet2Visible = false
                             commitmentBullet3Visible = false
@@ -132,7 +155,7 @@ struct OnboardingView: View {
         .environment(\.colorScheme, .dark)
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "painCards", "industryScare", "empathy", "goals", "age", "screenTimeAccess", "personalScare", "quickAssessment", "planReveal", "comparison", "differentiation", "focusMode", "notificationPriming", "commitment"]
+                let stepNames = ["welcome", "name", "painCards", "industryScare", "empathy", "goals", "age", "screenTimeAccess", "quickAssessment", "planReveal", "comparison", "differentiation", "focusMode", "notificationPriming", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -167,10 +190,10 @@ struct OnboardingView: View {
         switch lastDismissedCover {
         case .brainAgeReveal:
             Analytics.onboardingStep(step: "revealDismissed")
-            goToPage(10) // → planReveal
+            goToPage(9) // → planReveal
         case .paywall:
             Analytics.onboardingStep(step: "paywallDismissed")
-            goToPage(13) // → focusMode
+            goToPage(12) // → focusMode
         case nil:
             break
         }
@@ -197,14 +220,13 @@ struct OnboardingView: View {
         case 5: goalsPage
         case 6: agePage
         case 7: screenTimeAccessPage
-        case 8: personalScarePage
-        case 9: quickAssessmentPage
-        case 10: planRevealPage
-        case 11: comparisonPage
-        case 12: differentiationPage
-        case 13: focusModePage
-        case 14: notificationPrimingPage
-        case 15: commitmentPage
+        case 8: quickAssessmentPage
+        case 9: planRevealPage
+        case 10: comparisonPage
+        case 11: differentiationPage
+        case 12: focusModePage
+        case 13: notificationPrimingPage
+        case 14: commitmentPage
         default: EmptyView()
         }
     }
@@ -221,10 +243,10 @@ struct OnboardingView: View {
 
     // MARK: - Progress Header
 
-    /// Pages where the top progress bar is hidden (full-bleed editorial moments):
-    /// 4 Empathy, 9 Quick Assessment, 10 Plan Reveal.
+    /// Pages where the top progress bar is hidden (full-bleed interactive/cinematic moments):
+    /// 8 Quick Assessment, 9 Plan Reveal.
     private var progressHeaderOpacity: Double {
-        let hiddenPages: Set<Int> = [4, 9, 10]
+        let hiddenPages: Set<Int> = [8, 9]
         return hiddenPages.contains(currentPage) ? 0 : 1
     }
 
@@ -273,8 +295,8 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 10)
-        .padding(.bottom, 4)
+        .padding(.top, currentPage == 7 ? 36 : 10)
+        .padding(.bottom, currentPage == 7 ? 0 : 4)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: currentPage)
     }
 
@@ -296,6 +318,10 @@ struct OnboardingView: View {
     private var projectionIsEstimate: Bool {
         if useScreenTimeEstimate { return true }
         return measuredScreenTimeHours == nil && readCachedScreenTimeHours() == nil
+    }
+
+    private var hasMeasuredScreenTimeHours: Bool {
+        measuredScreenTimeHours != nil || readCachedScreenTimeHours() != nil
     }
 
     private var yearsUntilSixty: Int {
@@ -327,6 +353,18 @@ struct OnboardingView: View {
         measuredScreenTimeHours = readCachedScreenTimeHours()
     }
 
+    private func startScreenTimeCacheRefreshLoop() {
+        screenTimeCacheRefreshTask?.cancel()
+        screenTimeCacheRefreshTask = Task { @MainActor in
+            for _ in 0..<12 {
+                guard !Task.isCancelled else { return }
+                refreshCachedScreenTimeHours()
+                if measuredScreenTimeHours != nil { return }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+    }
+
     private func formatProjectedHours(_ value: Int) -> String {
         if value >= 1000 {
             let rounded = Int((Double(value) / 1000.0).rounded()) * 1000
@@ -350,7 +388,7 @@ struct OnboardingView: View {
         FocusOnboardPersonalUnlocks(
             onContinue: {
                 Analytics.onboardingStep(step: "personalScare")
-                goToPage(9) // → quickAssessment
+                goToPage(8) // → quickAssessment
             },
             authorized: screenTimeAuthorized,
             count: 287,
@@ -368,12 +406,25 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {
                     OBEyebrow(text: "MEMO · DOOMSCROLL BLOCKER")
-                    (Text("Apps want you.\n") + Text("Memo wants you back.").foregroundColor(OB.accent))
-                        .font(.system(size: 38, weight: .heavy, design: .rounded))
-                        .foregroundStyle(OB.fg)
-                        .lineSpacing(1)
-                        .kerning(-0.5)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Headline morphs once the bezel materializes — shorter copy
+                    // gives the phone-in-phone room to breathe without stealing
+                    // the brand line entirely.
+                    ZStack(alignment: .topLeading) {
+                        (Text("Apps want you.\n") + Text("Memo wants you back.").foregroundColor(OB.accent))
+                            .font(.system(size: 38, weight: .heavy, design: .rounded))
+                            .foregroundStyle(OB.fg)
+                            .lineSpacing(1)
+                            .kerning(-0.5)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .opacity(welcomeBezelVisible ? 0 : 1)
+
+                        Text("Watch Memo in action.")
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .foregroundStyle(OB.fg)
+                            .kerning(-0.5)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .opacity(welcomeBezelVisible ? 1 : 0)
+                    }
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 14)
@@ -382,15 +433,22 @@ struct OnboardingView: View {
 
                 Spacer(minLength: 28)
 
-                WelcomeBouncerHero(
-                    appsVisible: welcomeAppsVisible,
-                    appsLeaning: welcomeAppsLeaning,
-                    appsPushed: welcomeAppsPushed,
-                    memoVisible: welcomeMemoVisible,
-                    memoLeaning: welcomeMemoLeaning,
-                    memoShoving: welcomeMemoShoving,
-                    memoEnlarged: welcomeMemoEnlarged
-                )
+                ZStack {
+                    WelcomeBouncerHero(
+                        appsVisible: welcomeAppsVisible,
+                        appsLeaning: welcomeAppsLeaning,
+                        appsPushed: welcomeAppsPushed,
+                        memoVisible: welcomeMemoVisible,
+                        memoLeaning: welcomeMemoLeaning,
+                        memoShoving: welcomeMemoShoving,
+                        memoEnlarged: welcomeMemoEnlarged
+                    )
+                    .opacity(welcomeBezelVisible ? 0 : 1)
+
+                    WelcomeDemoBezel(isActive: welcomeBezelVisible && currentPage == 0)
+                        .opacity(welcomeBezelVisible ? 1 : 0)
+                        .scaleEffect(welcomeBezelVisible ? 1.0 : 0.92)
+                }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 12)
 
@@ -408,10 +466,15 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {
-                OBContinueButton(title: "Let's go") {
+                OBContinueButton(title: "Take my brain back") {
                     Analytics.onboardingStep(step: "welcome")
                     currentPage = 1
                 }
+                // Disable taps until the bezel has finished materializing.
+                // Otherwise the button is hit-testable behind its .opacity(0)
+                // fade-in and a fast user can blow past the bouncer + bezel
+                // entrance without seeing them.
+                .disabled(!welcomeCTATappable)
 
                 HStack(spacing: 6) {
                     Image(systemName: "lock.fill")
@@ -425,6 +488,7 @@ struct OnboardingView: View {
             .padding(.bottom, 18)
             .opacity(welcomeCTAVisible ? 1 : 0)
             .offset(y: welcomeCTAVisible ? 0 : 8)
+            .allowsHitTesting(welcomeCTATappable)
         }
         .preferredColorScheme(.dark)
         .onAppear { startWelcomeEntrance() }
@@ -462,6 +526,8 @@ struct OnboardingView: View {
         welcomeMemoEnlarged = false
         welcomeSublineVisible = false
         welcomeCTAVisible = false
+        welcomeCTATappable = false
+        welcomeBezelVisible = false
 
         // Beat 1 — Headline (threat is being framed)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
@@ -537,6 +603,27 @@ struct OnboardingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.80) {
             withAnimation(.easeOut(duration: 0.4)) { welcomeCTAVisible = true }
         }
+
+        // Beat 9 — Metaphor → receipts. The bouncer hero hands off to the
+        // phone-in-phone bezel demo. Only fires if the asset is bundled, so
+        // shipping without onboarding_demo.mp4 cleanly falls back to the
+        // existing welcome experience.
+        if Bundle.main.url(forResource: "onboarding_demo", withExtension: "mp4") != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.30) {
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    welcomeBezelVisible = true
+                }
+            }
+        }
+
+        // Beat 10 — Unlock the CTA. Fires regardless of whether the demo
+        // asset is bundled (timing matches "bezel finished materializing"
+        // when present, and serves as the same beat-after-CTA-fade-in when
+        // absent). Always slightly later than welcomeCTAVisible (~3.20s) so
+        // the user sees the bezel land before they can tap through.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.75) {
+            welcomeCTATappable = true
+        }
     }
 
     // MARK: - Name Entry Page
@@ -573,6 +660,52 @@ struct OnboardingView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 14)
 
+                #if DEBUG
+                HStack(spacing: 10) {
+                    Button {
+                        nameFieldFocused = false
+                        Analytics.onboardingStep(step: "debugJumpBrainTest")
+                        goToPage(8)
+                    } label: {
+                        Text("Debug: Brain test")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(accent.opacity(0.9))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                    )
+                            )
+                    }
+
+                    Button {
+                        nameFieldFocused = false
+                        Analytics.onboardingStep(step: "debugJumpContract")
+                        goToPage(14)
+                    } label: {
+                        Text("Debug: Contract")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(accent.opacity(0.9))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                    )
+                            )
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                #endif
+
                 // Memo's intro — typewriter on the headline, fade-up on the question
                 VStack(alignment: .leading, spacing: 6) {
                     TypewriterText(fullText: "Hi, I'm Memo.")
@@ -598,7 +731,9 @@ struct OnboardingView: View {
                     .padding(.bottom, 8)
                     .opacity(nameInputVisible ? 1 : 0)
 
-                // Borderless underlined input — feels like signing on a line
+                // Borderless underlined input — feels like signing on a line.
+                // Whole row is one tap target so taps anywhere along the bar
+                // focus the field, not just the narrow text content area.
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("", text: $enteredName)
                     .font(.system(size: 28, weight: .heavy, design: .monospaced))
@@ -609,6 +744,7 @@ struct OnboardingView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.words)
                     .onSubmit { dismissAndAdvance() }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     // Underline shifts color on focus
                     Rectangle()
@@ -617,6 +753,8 @@ struct OnboardingView: View {
                         .animation(.easeInOut(duration: 0.25), value: nameFieldFocused)
                 }
                 .padding(.horizontal, 24)
+                .contentShape(Rectangle())
+                .onTapGesture { nameFieldFocused = true }
                 .opacity(nameInputVisible ? 1 : 0)
 
                 Spacer()
@@ -664,7 +802,9 @@ struct OnboardingView: View {
                 withAnimation(.easeOut(duration: 0.5)) { nameInputVisible = true }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                #if !DEBUG
                 if currentPage == 1 { nameFieldFocused = true }
+                #endif
             }
         }
         .onDisappear {
@@ -700,7 +840,7 @@ struct OnboardingView: View {
                         .minimumScaleFactor(0.82)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Pick up to 3. Memo's plan goes after these first.")
+                    Text("Pick up to 3. Memo builds your first counterattack here.")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(AppColors.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -731,7 +871,7 @@ struct OnboardingView: View {
 
                 Spacer(minLength: 10)
 
-                continueButton("Continue") {
+                continueButton("Personalize my plan") {
                     Analytics.onboardingStep(step: "goals")
                     goToPage(6) // → age
                 }
@@ -750,18 +890,18 @@ struct OnboardingView: View {
 
     private var screenTimeAccessPage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Spacer().frame(height: 28)
+            Spacer().frame(height: screenTimeAuthorized ? 14 : 24)
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(screenTimeAuthorized ? "Screen Time\nconnected." : "Let Memo read\nthe damage.")
+                Text(screenTimeAuthorized ? "Memo found\nthe loop." : "Let Memo read\nthe receipt.")
                     .font(.system(size: 38, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.textPrimary)
-                    .lineSpacing(1)
+                    .lineSpacing(-1)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(screenTimeAuthorized
-                     ? "Memo can now build your plan from real numbers. Apple-private. No ads. No data sold."
-                     : "Screen Time lets Memo personalize your plan and block the apps you choose. Apple-private. No ads. No data sold.")
+                     ? "Yesterday’s Screen Time is now your first receipt."
+                     : "Screen Time shows what the feed took. Memo keeps it private and builds your plan from the truth.")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(AppColors.textSecondary)
                     .lineSpacing(3)
@@ -769,72 +909,27 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 28)
 
-            ZStack(alignment: .trailing) {
-                if screenTimeAuthorized {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 13, weight: .bold))
-                        Text("Screen Time connected")
-                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                            .tracking(0.8)
-                            .textCase(.uppercase)
-                    }
-                    .foregroundStyle(AppColors.accent)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(AppColors.accent.opacity(0.42), lineWidth: 1.2)
-                    )
-                    .rotationEffect(.degrees(-2))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                }
-
-                Image("mascot-thinking")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 98, height: 98)
-                    .shadow(color: AppColors.accent.opacity(screenTimeAuthorized ? 0.34 : 0.22), radius: screenTimeAuthorized ? 22 : 16, y: 8)
-                    .accessibilityHidden(true)
+            if screenTimeAuthorized {
+                screenTimePatternReport
+                    .padding(.horizontal, 28)
+                    .padding(.top, 18)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            } else {
+                screenTimePermissionPrimer
+                    .padding(.horizontal, 28)
+                    .padding(.top, 20)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
-            .padding(.horizontal, 34)
-            .padding(.top, 14)
-            .padding(.bottom, 18)
 
-            VStack(spacing: 0) {
-                Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(
-                    title: "Real numbers",
-                    detail: screenTimeAuthorized ? "Your plan uses your real pace now." : "Your plan uses your pace, not averages.",
-                    isConfirmed: screenTimeAuthorized
-                )
-                Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(
-                    title: "Real blockers",
-                    detail: "Choose what Memo bounces after this.",
-                    isConfirmed: screenTimeAuthorized
-                )
-                Divider().overlay(AppColors.cardBorder)
-                screenTimeReasonRow(
-                    title: "Private by design",
-                    detail: "Screen Time data stays on your phone.",
-                    isConfirmed: screenTimeAuthorized
-                )
-                Divider().overlay(AppColors.cardBorder)
-            }
-            .padding(.horizontal, 28)
-
-            Spacer(minLength: 18)
+            Spacer(minLength: screenTimeAuthorized ? 6 : 18)
 
             VStack(spacing: 12) {
-                continueButton(screenTimeAuthorized ? "Show what Memo found" : "Allow Screen Time") {
+                continueButton(screenTimeAuthorized ? "Test what it did to my brain" : "Allow Screen Time") {
                     if screenTimeAuthorized {
                         Analytics.onboardingStep(step: "screenTimeAccessApproved")
                         useScreenTimeEstimate = false
                         refreshCachedScreenTimeHours()
-                        goToPage(8) // → personalScare
+                        goToPage(8) // → quickAssessment
                     } else {
                         requestScreenTimeForOnboarding()
                     }
@@ -854,13 +949,23 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .padding(.bottom, 18)
+            .padding(.bottom, screenTimeAuthorized ? 6 : 18)
         }
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
         .onAppear {
             screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
             refreshCachedScreenTimeHours()
+            if screenTimeAuthorized {
+                startScreenTimeCacheRefreshLoop()
+                animateScreenTimeReceipt()
+            } else {
+                screenTimeReceiptVisible = false
+            }
+        }
+        .onDisappear {
+            screenTimeCacheRefreshTask?.cancel()
+            screenTimeReceiptVisible = false
         }
         .sheet(isPresented: $showingScreenTimeEstimateSheet) {
             ScreenTimeEstimateSheet(
@@ -870,7 +975,7 @@ struct OnboardingView: View {
                     measuredScreenTimeHours = nil
                     showingScreenTimeEstimateSheet = false
                     Analytics.onboardingStep(step: "screenTimeEstimate")
-                    goToPage(8) // → personalScare
+                    goToPage(8) // → quickAssessment
                 }
             )
             .presentationDetents([.medium, .large])
@@ -885,6 +990,368 @@ struct OnboardingView: View {
         return String(format: "%.1fh", effectiveDailyScreenTimeHours)
     }
 
+    private var screenTimeHoursNumber: String {
+        if effectiveDailyScreenTimeHours >= 8 && projectionIsEstimate {
+            return "8+"
+        }
+        return String(format: "%.1f", effectiveDailyScreenTimeHours)
+    }
+
+    private var screenTimeDayUsedFraction: CGFloat {
+        CGFloat(min(max(effectiveDailyScreenTimeHours / 24, 0.035), 1))
+    }
+
+    private var screenTimeRemainingLabel: String {
+        let remaining = max(0, 24 - effectiveDailyScreenTimeHours)
+        return String(format: "%.1fh left", remaining)
+    }
+
+    private var yesterdayDeviceActivityFilter: DeviceActivityFilter {
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: Date())
+        let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
+        return DeviceActivityFilter(
+            segment: .daily(during: DateInterval(start: yesterdayStart, end: todayStart)),
+            users: .all,
+            devices: .init([.iPhone])
+        )
+    }
+
+    private var weeklyScreenTimeDeviceActivityFilter: DeviceActivityFilter {
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: Date())
+        let weekStart = calendar.date(byAdding: .day, value: -7, to: todayStart) ?? todayStart
+        return DeviceActivityFilter(
+            segment: .daily(during: DateInterval(start: weekStart, end: todayStart)),
+            users: .all,
+            devices: .init([.iPhone])
+        )
+    }
+
+    private var screenTimePatternReport: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            connectedStamp
+                .opacity(screenTimeReceiptVisible ? 1 : 0)
+                .offset(y: screenTimeReceiptVisible ? 0 : 8)
+                .animation(.easeOut(duration: 0.28).delay(0.04), value: screenTimeReceiptVisible)
+
+            if screenTimeAuthorized {
+                DeviceActivityReport(.screenTime, filter: yesterdayDeviceActivityFilter)
+                    .frame(height: 104)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .opacity(screenTimeReceiptVisible ? 1 : 0)
+                    .scaleEffect(screenTimeReceiptVisible ? 1 : 0.96, anchor: .leading)
+                    .offset(y: screenTimeReceiptVisible ? 0 : 10)
+                    .animation(.spring(response: 0.42, dampingFraction: 0.86).delay(0.14), value: screenTimeReceiptVisible)
+            } else {
+                screenTimeMetricBlock(
+                    eyebrow: "estimated screen time",
+                    value: screenTimeHoursNumber,
+                    suffix: "h",
+                    tint: AppColors.coral
+                )
+            }
+
+            screenTimeReceiptChart
+                .opacity(screenTimeReceiptVisible ? 1 : 0)
+                .offset(y: screenTimeReceiptVisible ? 0 : 12)
+                .animation(.easeOut(duration: 0.34).delay(0.28), value: screenTimeReceiptVisible)
+
+            Divider().overlay(AppColors.cardBorder.opacity(0.7))
+                .opacity(screenTimeReceiptVisible ? 1 : 0)
+                .animation(.easeOut(duration: 0.24).delay(0.40), value: screenTimeReceiptVisible)
+
+            HStack(alignment: .top, spacing: 12) {
+                Rectangle()
+                    .fill(AppColors.accent)
+                    .frame(width: 3, height: 52)
+                    .clipShape(Capsule())
+
+                Text("That’s not willpower. That’s a pattern.")
+                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 2)
+            .padding(.bottom, -2)
+            .opacity(screenTimeReceiptVisible ? 1 : 0)
+            .offset(y: screenTimeReceiptVisible ? 0 : 8)
+            .animation(.easeOut(duration: 0.30).delay(0.46), value: screenTimeReceiptVisible)
+
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 11, weight: .bold))
+                Text("Stays on your phone")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .tracking(0.9)
+                    .textCase(.uppercase)
+            }
+            .foregroundStyle(AppColors.textTertiary)
+            .opacity(screenTimeReceiptVisible ? 1 : 0)
+            .animation(.easeOut(duration: 0.24).delay(0.58), value: screenTimeReceiptVisible)
+        }
+        .padding(15)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.cardElevated.opacity(0.86),
+                            AppColors.pageBg.opacity(0.78)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(AppColors.cardBorder.opacity(0.85), lineWidth: 1)
+                )
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(AppColors.coral.opacity(0.22))
+                        .frame(width: 176, height: 176)
+                        .blur(radius: 48)
+                        .offset(x: 58, y: 34)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    Circle()
+                        .fill(AppColors.accent.opacity(0.18))
+                        .frame(width: 188, height: 188)
+                        .blur(radius: 54)
+                        .offset(x: -68, y: 50)
+                }
+        )
+    }
+
+    private var screenTimeReceiptChart: some View {
+        DeviceActivityReport(.screenTimeWeekly, filter: weeklyScreenTimeDeviceActivityFilter)
+            .frame(height: 106)
+    }
+
+    private func screenTimeMetricBlock(eyebrow: String, value: String, suffix: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(eyebrow)
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .tracking(1.0)
+                .textCase(.uppercase)
+                .foregroundStyle(AppColors.textTertiary)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 74, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(tint)
+                    .minimumScaleFactor(0.62)
+                    .lineLimit(1)
+
+                Text(suffix)
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+        }
+    }
+
+    private var screenTimePermissionPrimer: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            screenTimePrivateReceiptPreview
+
+            VStack(spacing: 0) {
+                permissionReasonRow(
+                    icon: "waveform.path.ecg",
+                    title: "Real usage",
+                    detail: "No guessing, no averages."
+                )
+                Divider().overlay(AppColors.cardBorder.opacity(0.72))
+                permissionReasonRow(
+                    icon: "hand.raised.fill",
+                    title: "Pick your apps",
+                    detail: "You choose what Memo blocks."
+                )
+                Divider().overlay(AppColors.cardBorder.opacity(0.72))
+                permissionReasonRow(
+                    icon: "lock.fill",
+                    title: "Stays on device",
+                    detail: "Private by Apple design."
+                )
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+
+    private var screenTimePrivateReceiptPreview: some View {
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.cardElevated.opacity(0.88),
+                            AppColors.pageBg.opacity(0.72)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(AppColors.cardBorder.opacity(0.78), lineWidth: 1)
+                )
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(AppColors.electricViolet.opacity(0.18))
+                        .frame(width: 140, height: 140)
+                        .blur(radius: 40)
+                        .offset(x: 44, y: -22)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    Circle()
+                        .fill(AppColors.accent.opacity(0.16))
+                        .frame(width: 150, height: 150)
+                        .blur(radius: 44)
+                        .offset(x: -46, y: 38)
+                }
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 15, weight: .bold))
+                    Text("Private Screen Time receipt")
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                }
+                .foregroundStyle(AppColors.accent)
+
+                HStack(alignment: .bottom, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Real data")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColors.textSecondary)
+
+                        screenTimeMiniBars
+                    }
+
+                    Spacer(minLength: 8)
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("on-device")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .tracking(0.8)
+                            .textCase(.uppercase)
+                            .foregroundStyle(AppColors.textTertiary)
+                        Text("private")
+                            .font(.system(size: 22, weight: .black, design: .rounded))
+                            .foregroundStyle(AppColors.textPrimary)
+                    }
+                    .padding(.trailing, 4)
+                }
+            }
+            .padding(16)
+
+            Image("mascot-thinking")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 66, height: 66)
+                .shadow(color: AppColors.electricViolet.opacity(0.30), radius: 16, y: 7)
+                .offset(x: 7, y: 10)
+                .accessibilityHidden(true)
+        }
+        .frame(height: 154)
+    }
+
+    private var screenTimeMiniBars: some View {
+        HStack(alignment: .bottom, spacing: 6) {
+            ForEach(Array([0.32, 0.66, 0.48, 0.86, 0.56].enumerated()), id: \.offset) { index, value in
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.electricViolet, AppColors.periwinkle],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 14, height: 48 * value)
+                    .overlay(alignment: .top) {
+                        if index == 3 {
+                            Capsule()
+                                .fill(AppColors.coral)
+                                .frame(width: 14, height: 4)
+                        }
+                    }
+            }
+        }
+        .frame(height: 52, alignment: .bottom)
+    }
+
+    private func permissionReasonRow(icon: String, title: String, detail: String) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.accent.opacity(0.12))
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(AppColors.accent)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 13)
+    }
+
+    private var connectedStamp: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 18, weight: .bold))
+            Text("Screen Time connected")
+                .font(.system(size: 17, weight: .heavy, design: .rounded))
+        }
+        .foregroundStyle(AppColors.accent)
+    }
+
+    private var screenTimeDayStrip: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(AppColors.cardBorder.opacity(0.55))
+
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [AppColors.coralDeep, AppColors.coral],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: proxy.size.width * screenTimeDayUsedFraction)
+                        .shadow(color: AppColors.coral.opacity(0.32), radius: 14, y: 5)
+                }
+            }
+            .frame(height: 13)
+
+            HStack {
+                Text("\(dailyScreenTimeLabel) used")
+                Spacer()
+                Text(screenTimeRemainingLabel)
+            }
+            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+            .tracking(0.5)
+            .foregroundStyle(AppColors.textTertiary)
+            .textCase(.uppercase)
+        }
+    }
+
     private func requestScreenTimeForOnboarding() {
         isRequestingScreenTimeAccess = true
         Task {
@@ -895,11 +1362,21 @@ struct OnboardingView: View {
             if screenTimeAuthorized {
                 useScreenTimeEstimate = false
                 Analytics.onboardingStep(step: "screenTimeAccessApproved")
+                startScreenTimeCacheRefreshLoop()
+                animateScreenTimeReceipt()
             } else {
                 useScreenTimeEstimate = true
                 Analytics.onboardingStep(step: "screenTimeAccessDenied")
                 showingScreenTimeEstimateSheet = true
             }
+        }
+    }
+
+    private func animateScreenTimeReceipt() {
+        screenTimeReceiptVisible = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            guard screenTimeAuthorized else { return }
+            screenTimeReceiptVisible = true
         }
     }
 
@@ -945,16 +1422,17 @@ struct OnboardingView: View {
                 Spacer().frame(height: 28)
 
                 EmpathyFeedWallScene(sceneVisible: empathySceneVisible, feedMuted: empathySignalBroken)
-                    .frame(height: 330)
-                    .padding(.top, 2)
+                    .frame(height: 306)
+                    .padding(.top, 0)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    VStack(alignment: .leading, spacing: -2) {
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: -8) {
                         Text("Your brain")
                         Text("isn't broken.")
                     }
                     .font(.brand(size: 38, weight: .heavy))
                     .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(-4)
                     .fixedSize(horizontal: false, vertical: true)
                     .opacity(empathyCopyVisible ? 1 : 0)
                     .offset(y: empathyCopyVisible ? 0 : 10)
@@ -962,6 +1440,8 @@ struct OnboardingView: View {
                     Text("It's been hijacked.")
                         .font(.brand(size: 38, weight: .heavy))
                         .foregroundStyle(AppColors.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                         .fixedSize(horizontal: false, vertical: true)
                         .scaleEffect(empathySignalBroken ? 1 : 0.97, anchor: .leading)
                         .opacity(empathySignalBroken ? 1 : 0)
@@ -1026,16 +1506,21 @@ struct OnboardingView: View {
 
     private var agePage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Spacer().frame(height: 22)
+            Spacer().frame(height: 18)
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("How old is the brain\nwe're defending?")
-                    .font(.brand(size: 32, weight: .heavy))
+            VStack(alignment: .leading, spacing: 11) {
+                Text("LIFETIME MATH")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(AppColors.accent)
+
+                Text("How many years\nare we defending?")
+                    .font(.brand(size: 35, weight: .heavy))
                     .foregroundStyle(AppColors.textPrimary)
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Memo uses this to calculate what the feed costs you over time.")
+                Text("Memo uses your age to calculate what the feed costs by 60.")
                     .font(.brand(size: 16, weight: .medium))
                     .foregroundStyle(AppColors.textSecondary)
                     .lineSpacing(3)
@@ -1044,19 +1529,23 @@ struct OnboardingView: View {
             .opacity(agePageAppeared ? 1 : 0)
             .offset(y: agePageAppeared ? 0 : 10)
 
-            Spacer().frame(height: 82)
+            Spacer().frame(height: 38)
 
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 AgeNumberRail(selectedAge: $selectedAge)
                     .opacity(agePageAppeared ? 1 : 0)
                     .scaleEffect(agePageAppeared ? 1 : 0.96)
+
+                ageProjectionStrip
+                    .opacity(agePageAppeared ? 1 : 0)
+                    .offset(y: agePageAppeared ? 0 : 6)
 
                 // Quiet inline privacy line — no border, no box, no coral. Trust whispers.
                 HStack(spacing: 6) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 9, weight: .semibold))
                     Text("Stays on your phone · Never sold")
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         .tracking(0.4)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
@@ -1067,28 +1556,17 @@ struct OnboardingView: View {
                 .offset(y: agePageAppeared ? 0 : 6)
             }
 
-            Spacer(minLength: 18)
+            Spacer(minLength: 12)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 Button {
                     Analytics.onboardingStep(step: "age")
                     goToPage(7) // → screenTimeAccess
                 } label: {
-                    Text("Run my numbers")
+                    Text("Calculate my cost")
                         .gradientButton()
                 }
                 .accessibilityHint("Uses your age to personalize the next onboarding step")
-
-                Button {
-                    selectedAge = 0
-                    Analytics.onboardingStep(step: "age")
-                    goToPage(7) // → screenTimeAccess
-                } label: {
-                    Text("Skip")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                }
             }
             .frame(maxWidth: .infinity)
         }
@@ -1108,15 +1586,164 @@ struct OnboardingView: View {
         }
     }
 
+    private var ageProjectionStrip: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(yearsUntilSixty)")
+                    .font(.system(size: 28, weight: .black, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(AppColors.accent)
+
+                Text(yearsUntilSixty == 1 ? "year left in the projection" : "years left in the projection")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.76))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            VStack(spacing: 8) {
+                GeometryReader { proxy in
+                    let trackWidth = proxy.size.width
+                    let tickCount = 5
+
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(AppColors.cardBorder.opacity(0.56))
+                            .frame(height: 16)
+
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        AppColors.accent,
+                                        AppColors.violet.opacity(0.92),
+                                        AppColors.coral.opacity(0.94)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(height: 16)
+                            .overlay(alignment: .top) {
+                                Capsule()
+                                    .fill(AppColors.textPrimary.opacity(0.18))
+                                    .frame(height: 5)
+                                    .padding(.horizontal, 6)
+                                    .padding(.top, 3)
+                            }
+                            .shadow(color: AppColors.accent.opacity(0.28), radius: 14, y: 6)
+
+                        ForEach(1..<tickCount, id: \.self) { index in
+                            Capsule()
+                                .fill(AppColors.pageBg.opacity(0.58))
+                                .frame(width: 2, height: 18)
+                                .offset(x: trackWidth * CGFloat(index) / CGFloat(tickCount))
+                        }
+
+                        Circle()
+                            .fill(AppColors.accent)
+                            .frame(width: 18, height: 18)
+                            .overlay {
+                                Circle()
+                                    .stroke(AppColors.textPrimary.opacity(0.82), lineWidth: 2)
+                            }
+                            .shadow(color: AppColors.accent.opacity(0.65), radius: 12)
+                            .offset(x: -1)
+
+                        Circle()
+                            .fill(AppColors.coral)
+                            .frame(width: 18, height: 18)
+                            .overlay {
+                                Circle()
+                                    .stroke(AppColors.textPrimary.opacity(0.66), lineWidth: 2)
+                            }
+                            .shadow(color: AppColors.coral.opacity(0.46), radius: 12)
+                            .offset(x: trackWidth - 17)
+                    }
+                }
+                .frame(height: 24)
+
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("TODAY")
+                            .foregroundStyle(AppColors.accent)
+                        Text("\(max(selectedAge, 18))")
+                            .font(.system(size: 13, weight: .black, design: .monospaced))
+                            .monospacedDigit()
+                    }
+
+                    Spacer()
+
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("AGE 60")
+                            .foregroundStyle(AppColors.coral.opacity(0.92))
+                        Text("projection")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .tracking(1.0)
+                            .foregroundStyle(AppColors.textTertiary.opacity(0.58))
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                }
+                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .tracking(1.1)
+                .foregroundStyle(AppColors.textTertiary.opacity(0.76))
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 13)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppColors.cardElevated.opacity(0.72))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(AppColors.cardBorder.opacity(0.8), lineWidth: 1)
+                }
+        }
+    }
+
     // MARK: - Quick Assessment Page
 
     private var quickAssessmentPage: some View {
-        QuickAssessmentView(backgroundColor: $quickAssessmentBgColor) { result in
-            assessmentResult = result
-            Analytics.onboardingStep(step: "quickAssessment")
-            // Present dramatic reveal as a full-screen cover so it escapes the TabView.
-            // Cover only fires from a legitimate onComplete — swiping the TabView won't trigger it.
-            presentedCover = .brainAgeReveal
+        ZStack(alignment: .topTrailing) {
+            QuickAssessmentView(
+                backgroundColor: $quickAssessmentBgColor,
+                isInFullscreenPhase: $quickAssessmentIsFullscreen
+            ) { result in
+                assessmentResult = result
+                Analytics.onboardingStep(step: "quickAssessment")
+                // Present dramatic reveal as a full-screen cover so it escapes the TabView.
+                // Cover only fires from a legitimate onComplete — swiping the TabView won't trigger it.
+                presentedCover = .brainAgeReveal
+            }
+
+            #if DEBUG
+            if !quickAssessmentIsFullscreen {
+            Button {
+                Analytics.onboardingStep(step: "debugSkipBrainAgeTest")
+                assessmentResult = nil
+                quickAssessmentBgColor = AppColors.pageBg
+                goToPage(9) // → planReveal
+            } label: {
+                Text("Skip test")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.cardElevated.opacity(0.92))
+                            .overlay(
+                                Capsule()
+                                    .stroke(AppColors.accent.opacity(0.32), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 56)
+            .padding(.trailing, 24)
+            }
+            #endif
         }
     }
 
@@ -1136,7 +1763,7 @@ struct OnboardingView: View {
             receiptCount: receiptCount,
             onContinue: {
                 Analytics.onboardingStep(step: "planReveal")
-                goToPage(11) // → comparison
+            goToPage(10) // → comparison
             }
         )
     }
@@ -1146,7 +1773,7 @@ struct OnboardingView: View {
     private var notificationPrimingPage: some View {
         OnboardingNotificationPrimingView { granted in
             notificationsEnabled = granted
-            goToPage(15) // → commitment
+            goToPage(14) // → commitment
         }
     }
 
@@ -1176,7 +1803,7 @@ struct OnboardingView: View {
             dailyHours: effectiveDailyScreenTimeHours,
             brainAge: assessmentResult?.brainAge,
             onContinue: {
-                goToPage(12) // → differentiation
+                goToPage(11) // → differentiation
             }
         )
     }
@@ -1193,47 +1820,58 @@ struct OnboardingView: View {
     // MARK: - Commitment Page
 
     private var commitmentPage: some View {
-        VStack(spacing: 0) {
-            Spacer().frame(height: 80)
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 46)
 
-            // Title with user's name
-            Group {
-                if enteredName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Your plan")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                } else {
-                    (Text(enteredName.trimmingCharacters(in: .whitespacesAndNewlines))
-                        .foregroundColor(AppColors.accent)
-                    + Text("'s plan"))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                }
-            }
-            .padding(.bottom, 28)
+            Text("FINAL STEP")
+                .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                .tracking(2.4)
+                .foregroundStyle(AppColors.accent)
+                .padding(.bottom, 12)
 
-            // Commitment bullets
-            VStack(alignment: .leading, spacing: 16) {
-                if commitmentBullet1Visible {
-                    TypewriterText(fullText: "• I'll train before the feed gets me", speed: 0.025)
-                        .font(.subheadline)
-                        .transition(.opacity)
-                }
-                if commitmentBullet2Visible {
-                    TypewriterText(fullText: "• I'll make scrolling cost reps", speed: 0.025)
-                        .font(.subheadline)
-                        .transition(.opacity)
-                }
-                if commitmentBullet3Visible {
-                    TypewriterText(fullText: "• I'll let Memo block the apps draining me", speed: 0.025)
-                        .font(.subheadline)
-                        .transition(.opacity)
-                }
-                if commitmentBullet4Visible {
-                    TypewriterText(fullText: "• I'll stop being free real estate", speed: 0.025)
-                        .font(.subheadline)
-                        .transition(.opacity)
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Sign the pact.")
+                    .font(.brand(size: 35, weight: .heavy))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+
+                Text("Make the feed wait.")
+                    .font(.brand(size: 32, weight: .heavy))
+                    .foregroundStyle(AppColors.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
-            .padding(.horizontal, 32)
+            .padding(.bottom, 12)
+
+            Text("Hold the seal and your name signs the plan. Training comes before scrolling.")
+                .font(.brand(size: 16, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineSpacing(4)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 18)
+
+            CommitmentPactSheet(
+                name: enteredName.trimmingCharacters(in: .whitespacesAndNewlines),
+                isSigned: commitmentCompleted,
+                signatureProgress: holdProgress,
+                line1Visible: commitmentBullet1Visible,
+                line2Visible: commitmentBullet2Visible,
+                line3Visible: commitmentBullet3Visible,
+                line4Visible: commitmentBullet4Visible,
+                onHoldStart: {
+                    guard !commitmentCompleted else { return }
+                    if holdTimer == nil {
+                        startHoldTimer()
+                    }
+                },
+                onHoldEnd: {
+                    if !commitmentCompleted {
+                        cancelHoldTimer()
+                    }
+                }
+            )
             .onAppear {
                 let delays = [0.15, 0.85, 1.55, 2.25]
                 DispatchQueue.main.asyncAfter(deadline: .now() + delays[0]) {
@@ -1252,120 +1890,395 @@ struct OnboardingView: View {
 
             Spacer()
 
-            // Hold to agree — organic shape
-            VStack(spacing: 12) {
-                ZStack {
-                    // Invisible hit target
-                    Circle()
-                        .fill(Color.clear)
-                        .frame(width: 100, height: 100)
-                        .contentShape(Circle())
-
-                    // Base grey ring (always visible)
-                    OrganicCircle()
-                        .stroke(AppColors.cardBorder, lineWidth: 2.5)
-                        .frame(width: 80, height: 80)
-
-                    // Bright accent ring fades in as you hold
-                    OrganicCircle()
-                        .stroke(AppColors.accent, lineWidth: 3.5)
-                        .frame(width: 80, height: 80)
-                        .opacity(holdProgress)
-                        .shadow(color: AppColors.accent.opacity(0.7 * holdProgress), radius: 14 * holdProgress)
-                        .animation(.easeOut(duration: 0.08), value: holdProgress)
-
-                    // Progress fill — strong at full hold
-                    OrganicCircle()
-                        .fill(AppColors.accent.opacity(0.85 * holdProgress))
-                        .frame(width: 74, height: 74)
-                        .scaleEffect(0.5 + 0.5 * holdProgress)
-                        .shadow(color: AppColors.accent.opacity(0.5 * holdProgress), radius: 16 * holdProgress)
-                        .animation(.easeOut(duration: 0.08), value: holdProgress)
-
-                    // Completed state
-                    if commitmentCompleted {
-                        OrganicCircle()
-                            .fill(AppColors.accent)
-                            .frame(width: 74, height: 74)
-                            .shadow(color: AppColors.accent.opacity(0.6), radius: 18)
-
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .transition(.scale.combined(with: .opacity))
-                    }
-                }
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            guard !commitmentCompleted else { return }
-                            if holdTimer == nil {
-                                startHoldTimer()
-                            }
-                        }
-                        .onEnded { _ in
-                            if !commitmentCompleted {
-                                cancelHoldTimer()
-                            }
-                        }
-                )
-
+            VStack(spacing: 6) {
                 if !commitmentCompleted {
-                    Text("Hold to agree")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text("Hold the seal to sign")
+                        .font(.brand(size: 22, weight: .heavy))
                         .foregroundStyle(holdProgress > 0.05 ? AppColors.accent : Color.primary)
                         .animation(.easeOut(duration: 0.15), value: holdProgress > 0.05)
 
-                    Text("Hold to commit. The feed doesn't get a vote.")
-                        .font(.brand(size: 14, weight: .semibold))
-                        .foregroundStyle(.tertiary)
+                    Text("The feed doesn't get a vote.")
+                        .font(.brand(size: 15, weight: .semibold))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
+                } else {
+                    Text("Signed.")
+                        .font(.brand(size: 22, weight: .heavy))
+                        .foregroundStyle(AppColors.accent)
+                        .transition(.opacity.combined(with: .scale))
                 }
             }
-            .padding(.bottom, 32)
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 22)
 
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.caption2)
                 Text("No ads. No data sold. Memo stays on your side.")
-                    .font(.caption)
+                    .font(.brand(size: 13, weight: .medium))
             }
-            .foregroundStyle(.tertiary)
-            .padding(.top, 8)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
         }
+        .padding(.horizontal, 28)
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
     }
 
-    private func commitmentBullet(_ prefix: String, bold: String, suffix: String = "") -> some View {
-        (Text("• " + prefix)
-            .font(.subheadline)
-        + Text(bold)
-            .font(.subheadline.weight(.bold))
-        + Text(suffix)
-            .font(.subheadline))
-            .foregroundStyle(.primary)
+    private struct CommitmentPactSheet: View {
+        let name: String
+        let isSigned: Bool
+        let signatureProgress: CGFloat
+        let line1Visible: Bool
+        let line2Visible: Bool
+        let line3Visible: Bool
+        let line4Visible: Bool
+        let onHoldStart: () -> Void
+        let onHoldEnd: () -> Void
+
+        private var pactTitle: String {
+            name.isEmpty ? "Memo pact" : "\(name)'s Memo pact"
+        }
+
+        private var signatureName: String {
+            name.isEmpty ? "Memo trainee" : name
+        }
+
+        var body: some View {
+            ZStack(alignment: .bottomTrailing) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(pactTitle)
+                                .font(.brand(size: 24, weight: .heavy))
+                                .foregroundStyle(.primary)
+
+                            Text("Training first. Feed second.")
+                                .font(.brand(size: 14, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(isSigned ? "SIGNED" : "READY")
+                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                            .tracking(1.6)
+                            .foregroundStyle(isSigned ? AppColors.coral : AppColors.accent)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background {
+                                Capsule()
+                                    .stroke((isSigned ? AppColors.coral : AppColors.accent).opacity(0.6), lineWidth: 1)
+                            }
+                    }
+                    .padding(.bottom, 18)
+
+                    PactDivider()
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        CommitmentPactLine(isVisible: line1Visible, text: "Train before I scroll")
+                        CommitmentPactLine(isVisible: line2Visible, text: "Make unlocks cost reps")
+                        CommitmentPactLine(isVisible: line3Visible, text: "Bounce the apps draining me")
+                        CommitmentPactLine(isVisible: line4Visible, text: "Don't let Big Social colonize my attention")
+                    }
+
+                    SignatureLine(
+                        name: signatureName,
+                        progress: signatureProgress,
+                        isSigned: isSigned
+                    )
+                    .padding(.top, 10)
+                }
+                .padding(18)
+                .padding(.bottom, 10)
+                .background {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(AppColors.cardElevated)
+                        .overlay(alignment: .top) {
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(AppColors.accent.opacity(0.24), lineWidth: 1.2)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(AppColors.cardBorder.opacity(0.9), lineWidth: 1)
+                        }
+                        .shadow(color: AppColors.accent.opacity(0.12), radius: 28, y: 14)
+                }
+
+                if isSigned {
+                    Text("SIGNED")
+                        .font(.system(size: 34, weight: .black, design: .monospaced))
+                        .tracking(2.5)
+                        .foregroundStyle(AppColors.coral)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(AppColors.coral, lineWidth: 2)
+                        }
+                        .rotationEffect(.degrees(-9))
+                        .offset(x: -16, y: -70)
+                        .transition(.scale(scale: 1.2).combined(with: .opacity))
+                }
+
+                Image("mascot-celebrate")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 86, height: 86)
+                    .shadow(color: AppColors.accent.opacity(0.25), radius: 18, y: 8)
+                    .offset(x: -92, y: 42)
+                    .accessibilityHidden(true)
+
+                CommitmentSeal(progress: signatureProgress, isSigned: isSigned)
+                    .offset(x: 6, y: 22)
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { _ in
+                                guard !isSigned else { return }
+                                onHoldStart()
+                            }
+                            .onEnded { _ in
+                                guard !isSigned else { return }
+                                onHoldEnd()
+                            }
+                    )
+            }
+            .padding(.trailing, 8)
+            .padding(.bottom, 42)
+        }
+    }
+
+    private struct SignatureLine: View {
+        let name: String
+        let progress: CGFloat
+        let isSigned: Bool
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("signature")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .tracking(1.8)
+                    .foregroundStyle(.tertiary)
+
+                GeometryReader { proxy in
+                    let width = proxy.size.width
+                    let clamped = min(max(progress, 0), 1)
+                    let revealWidth = max(1, width * clamped)
+
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(AppColors.cardBorder.opacity(0.85))
+                            .frame(height: 1)
+                            .offset(y: 18)
+
+                        Text(name)
+                            .font(.custom("Snell Roundhand", size: 38).weight(.bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.58)
+                            .foregroundStyle(AppColors.accent)
+                            .shadow(color: AppColors.accent.opacity(0.35), radius: 10)
+                            .mask(alignment: .leading) {
+                                Rectangle()
+                                    .frame(width: isSigned ? width : revealWidth)
+                            }
+
+                        Circle()
+                            .fill(AppColors.accent)
+                            .frame(width: 9, height: 9)
+                            .shadow(color: AppColors.accent.opacity(0.65), radius: 8)
+                            .offset(x: max(0, revealWidth - 5), y: 18)
+                            .opacity(isSigned || clamped <= 0.02 ? 0 : 1)
+                    }
+                }
+                .frame(height: 52)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Signature \(name)")
+        }
+    }
+
+    private struct CommitmentPactLine: View {
+        let isVisible: Bool
+        let text: String
+        var showDivider = true
+
+        var body: some View {
+            VStack(spacing: 0) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundStyle(AppColors.accent)
+                        .frame(width: 20, height: 20)
+                        .background {
+                            Circle()
+                                .fill(AppColors.accent.opacity(0.16))
+                        }
+                        .opacity(isVisible ? 1 : 0.18)
+
+                    Group {
+                        if isVisible {
+                            TypewriterText(fullText: text, speed: 0.025)
+                                .transition(.opacity)
+                        } else {
+                            Text(text)
+                                .redacted(reason: .placeholder)
+                                .opacity(0.18)
+                        }
+                    }
+                    .font(.brand(size: 15, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.vertical, 11)
+
+                if showDivider {
+                    PactDivider()
+                }
+            }
+        }
+    }
+
+    private struct PactDivider: View {
+        var body: some View {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.75))
+                .frame(height: 1)
+        }
+    }
+
+    private struct CommitmentSeal: View {
+        let progress: CGFloat
+        let isSigned: Bool
+
+        var body: some View {
+            let sealWidth: CGFloat = 118
+            let sealHeight: CGFloat = 96
+            let sealRotation: Angle = .degrees(-8)
+
+            ZStack {
+                ZStack {
+                    SealBlobShape()
+                        .fill(AppColors.accent.opacity(0.10 + 0.52 * progress))
+
+                    SealBlobShape()
+                        .stroke(AppColors.accent.opacity(isSigned ? 0.85 : 0.34 + 0.46 * progress), lineWidth: 2)
+
+                    SealBlobShape()
+                        .trim(from: 0, to: min(progress, 1))
+                        .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                        .shadow(color: AppColors.accent.opacity(0.55 * progress), radius: 14 * progress)
+                        .animation(.easeOut(duration: 0.08), value: progress)
+                }
+                .frame(width: sealWidth, height: sealHeight)
+                .rotationEffect(sealRotation)
+                .shadow(color: AppColors.accent.opacity(0.22 + 0.34 * progress), radius: 18 + 8 * progress, y: 8)
+                .overlay {
+                    if isSigned {
+                        SealBlobShape()
+                            .stroke(AppColors.coral.opacity(0.75), lineWidth: 2)
+                            .frame(width: sealWidth - 12, height: sealHeight - 12)
+                            .rotationEffect(sealRotation)
+                            .transition(.opacity)
+                    }
+                }
+
+                VStack(spacing: 2) {
+                    if isSigned {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 25, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text("HOLD")
+                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                            .tracking(1.5)
+                            .foregroundStyle(AppColors.textTertiary)
+
+                        Text("SIGN")
+                            .font(.system(size: 21, weight: .black, design: .monospaced))
+                            .tracking(1.4)
+                            .foregroundStyle(progress > 0.08 ? .white : AppColors.accent)
+                    }
+                }
+                .rotationEffect(.degrees(-7))
+                .scaleEffect(isSigned ? 1.08 : 1)
+                .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isSigned)
+
+            }
+            .frame(width: 136, height: 118)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private struct SealBlobShape: Shape {
+        func path(in rect: CGRect) -> Path {
+            let w = rect.width
+            let h = rect.height
+
+            var path = Path()
+            path.move(to: CGPoint(x: 0.18 * w, y: 0.16 * h))
+            path.addCurve(
+                to: CGPoint(x: 0.62 * w, y: 0.08 * h),
+                control1: CGPoint(x: 0.30 * w, y: -0.01 * h),
+                control2: CGPoint(x: 0.48 * w, y: 0.02 * h)
+            )
+            path.addCurve(
+                to: CGPoint(x: 0.92 * w, y: 0.32 * h),
+                control1: CGPoint(x: 0.78 * w, y: 0.00 * h),
+                control2: CGPoint(x: 0.91 * w, y: 0.15 * h)
+            )
+            path.addCurve(
+                to: CGPoint(x: 0.84 * w, y: 0.76 * h),
+                control1: CGPoint(x: 1.02 * w, y: 0.47 * h),
+                control2: CGPoint(x: 0.96 * w, y: 0.66 * h)
+            )
+            path.addCurve(
+                to: CGPoint(x: 0.45 * w, y: 0.94 * h),
+                control1: CGPoint(x: 0.75 * w, y: 0.96 * h),
+                control2: CGPoint(x: 0.58 * w, y: 0.98 * h)
+            )
+            path.addCurve(
+                to: CGPoint(x: 0.10 * w, y: 0.78 * h),
+                control1: CGPoint(x: 0.30 * w, y: 1.04 * h),
+                control2: CGPoint(x: 0.12 * w, y: 0.96 * h)
+            )
+            path.addCurve(
+                to: CGPoint(x: 0.18 * w, y: 0.16 * h),
+                control1: CGPoint(x: -0.03 * w, y: 0.60 * h),
+                control2: CGPoint(x: 0.00 * w, y: 0.32 * h)
+            )
+            path.closeSubpath()
+            return path
+        }
     }
 
     private func startHoldTimer() {
+        guard !onboardingCompletionQueued else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         holdTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             Task { @MainActor in
+                guard !onboardingCompletionQueued else {
+                    cancelHoldTimer()
+                    return
+                }
                 holdProgress += 0.05 / 3.0 // 3 seconds total
                 if holdProgress.truncatingRemainder(dividingBy: 0.1) < 0.02 {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 }
                 if holdProgress >= 1.0 {
                     holdProgress = 1.0
+                    onboardingCompletionQueued = true
                     cancelHoldTimer()
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                         commitmentCompleted = true
                     }
                     Analytics.onboardingStep(step: "commitment")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.15) {
                         completeOnboarding()
                     }
                 }
@@ -1386,16 +2299,16 @@ struct OnboardingView: View {
             FocusModeSetupView(onComplete: {
                 focusModeWasSetUp = true
                 Analytics.onboardingStep(step: "focusModeCompleted")
-                goToPage(14) // → notificationPriming
+                goToPage(13) // → notificationPriming
             })
 
-            // "Not now" skip button
+            // "Set up later" skip button
             Button {
                 Analytics.onboardingStep(step: "focusModeSkipped")
                 Analytics.focusSetupSkipped()
-                goToPage(14) // → notificationPriming
+                goToPage(13) // → notificationPriming
             } label: {
-                Text("Not now")
+                Text("Set up later")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -1413,6 +2326,7 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
+        guard onboardingCompletionQueued else { return }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         let user: User
         if let existing = users.first {
@@ -1740,19 +2654,19 @@ struct EmpathyFeedWallScene: View {
                     startRadius: 8,
                     endRadius: 126
                 )
-                .frame(width: 220, height: 220)
-                .position(x: 124, y: 218)
+                .frame(width: 248, height: 248)
+                .position(x: 126, y: 204)
                 .blur(radius: 4)
                 .opacity(sceneVisible ? 1 : 0)
 
                 Image("mascot-cool")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 126, height: 126)
+                    .frame(width: 156, height: 156)
                     .rotationEffect(.degrees(-3))
                     .shadow(color: AppColors.accent.opacity(0.55), radius: 24, y: 12)
                     .shadow(color: AppColors.pageBg.opacity(0.95), radius: 14)
-                    .position(x: 120, y: 218)
+                    .position(x: 126, y: 206)
                     .opacity(sceneVisible ? 1 : 0)
                     .scaleEffect(sceneVisible ? 1 : 0.92)
                     .animation(.spring(response: 0.44, dampingFraction: 0.78), value: sceneVisible)
@@ -1783,30 +2697,15 @@ struct FeedWallTile: View {
     let dimmed: Bool
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        color.opacity(dimmed ? 0.18 : 0.30),
-                        AppColors.cardElevated.opacity(dimmed ? 0.34 : 0.52)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+        Image(assetName)
+            .resizable()
+            .scaledToFit()
             .frame(width: width, height: height)
-            .overlay(
-                Image(assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: min(width, height) * 0.58, height: min(width, height) * 0.58)
-                    .opacity(dimmed ? 0.56 : 0.90)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(color.opacity(dimmed ? 0.22 : 0.38), lineWidth: 1)
-            )
-            .shadow(color: color.opacity(dimmed ? 0.20 : 0.34), radius: 18, y: 10)
+            .opacity(dimmed ? 0.34 : 0.78)
+            .saturation(dimmed ? 0.65 : 1)
+            .blur(radius: dimmed ? 1.2 : 0.35)
+            .shadow(color: color.opacity(dimmed ? 0.18 : 0.42), radius: 22, y: 10)
+            .shadow(color: AppColors.pageBg.opacity(0.88), radius: 10)
     }
 }
 
@@ -2085,22 +2984,22 @@ struct GoalCard: View {
 
     private var missionTitle: String {
         switch goal {
-        case .attentionShot:    return "Sharper attention"
-        case .screenTimeFrying: return "Hours back"
-        case .doomscrolling:    return "Quality sleep"
-        case .loseFocus:        return "Beat the room"
-        case .forgetInstantly:  return "Better memory"
-        case .getSharper:       return "Brain age glow-up"
+        case .attentionShot:    return "Uncolonized attention"
+        case .screenTimeFrying: return "Your hours back"
+        case .doomscrolling:    return "Sleep that survives"
+        case .loseFocus:        return "Outscore the feed"
+        case .forgetInstantly:  return "Memory that sticks"
+        case .getSharper:       return "Younger Brain Score"
         }
     }
 
     private var missionSubtitle: String {
         switch goal {
-        case .attentionShot:    return "Finish a paragraph without checking your phone"
-        case .screenTimeFrying: return "Get your time back from the feed"
-        case .doomscrolling:    return "Stop scrolling at 2am"
-        case .loseFocus:        return "Climb the weekly leaderboard"
-        case .forgetInstantly:  return "Remember what you walked into a room for"
+        case .attentionShot:    return "Keep Big Social out of your focus"
+        case .screenTimeFrying: return "Take time back from the feed"
+        case .doomscrolling:    return "Stop the 2am scroll before it starts"
+        case .loseFocus:        return "Climb while your apps wait"
+        case .forgetInstantly:  return "Remember what you read and opened"
         case .getSharper:       return "Push your Brain Score up"
         }
     }
@@ -2110,13 +3009,16 @@ struct GoalCard: View {
     }
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            action()
+        } label: {
             ZStack(alignment: .leading) {
                 HStack(spacing: 16) {
                     Rectangle()
                         .fill(isSelected ? AppColors.accent : Color.clear)
                         .frame(width: 3, height: 44)
-                        .shadow(color: AppColors.accent.opacity(isSelected ? 0.6 : 0), radius: 8)
+                        .shadow(color: AppColors.accent.opacity(isSelected ? 0.45 : 0), radius: 8)
 
                     Text(missionNumber)
                         .font(.system(size: 14, weight: .heavy, design: .rounded))
@@ -2308,4 +3210,167 @@ private struct GoalSelectionMark: View {
         }
         .frame(width: 30, height: 30)
     }
+}
+
+// MARK: - Welcome Demo Bezel
+//
+// Phone-in-phone bezel showing the auto-looping product demo. Materializes
+// after the existing WelcomeBouncerHero animation completes — metaphor (Memo
+// pushing apps) hands off to receipts (real recording of the block-train-
+// unlock loop). Asset: `onboarding_demo.mp4` in the main bundle. The caller
+// guards transition to this bezel with a Bundle lookup, so shipping without
+// the asset cleanly falls back to the bouncer-only welcome.
+
+private struct WelcomeDemoBezel: View {
+    /// Drives play/pause so the AVPlayer doesn't burn cycles when the welcome
+    /// page is off-screen (still in the navigation stack but not visible).
+    let isActive: Bool
+
+    @State private var isMuted = true
+
+    private static let videoName = "onboarding_demo"
+    private static let videoExt = "mp4"
+
+    var body: some View {
+        GeometryReader { geo in
+            // PNG aspect = 450 / 920 ≈ 0.489. Use the asset's exact ratio so
+            // the screen cutout matches up with the video underneath.
+            let bezelWidth: CGFloat = min(geo.size.width * 0.55, 220)
+            let bezelHeight: CGFloat = bezelWidth * (920.0 / 450.0)
+            // The PNG's chrome is roughly 4% of width on each side. Inset the
+            // video by that much so it sits flush inside the screen cutout
+            // and doesn't bleed under the bezel.
+            let screenInset: CGFloat = bezelWidth * 0.04
+            let screenCornerRadius: CGFloat = bezelWidth * 0.12
+
+            HStack {
+                Spacer(minLength: 0)
+                bezelFrame(screenInset: screenInset, screenCornerRadius: screenCornerRadius)
+                    .frame(width: bezelWidth, height: bezelHeight)
+                    .rotation3DEffect(
+                        .degrees(10),
+                        axis: (x: 0.0, y: 1.0, z: 0.0),
+                        anchor: .center,
+                        anchorZ: 0,
+                        perspective: 0.45
+                    )
+                    .shadow(color: .black.opacity(0.75), radius: 28, x: 10, y: 18)
+                    .shadow(color: Color(red: 0.408, green: 0.565, blue: 0.996).opacity(0.18), radius: 36, x: 0, y: 0)
+                    .offset(y: -36)
+                Spacer(minLength: 0)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+        }
+    }
+
+    private func bezelFrame(screenInset: CGFloat, screenCornerRadius: CGFloat) -> some View {
+        ZStack {
+            // Layer 1: video plays in the screen cutout area, clipped to
+            // match the PNG's screen corner radius.
+            LoopingVideoPlayer(
+                videoName: Self.videoName,
+                videoExt: Self.videoExt,
+                isPlaying: isActive,
+                isMuted: isMuted
+            )
+            .clipShape(RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous))
+            .padding(screenInset)
+
+            // Layer 2: real iPhone 17 Pro PNG with transparent screen. Sits
+            // on top of the video — its transparent screen lets the video
+            // show through, and the PNG provides photoreal chrome edges,
+            // baked highlights, and Dynamic Island detail.
+            // Loaded via UIImage explicitly because SwiftUI's `Image(_ name:)`
+            // sometimes fails to resolve loose bundle PNGs that aren't part
+            // of an Asset Catalog.
+            if let frame = UIImage(named: "iphone17pro") {
+                Image(uiImage: frame)
+                    .resizable()
+                    .scaledToFit()
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+// Plays the demo video on a seamless loop using AVPlayerLooper. Pauses when
+// `isPlaying` flips to false so backgrounded onboarding pages don't keep the
+// decoder running.
+private struct LoopingVideoPlayer: UIViewRepresentable {
+    let videoName: String
+    let videoExt: String
+    let isPlaying: Bool
+    let isMuted: Bool
+
+    final class Coordinator {
+        var player: AVQueuePlayer?
+        var looper: AVPlayerLooper?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> PlayerHostView {
+        let view = PlayerHostView()
+        view.backgroundColor = .black
+
+        guard let url = Bundle.main.url(forResource: videoName, withExtension: videoExt) else {
+            return view
+        }
+
+        let item = AVPlayerItem(url: url)
+        let queuePlayer = AVQueuePlayer(playerItem: item)
+        queuePlayer.isMuted = isMuted
+        queuePlayer.actionAtItemEnd = .advance
+
+        let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+
+        context.coordinator.player = queuePlayer
+        context.coordinator.looper = looper
+
+        view.playerLayer.player = queuePlayer
+        view.playerLayer.videoGravity = .resizeAspectFill
+
+        if isPlaying {
+            queuePlayer.play()
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerHostView, context: Context) {
+        guard let player = context.coordinator.player else { return }
+        player.isMuted = isMuted
+        if isPlaying {
+            if player.timeControlStatus != .playing {
+                player.play()
+            }
+        } else {
+            if player.timeControlStatus != .paused {
+                player.pause()
+            }
+        }
+    }
+
+    static func dismantleUIView(_ uiView: PlayerHostView, coordinator: Coordinator) {
+        coordinator.player?.pause()
+        coordinator.looper = nil
+        coordinator.player = nil
+        uiView.playerLayer.player = nil
+    }
+
+    final class PlayerHostView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+}
+
+#Preview("Contract Page") {
+    OnboardingView(startPage: 15, previewName: "Dylan") {}
+        .environment(FocusModeService())
+        .modelContainer(for: [
+            User.self,
+            Exercise.self,
+            DailySession.self,
+            BrainScoreResult.self,
+            Achievement.self
+        ], inMemory: true)
 }
