@@ -490,19 +490,53 @@ struct OnboardingPersonalSolutionView: View {
     /// Beat 2 — the plan card. No ScrollView per spec implementation note 4;
     /// fixed VStack + safeAreaInset(.bottom) for the CTA. Hero + bridge
     /// added in Phase 5.
+    /// Beat 2 — the brain-trainer USP + tactical plan card + brand-voice
+    /// bridge. Fixed VStack, no ScrollView. Mirrors Beat 1's safeAreaInset
+    /// pattern for the CTA.
     private var planBeatLayout: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
+            // Eyebrow
             Text("MEMO'S PLAYBOOK")
                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .tracking(1.4)
                 .foregroundStyle(AppColors.textPrimary.opacity(0.4))
 
+            // Hero — brain-trainer USP
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Brain training")
+                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.94))
+                Text("that pays you in time.")
+                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.accent)
+            }
+
+            // Supporting subhead
+            Text("Beat a brain game. Earn back screen time. The only blocker that trains your brain while it locks the noise.")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColors.textPrimary.opacity(0.55))
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Plan card
             planCard
 
             Spacer(minLength: 0)
+
+            // Bridge — carries the corporate antagonist into Beat 2
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Take your brain back.")
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.94))
+                Text("Big tech won't give it back voluntarily.")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .opacity(cardsAppeared[3] ? 1 : 0)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 38)
+        .padding(.top, 28)
         .frame(maxWidth: .infinity, alignment: .leading)
         .safeAreaInset(edge: .bottom) {
             unlockPlanButton
