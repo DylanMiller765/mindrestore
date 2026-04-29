@@ -487,93 +487,23 @@ struct OnboardingPersonalSolutionView: View {
     /// behavioral science — want the last bit too?". The hero is the
     /// reclaim total; the 2-color life bar shows saved (blue) vs residual
     /// (coral); the explainer makes the 75% claim defensible; the
-    /// residual footnote + question set up the paywall as the answer to
-    /// "want it all back?".
+    /// Beat 2 — the plan card. No ScrollView per spec implementation note 4;
+    /// fixed VStack + safeAreaInset(.bottom) for the CTA. Hero + bridge
+    /// added in Phase 5.
     private var planBeatLayout: some View {
-        let lifeBarWidth: CGFloat = 280
+        VStack(alignment: .leading, spacing: 16) {
+            Text("MEMO'S PLAYBOOK")
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(AppColors.textPrimary.opacity(0.4))
 
-        return ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 22) {
-                // RECLAIMED hero
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("RECLAIMED")
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                        .tracking(1.4)
-                        .foregroundStyle(AppColors.accent)
+            planCard
 
-                    Text(savedBreakdownText)
-                        .font(.system(size: 39, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColors.accent)
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                        .shadow(color: AppColors.accent.opacity(0.32), radius: 16, y: 8)
-
-                    Text("back in your life.")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.7))
-                }
-
-                // Two-color life bar (saved blue / residual coral) with
-                // TODAY · AGE 60 markers tight to the bar's edges.
-                VStack(alignment: .leading, spacing: 8) {
-                    LifeBar(
-                        savedFraction: CGFloat(Self.memoReductionFraction),
-                        progress: planBarProgress,
-                        width: lifeBarWidth,
-                        height: 14
-                    )
-
-                    HStack {
-                        Text("TODAY")
-                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                            .tracking(1.0)
-                            .foregroundStyle(AppColors.textPrimary.opacity(0.4))
-                        Spacer()
-                        Text("AGE 60")
-                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                            .tracking(1.0)
-                            .foregroundStyle(AppColors.textPrimary.opacity(0.4))
-                    }
-                    .frame(width: lifeBarWidth)
-                }
-
-                // Plan card (rev 3 elevations preserved).
-                planCard
-
-                // HOW IT WORKS — defensibility for the 75% claim.
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("HOW IT WORKS")
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                        .tracking(1.3)
-                        .foregroundStyle(AppColors.textTertiary)
-
-                    Text("Backed by behavioral science: friction beats willpower. Memo bounces 3 of 4 app opens — every unlock costs 5 min of training.")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.78))
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .opacity(cardsAppeared[3] ? 1 : 0)
-
-                // Residual footnote + brand-voice punch.
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("still: \(residualBreakdownText) on the table.")
-                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                        .tracking(0.6)
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.5))
-
-                    Text("want it all back?")
-                        .font(.system(size: 17, weight: .heavy, design: .rounded))
-                        .italic()
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.7))
-                }
-                .opacity(cardsAppeared[3] ? 1 : 0)
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 18)
-            .padding(.bottom, 24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 24)
+        .padding(.top, 38)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .safeAreaInset(edge: .bottom) {
             unlockPlanButton
                 .padding(.horizontal, 32)
