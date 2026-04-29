@@ -811,6 +811,21 @@ struct OnboardingPersonalSolutionView: View {
         }
     }
 
+    /// Beat 1 → Beat 2 transition, fired by Beat 1's "See the plan →" CTA.
+    /// Wired in Phase 3. Defined here in Phase 1 to keep the diff in
+    /// each phase tight.
+    @MainActor
+    private func advanceToPlan() {
+        guard revealBeat == .reclaim else { return }
+        withAnimation(.spring(response: 0.74, dampingFraction: 0.86)) {
+            revealBeat = .plan
+        }
+        revealTask?.cancel()
+        revealTask = Task { @MainActor in
+            await revealPlanRows()
+        }
+    }
+
     @MainActor
     private func revealPlanRows() async {
         // Soft success haptic when the first plan row lands — completes
