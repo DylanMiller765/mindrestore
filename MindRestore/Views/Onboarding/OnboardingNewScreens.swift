@@ -157,6 +157,15 @@ struct OnboardingPersonalSolutionView: View {
     /// "printed."
     @State private var cardGlowing: [Bool] = [false, false, false, false]
 
+    /// Drives the Beat 1 hero number's format. The cut snaps to .hours so
+    /// the user reads continuity with the count-up; ~700ms later we flip
+    /// to .breakdown ("4 YEARS · 132 DAYS") so the emotional weight lands.
+    private enum HeroFormat {
+        case hours
+        case breakdown
+    }
+    @State private var heroFormat: HeroFormat = .hours
+
     /// Top 3 solutions to mirror back. Falls back to a sensible default trio
     /// if the user skipped goal selection (so the page still has substance).
     private var solutions: [UserFocusGoal] {
@@ -690,6 +699,7 @@ struct OnboardingPersonalSolutionView: View {
         slashOpacity = 0
         countProgress = 0
         planBarProgress = 0
+        heroFormat = .hours
         cardGlowing = [false, false, false, false]
 
         revealTask?.cancel()
