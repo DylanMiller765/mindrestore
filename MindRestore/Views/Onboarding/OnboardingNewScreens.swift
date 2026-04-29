@@ -219,19 +219,43 @@ struct OnboardingPersonalSolutionView: View {
                 revealBackdrop(size: proxy.size)
 
                 Group {
-                    if revealBeat == .plan {
-                        planBeatLayout
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
+                    switch revealBeat {
+                    case .stakes:
                         VStack(spacing: 0) {
                             cinematicProjectionHero
                                 .padding(.horizontal, 28)
                                 .padding(.top, 38)
                                 .opacity(headlineAppeared ? 1 : 0)
                                 .offset(y: headlineAppeared ? 0 : 10)
-
                             Spacer(minLength: 22)
                         }
+                    case .reclaim:
+                        VStack(alignment: .leading, spacing: 26) {
+                            cinematicProjectionHero
+                            beat1Extras
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.top, 38)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .safeAreaInset(edge: .bottom) {
+                            beat1CTAButton
+                                .padding(.horizontal, 32)
+                                .padding(.bottom, 16)
+                                .padding(.top, 8)
+                                .background(
+                                    LinearGradient(
+                                        colors: [AppColors.pageBg.opacity(0), AppColors.pageBg.opacity(0.85), AppColors.pageBg],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                    .ignoresSafeArea(edges: .bottom)
+                                )
+                        }
+                        .transition(.opacity)
+                    case .plan:
+                        planBeatLayout
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
