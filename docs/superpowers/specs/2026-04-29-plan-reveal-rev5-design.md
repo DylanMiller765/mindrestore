@@ -24,7 +24,7 @@ Land the cut as a clear "you get 4Y 132D back," then dwell on "big tech is colon
 | # | Decision | Source |
 |---|---|---|
 | 1 | **Two-beat sequence** after the cut. Beat 1 = reclaim + corporate punch + CTA. Beat 2 = plan card + brand-voice bridge + CTA. | Q1 = B |
-| 2 | **Plan card style:** tactical color-coded stack — each step is its own row card with a 3pt colored leading bar (coral/violet/blue/amber). No outer container box. | Q2 = 2 |
+| 2 | **Plan card style:** tactical color-coded stack — each step is its own row card with a 3pt colored leading bar. Order matches the row sequence Train → Earn → Block → Compete: **violet / accent / coral / amber**. No outer container box. | Q2 = 2 |
 | 3 | **Cut moment fix:** keep the single big number, but flip the eyebrow from "With Memo" to **RECLAIMED** with subtitle "hours back in your life" the moment the slash hits. | Q3 = A |
 | 4 | **Beat 1 corporate punch:** *"Big tech is colonizing your attention."* / *"Memo fights back."* (italic, accent color on the second line). | Q4 = B |
 | 5 | **Beat 2 hero:** "Brain training that pays you in time." Plan rows reorder to **Train → Earn → Block → Compete**. Bridge: "Take your brain back. Big tech won't give it back voluntarily." No 25% number on this beat. | Q5 = X |
@@ -88,14 +88,22 @@ The cut animation is the same choreography as rev 4 — slash sweep, tile recoil
 
 `recoilProgress` and `revealBeat` are **decoupled** in rev 5 (rev 4 fired both in the same withAnimation block at slash-start). Recoil rides the slash; the layout-state change rides the number snap. This keeps the apps recoiling immediately — visual cause-and-effect of the slash — while the hero swap waits for the new number to land.
 
+**The number-format transition is two-step, not one** (resolves the "is the cut number 38,000 or 4 YR · 132 D?" ambiguity):
+
+1. **At the cut**, the number snaps to `savedHoursTotal` formatted as `reclaimedHoursText` (e.g., `38,000`). The user just spent ~5 seconds watching the count-up climb in *hours*; the snap continues that visual contract — same units, same shape, same monospace digits, just a smaller number with new label colors. This is what makes the cut readable.
+2. **After ~700ms dwell** (the slash has faded, the apps have recoiled), the hero number reformats from hours → years/days. The hours number `38,000` cross-fades into the breakdown text `4 YEARS · 132 DAYS` (still `AppColors.accent`, still ~39pt heavy rounded, but a shorter string). Same screen position. Subtitle stays "hours back in your life" — semantic anchor for the breakdown.
+
+This means Beat 1's hero settles on `savedBreakdownText`, but only after the cut-moment hours number has done its readability job. Implementation: a `heroFormat` enum (`.hours` / `.breakdown`) toggled inside `startRevealAnimation` after the dwell, with `.contentTransition(.opacity)` on the Text so the swap cross-fades instead of jumping.
+
 Sequence (relative t, slash-start = 0):
 
 | t | Event |
 |---|---|
 | 0.00s | Slash sweep starts (0.5s easeOut). `recoilProgress` springs to 1.0 in its own withAnimation block. `revealBeat` still `.stakes`. |
-| 0.80s | Number snaps to `savedHoursTotal` AND `revealBeat = .reclaim` in the same withAnimation block (0.5s spring). The hero block re-renders against the new state: eyebrow text crossfades coral "WITHOUT MEMO" → accent "RECLAIMED"; subtitle "hours back in your life" fades in below the number; the rev 4 stakes headline ("You're giving social media giants") fades out. |
+| 0.80s | Number snaps to `savedHoursTotal` (rendered as hours, e.g. `38,000`) AND `revealBeat = .reclaim` in the same withAnimation block (0.5s spring). The hero block re-renders against the new state: eyebrow text crossfades coral "WITHOUT MEMO" → accent "RECLAIMED"; subtitle "hours back in your life" fades in below the number; the rev 4 stakes headline ("You're giving social media giants") fades out. |
 | 1.10s | Slash capsule fades out (0.4s easeIn). |
 | 1.10s | Beat 1's life bar + corporate punch + CTA enter. Implementation uses SwiftUI `.transition(.opacity.combined(with: .move(edge: .bottom)))` per element so the layout-state change drives the entrance — no extra reveal-progress state variable needed. Stagger via 100ms `.delay()` per element so they come in sequentially, not as a wall. |
+| 1.50s | `heroFormat` flips to `.breakdown`. Hero number cross-fades from `38,000` → `4 YEARS · 132 DAYS`. Subtitle "hours back in your life" stays as the semantic anchor. |
 
 What rev 4's `.withMemo` state did that rev 5 explicitly drops:
 - The headline rewrite ("Memo cuts the damage in half.") — gone. Beat 1's headline IS the RECLAIMED hero.
@@ -103,14 +111,14 @@ What rev 4's `.withMemo` state did that rev 5 explicitly drops:
 - The `mascot-unlocked` placement below the number — gone (corporate punch is the emotional anchor on Beat 1, not the brain).
 - The "Memo turns scrolling into reps" subtitle — gone.
 
-### Beat 1 (revealBeat == .reclaim)
+### Beat 1 (revealBeat == .reclaim) — settled state, post-dwell
 
 ```
 ┌─────────────────────────────────────┐
 │                                     │
 │  RECLAIMED                          │  ← accent eyebrow, 11pt mono heavy
-│  4 YR · 132 D     (savedBreakdown)  │  ← accent, 39pt heavy rounded
-│  back in your life.                 │  ← white@70%, 17pt semibold
+│  4 YEARS · 132 DAYS                 │  ← accent, 39pt heavy rounded (savedBreakdownText after the format swap)
+│  hours back in your life            │  ← white@70%, 17pt semibold (subtitle anchors the unit)
 │                                     │
 │  ▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱   ← 2-color bar │
 │  TODAY              AGE 60          │  ← white@40%, 10pt mono
@@ -123,7 +131,7 @@ What rev 4's `.withMemo` state did that rev 5 explicitly drops:
 └─────────────────────────────────────┘
 ```
 
-The hero block (RECLAIMED + breakdown + "back in your life") is the same content the cut animation reveals — Beat 1 is just the surrounding frame for that hero. The bar + corporate punch + CTA are the new elements that fade in on the dwell.
+The hero block has two visual states: at the cut, it shows the hours number (`38,000` + "hours back in your life"); after ~700ms dwell, it reformats to the breakdown text (`4 YEARS · 132 DAYS`, subtitle unchanged). The bar + corporate punch + CTA all enter during the same dwell window via SwiftUI transitions.
 
 The corporate punch sits in the visual middle of the screen, not bottom — it's the message, not a footer. CTA pins to the bottom via `safeAreaInset(edge: .bottom)`.
 
@@ -203,7 +211,7 @@ The order matters: Train → Earn → Block → Compete tells the brand's story 
 
 The eyebrow + subtitle changes need to land *as the slash hits*, not after. SwiftUI `.contentTransition(.opacity)` on the eyebrow Text — driven by `revealBeat` — gives a clean cross-fade. Same for the subtitle (which just appears, doesn't change content).
 
-In code: hoist the eyebrow and subtitle out of the existing `if withMemo` branch into a single block whose content is computed from `revealBeat`. When `revealBeat` flips to `.reclaim` inside the same `withAnimation` block as the number snap, the cross-fade rides the same spring. No new state needed.
+In code: hoist the eyebrow and subtitle out of the existing `if withMemo` branch into a single block whose content is computed from `revealBeat`. When `revealBeat` flips to `.reclaim` inside the same `withAnimation` block as the number snap, the cross-fade rides the same spring. The eyebrow + subtitle don't need new state — they read from `revealBeat`. (The hero *number* format does need new state — see implementation note 6 for `heroFormat`.)
 
 ## Backdrop behavior
 
@@ -233,6 +241,7 @@ t=5.42s  countProjection() ends. countProgress=1, full coralDeep.
 t=6.02s  600ms hold ends. Medium impact haptic.
          Slash sweeps (0.5s easeOut). recoilProgress springs to 1.0 (1.2s spring).
 t=6.82s  Number snap (0.5s spring) AND revealBeat = .reclaim in same block.
+         heroFormat is .hours; number renders as `38,000`.
          Hero re-renders: eyebrow "WITHOUT MEMO"→"RECLAIMED" cross-fade,
                           color coral→accent,
                           subtitle "hours back in your life" fades in,
@@ -242,20 +251,47 @@ t=7.32s  Beat 1 elements enter via SwiftUI transitions (triggered by .reclaim):
            +0ms     life bar (planBarProgress 0→1, 0.6s easeOut)
            +100ms   corporate punch (opacity + slide-up, 0.5s spring)
            +200ms   CTA (opacity, 0.5s)
-t=8.02s  Beat 1 fully revealed. User dwell.
-t=∞     User taps "See the plan →".
-         revealBeat = .plan via 0.74s spring.
+t=7.52s  heroFormat flips to .breakdown. Number cross-fades `38,000` → `4 YEARS · 132 DAYS`.
+t=8.02s  Beat 1 fully revealed. *startRevealAnimation() exits here* — Task ends.
+t=∞     User taps "See the plan →" → calls advanceToPlan().
+         advanceToPlan() sets revealBeat = .plan via 0.74s spring,
+         then calls revealPlanRows() in a fresh Task.
          Plan rows reveal sequentially (4 × 86ms stagger via cardsAppeared).
          Soft success haptic on row 01.
 ```
 
 ≈8s from page-enter to "user can tap." The count-up earns it — drama, payoff, message — and Beat 1 dwells deliberately so the corporate punch lands instead of getting auto-advanced past.
 
+## Implementation notes (resolve rev 4 → rev 5 deltas Claude must not miss)
+
+These are not optional. Each one fixes a specific way rev 5 could regress to rev 4 behavior if implemented mechanically:
+
+1. **Cut transitions to .reclaim, *not* .plan.** Rev 4's `startRevealAnimation` ends with `revealBeat = .plan` and an auto-call to `revealPlanRows()`. Rev 5 must end after `revealBeat = .reclaim` and the Beat 1 fade-ins. **Delete** the trailing `revealBeat = .plan` block, the `planBarProgress = 1` animation tied to it, the 180ms sleep, and the `await revealPlanRows()` from `startRevealAnimation`.
+
+2. **`planBarProgress` animates on entering .reclaim, not .plan.** The 2-color life bar lives on Beat 1 in rev 5. Trigger `planBarProgress = 1` (0.6s easeOut) inside the same block that flips `revealBeat = .reclaim`, not on entering `.plan`. The variable name keeps for git-history continuity but its semantic owner is now Beat 1.
+
+3. **Add `advanceToPlan()` for the Beat 1 CTA.** New @MainActor method:
+   ```
+   advanceToPlan():
+     - withAnimation(.spring(response: 0.74, dampingFraction: 0.86)) { revealBeat = .plan }
+     - Task { await revealPlanRows() }   // existing function unchanged
+   ```
+   Wire Beat 1's "See the plan →" button to call this. Beat 2's existing "Show what changes →" still calls `onContinue()`.
+
+4. **No ScrollView on Beat 2.** Rev 4's plan layout wraps in `ScrollView`. Replace with a fixed `VStack` (with `safeAreaInset(edge: .bottom)` for the CTA). If content overflows on the smallest supported iPhone, tighten row paddings, drop the subhead's last sentence, or use `minimumScaleFactor` on the hero — never re-introduce vertical scroll. Same applies to Beat 1.
+
+5. **Backdrop dimming triggers on `revealBeat != .stakes`, not `isPlan`.** Rename the backdrop's `isPlan: Bool` parameter to `isDefeated: Bool`, and pass `revealBeat != .stakes` from the parent. Update the two internal references (`planOpacityMul = isDefeated ? 0.20 : 1.0` and the halo's `isDefeated ? 0.14 : 0.24`). This way Beat 1 inherits the same dim/recoiled grid as Beat 2 — the apps don't get bright again between beats.
+
+6. **Hero number format is driven by an enum, not by `revealBeat`.** Add `@State private var heroFormat: HeroFormat = .hours` with `enum HeroFormat { case hours, breakdown }`. The cut animation sets it to `.hours` simultaneously with the snap; a 700ms `Task.sleep` then flips it to `.breakdown` via `withAnimation(.easeInOut(duration: 0.4))`. The hero `Text` reads from `heroFormat` and uses `.contentTransition(.opacity)` so the swap cross-fades.
+
+7. **Drop rev 4's `.withMemo` case.** Search for every `revealBeat == .withMemo` reference and convert to `.reclaim` (or remove if the branch was rev-4-specific cosmetic — e.g., the ghost stack, mascot, "Memo cuts the damage in half" headline). The new `.reclaim` should not inherit those visual treatments.
+
 ## Files affected
 
 | File | Change |
 |---|---|
-| `MindRestore/Views/Onboarding/OnboardingNewScreens.swift` | Primary. Adds `.reclaim` state, splits plan-beat layout, redesigns plan card, adds Screen Time pill, hoists eyebrow/subtitle out of cut moment. |
+| `MindRestore/Views/Onboarding/OnboardingNewScreens.swift` | Primary. Renames `.withMemo` → `.reclaim`, splits post-cut into Beat 1/Beat 2 layouts, redesigns plan card (tactical color-coded rows), adds Screen Time pill on stakes, adds `heroFormat` enum + state, adds `advanceToPlan()` for Beat 1 CTA, removes ScrollView, removes auto-advance to `.plan`, removes rev-4-only treatments (ghost stack / "cuts in half" / mascot-unlocked on cut). |
+| `MindRestore/Views/Onboarding/OnboardingNewScreens.swift` (PlanRevealBackdrop) | Rename parameter `isPlan` → `isDefeated`. Update two callsites of the prop (`planOpacityMul` and halo opacity). Parent passes `revealBeat != .stakes`. |
 | `MindRestore/Utilities/DesignSystem.swift` | No new tokens needed (`coral`, `violet`, `accent`, `amber` all exist). |
 | `MindRestore/Assets.xcassets/` | No new assets. |
 
@@ -272,11 +308,11 @@ No `.xcodeproj` changes (per CLAUDE.md). No new SPM packages.
 
 ## Project rules (carry forward)
 
-- Always `xcodebuild` CLI. Never Xcode MCP `BuildProject` (hangs 10+ min).
-- SourceKit "Cannot find X in scope" errors are false positives — only trust xcodebuild output.
+- **Builds + installs go through CLI.** `xcodebuild -project ...` for compilation, `xcrun devicectl device install app` for the device push. Never `mcp__xcode__BuildProject` (hangs 10+ min per `feedback_use_xcodebuild_cli.md`). Build commands documented in CLAUDE.md.
+- **The `/verify-changes` skill is for the preview/screenshot loop, not for compiling.** It uses Xcode MCP for SwiftUI Preview rendering and screenshot capture, which is fine — but it does *not* replace the CLI build + install steps above. Run the CLI build first, then use `/verify-changes` to surface previews/screenshots back to the user.
+- SourceKit "Cannot find X in scope" errors are false positives — only trust `xcodebuild` output.
 - Use `AppColors` constants — never raw `Color(red:)`.
 - Device target: `00008130-000A214E11E2001C`.
-- Verify on-device after build via `xcrun devicectl device install app`.
 
 ## Spec history
 
