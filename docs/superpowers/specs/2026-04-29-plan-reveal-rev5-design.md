@@ -102,7 +102,7 @@ Sequence (relative t, slash-start = 0):
 | 0.00s | Slash sweep starts (0.5s easeOut). `recoilProgress` springs to 1.0 in its own withAnimation block. `revealBeat` still `.stakes`. |
 | 0.80s | Number snaps to `savedHoursTotal` (rendered as hours, e.g. `38,000`) AND `revealBeat = .reclaim` in the same withAnimation block (0.5s spring). The hero block re-renders against the new state: eyebrow text crossfades coral "WITHOUT MEMO" → accent "RECLAIMED"; subtitle "hours back in your life" fades in below the number; the rev 4 stakes headline ("You're giving social media giants") fades out. |
 | 1.10s | Slash capsule fades out (0.4s easeIn). |
-| 1.10s | Beat 1's life bar + corporate punch + CTA enter. Implementation uses SwiftUI `.transition(.opacity.combined(with: .move(edge: .bottom)))` per element so the layout-state change drives the entrance — no extra reveal-progress state variable needed. Stagger via 100ms `.delay()` per element so they come in sequentially, not as a wall. |
+| 1.10s | Beat 1's life bar + corporate punch + CTA enter. Each element uses `.transition(.opacity.combined(with: .move(edge: .bottom)))`. Stagger them so they don't enter as a wall — preferred path is `.animation(.spring(...).delay(0.1))` / `.delay(0.2)` per element on the layout-state change; if SwiftUI's transition timing turns out unreliable in practice (delayed transitions can be finicky when multiple subviews share a single state flip), fall back to a small `[Bool]` or phase state explicitly toggled in `startRevealAnimation`. Don't over-engineer up front. |
 | 1.50s | `heroFormat` flips to `.breakdown`. Hero number cross-fades from `38,000` → `4 YEARS · 132 DAYS`. Subtitle "hours back in your life" stays as the semantic anchor. |
 
 What rev 4's `.withMemo` state did that rev 5 explicitly drops:
@@ -246,13 +246,14 @@ t=6.82s  Number snap (0.5s spring) AND revealBeat = .reclaim in same block.
                           color coral→accent,
                           subtitle "hours back in your life" fades in,
                           stakes headline fades out.
-t=7.32s  Slash fades out (0.4s easeIn).
-t=7.32s  Beat 1 elements enter via SwiftUI transitions (triggered by .reclaim):
-           +0ms     life bar (planBarProgress 0→1, 0.6s easeOut)
-           +100ms   corporate punch (opacity + slide-up, 0.5s spring)
-           +200ms   CTA (opacity, 0.5s)
-t=7.52s  heroFormat flips to .breakdown. Number cross-fades `38,000` → `4 YEARS · 132 DAYS`.
-t=8.02s  Beat 1 fully revealed. *startRevealAnimation() exits here* — Task ends.
+t=7.12s  Slash fades out (0.4s easeIn → ends at t=7.52s).
+t=7.12s  Beat 1 elements enter via SwiftUI transitions (triggered by .reclaim):
+           +0ms     life bar (planBarProgress 0→1, 0.6s easeOut → ends t=7.72s)
+           +100ms   corporate punch (opacity + slide-up, 0.5s spring → settles t=7.72s)
+           +200ms   CTA (opacity, 0.5s → ends t=7.82s)
+t=7.52s  heroFormat flips to .breakdown — exactly as the slash fade completes.
+         Number cross-fades `38,000` → `4 YEARS · 132 DAYS` (0.4s easeInOut).
+t=7.92s  Format flip done. Beat 1 fully revealed. *startRevealAnimation() exits here* — Task ends.
 t=∞     User taps "See the plan →" → calls advanceToPlan().
          advanceToPlan() sets revealBeat = .plan via 0.74s spring,
          then calls revealPlanRows() in a fresh Task.
@@ -268,7 +269,7 @@ These are not optional. Each one fixes a specific way rev 5 could regress to rev
 
 1. **Cut transitions to .reclaim, *not* .plan.** Rev 4's `startRevealAnimation` ends with `revealBeat = .plan` and an auto-call to `revealPlanRows()`. Rev 5 must end after `revealBeat = .reclaim` and the Beat 1 fade-ins. **Delete** the trailing `revealBeat = .plan` block, the `planBarProgress = 1` animation tied to it, the 180ms sleep, and the `await revealPlanRows()` from `startRevealAnimation`.
 
-2. **`planBarProgress` animates on entering .reclaim, not .plan.** The 2-color life bar lives on Beat 1 in rev 5. Trigger `planBarProgress = 1` (0.6s easeOut) inside the same block that flips `revealBeat = .reclaim`, not on entering `.plan`. The variable name keeps for git-history continuity but its semantic owner is now Beat 1.
+2. **`planBarProgress` animates after the snap, not concurrently with the snap.** The 2-color life bar lives on Beat 1 in rev 5. Trigger `planBarProgress = 1` (0.6s easeOut) at slash-fade time (t=7.12s, ~300ms after the snap), not in the same `withAnimation` block that flips `revealBeat = .reclaim`. Concurrent triggering causes the bar to start drawing while the apps are still recoiling — visually noisy. Doing it on slash-fade lets the user finish reading the new number before the bar enters. The variable name keeps for git-history continuity but its semantic owner is now Beat 1.
 
 3. **Add `advanceToPlan()` for the Beat 1 CTA.** New @MainActor method:
    ```
@@ -278,7 +279,7 @@ These are not optional. Each one fixes a specific way rev 5 could regress to rev
    ```
    Wire Beat 1's "See the plan →" button to call this. Beat 2's existing "Show what changes →" still calls `onContinue()`.
 
-4. **No ScrollView on Beat 2.** Rev 4's plan layout wraps in `ScrollView`. Replace with a fixed `VStack` (with `safeAreaInset(edge: .bottom)` for the CTA). If content overflows on the smallest supported iPhone, tighten row paddings, drop the subhead's last sentence, or use `minimumScaleFactor` on the hero — never re-introduce vertical scroll. Same applies to Beat 1.
+4. **No ScrollView on Beat 2.** Rev 4's plan layout wraps in `ScrollView`. Replace with a fixed `VStack` (with `safeAreaInset(edge: .bottom)` for the CTA). If content overflows, tighten row paddings, drop the subhead's last sentence, or use `minimumScaleFactor` on the hero — never re-introduce vertical scroll. Same applies to Beat 1. **Verify no-overflow on the smallest iOS-17-supported device, not just iPhone 16 Pro.** Run on iPhone SE (3rd gen) simulator (4.7", 1334×750 → ~480pt usable height) and iPhone 13 mini (5.4") simulators before claiming the no-scroll constraint holds — the dev device is iPhone 16 Pro, which is the most generous form-factor in the lineup, so passing there is not proof.
 
 5. **Backdrop dimming triggers on `revealBeat != .stakes`, not `isPlan`.** Rename the backdrop's `isPlan: Bool` parameter to `isDefeated: Bool`, and pass `revealBeat != .stakes` from the parent. Update the two internal references (`planOpacityMul = isDefeated ? 0.20 : 1.0` and the halo's `isDefeated ? 0.14 : 0.24`). This way Beat 1 inherits the same dim/recoiled grid as Beat 2 — the apps don't get bright again between beats.
 
