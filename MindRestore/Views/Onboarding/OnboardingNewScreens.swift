@@ -590,44 +590,40 @@ struct OnboardingPersonalSolutionView: View {
         }
     }
 
+    /// Rev 5 tactical color-coded plan stack. No outer container box; each
+    /// row is its own RoundedRectangle with a 3pt colored leading bar.
+    /// Order encodes the brand story: Train (mechanism) → Earn (payoff) →
+    /// Block (enforcement) → Compete (long game).
     private var planCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Memo's plan")
-                        .font(.system(size: 22, weight: .black, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text("Engineered to outlast the algorithm.")
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                        .tracking(0.6)
-                        .textCase(.uppercase)
-                        .foregroundStyle(AppColors.textPrimary.opacity(0.45))
-                }
-
-                Spacer()
-
-                Image("mascot-thinking")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 64)
-                    .offset(y: -20)
-                    .shadow(color: AppColors.accent.opacity(0.18), radius: 12, y: 6)
-            }
-            .padding(.bottom, 6)
-
-            planCardRow(number: "01", label: "App blocking", detail: "Memo blocks what you pick", value: "pick yours", index: 0)
-            planCardRow(number: "02", label: "Brain training", detail: "Play to earn back screen time", value: "5 min/day", index: 1)
-            planCardRow(number: "03", label: "Earn unlocks", detail: "Beat a brain game", value: "15 min", index: 2)
-            planCardRow(number: "04", label: "Leaderboards", detail: "Weekly · monthly · all-time", value: "live now", index: 3, showDivider: false)
-        }
-        .padding(18)
-        .background {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(AppColors.cardElevated)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(AppColors.cardBorder.opacity(0.85), lineWidth: 1)
-                }
+        VStack(alignment: .leading, spacing: 7) {
+            planCardRow(
+                color: AppColors.violet,
+                label: "Train",
+                detail: "brain games · 5 min a day",
+                value: "5 min/day",
+                index: 0
+            )
+            planCardRow(
+                color: AppColors.accent,
+                label: "Earn",
+                detail: "15 min unlocked per win",
+                value: "15 min",
+                index: 1
+            )
+            planCardRow(
+                color: AppColors.coral,
+                label: "Block",
+                detail: "apps stay shielded until you train",
+                value: "pick yours",
+                index: 2
+            )
+            planCardRow(
+                color: AppColors.amber,
+                label: "Compete",
+                detail: "leaderboards · live now",
+                value: "live",
+                index: 3
+            )
         }
     }
 
@@ -931,53 +927,48 @@ struct OnboardingPersonalSolutionView: View {
         }
     }
 
+    /// Single row card. Row-color@10% background, 3pt leading bar in
+    /// row-color, label + detail stack on the leading edge, mono value
+    /// trailing. Reuses cardsAppeared[index] for the entry animation.
+    @ViewBuilder
     private func planCardRow(
-        number: String,
+        color: Color,
         label: String,
         detail: String,
         value: String,
-        index: Int,
-        showDivider: Bool = true
+        index: Int
     ) -> some View {
         let appeared = index < cardsAppeared.count ? cardsAppeared[index] : true
-        let glowing = index < cardGlowing.count ? cardGlowing[index] : false
-        return VStack(spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(number)
-                    .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(AppColors.accent)
-                    .frame(width: 26, alignment: .leading)
-                    // Glow pulse — when this row first appears, the leading
-                    // number flashes brand-blue with a radial blur shadow,
-                    // then settles. Reads as "unsealed" rather than printed.
-                    .shadow(color: AppColors.accent.opacity(glowing ? 0.85 : 0), radius: glowing ? 8 : 0, y: 0)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(label)
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text(detail)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        HStack(spacing: 12) {
+            Rectangle()
+                .fill(color)
+                .frame(width: 3)
 
-                Spacer(minLength: 8)
-
-                Text(value)
-                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(index == 0 ? AppColors.accent : AppColors.textPrimary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label)
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(detail)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 11)
 
-            if showDivider {
-                Rectangle()
-                    .fill(AppColors.cardBorder.opacity(0.82))
-                    .frame(height: 1)
-            }
+            Spacer(minLength: 8)
+
+            Text(value)
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .padding(.trailing, 12)
         }
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(color.opacity(0.10))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
     }
