@@ -387,6 +387,77 @@ struct OnboardingPersonalSolutionView: View {
         }
     }
 
+    /// Beat 1 elements that enter under the hero after the cut: the 2-color
+    /// life bar with TODAY/AGE 60 markers, and the corporate-attack
+    /// punchline. Each element uses a SwiftUI transition with a small
+    /// per-element delay so they enter sequentially, not as a wall.
+    private var beat1Extras: some View {
+        let lifeBarWidth: CGFloat = 280
+
+        return VStack(alignment: .leading, spacing: 22) {
+            // 2-color life bar
+            VStack(alignment: .leading, spacing: 8) {
+                LifeBar(
+                    savedFraction: CGFloat(Self.memoReductionFraction),
+                    progress: planBarProgress,
+                    width: lifeBarWidth,
+                    height: 14
+                )
+
+                HStack {
+                    Text("TODAY")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .tracking(1.0)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.4))
+                    Spacer()
+                    Text("AGE 60")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .tracking(1.0)
+                        .foregroundStyle(AppColors.textPrimary.opacity(0.4))
+                }
+                .frame(width: lifeBarWidth)
+            }
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+            // Corporate punch — the brand-voice rev 5 anchor.
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Big tech is colonizing\nyour attention.")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary.opacity(0.94))
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Memo fights back.")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .italic()
+                    .foregroundStyle(AppColors.accent)
+            }
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+            .animation(.spring(response: 0.55, dampingFraction: 0.85).delay(0.10), value: revealBeat)
+        }
+    }
+
+    /// Beat 1's "See the plan →" — fires advanceToPlan() (Phase 1 stub).
+    private var beat1CTAButton: some View {
+        Button(action: advanceToPlan) {
+            HStack(spacing: 8) {
+                Text("See the plan")
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 15, weight: .heavy))
+            }
+            .font(.system(size: 18, weight: .heavy, design: .rounded))
+            .foregroundStyle(AppColors.textPrimary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(AppColors.textPrimary.opacity(0.2), lineWidth: 1)
+            }
+            .shadow(color: AppColors.accent.opacity(0.34), radius: 22, y: 10)
+        }
+        .buttonStyle(.plain)
+    }
+
     /// Rev 4 plan-beat layout. Reframes the page from "Memo halves your
     /// damage (still 3 years lost)" to "Memo reclaims 4Y 132D — backed by
     /// behavioral science — want the last bit too?". The hero is the
