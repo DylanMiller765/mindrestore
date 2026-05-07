@@ -22,6 +22,11 @@ struct LeaderboardView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                headerView
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    .padding(.bottom, 4)
+
                 // Category picker
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
@@ -97,27 +102,51 @@ struct LeaderboardView: View {
                 }
             }
             .pageBackground()
-            .navigationTitle("Rankings")
-            .toolbar {
-                if gameCenterService.isAuthenticated {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            let leaderboardID = GameCenterService.leaderboardID(for: selectedCategory)
-                            gameCenterService.showLeaderboard(leaderboardID: leaderboardID)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "gamecontroller.fill")
-                                Text("Game Center")
-                                    .font(.caption.weight(.semibold))
-                            }
-                        }
-                    }
-                }
-            }
             .onAppear {
                 guard !hasLoaded else { return }
                 Analytics.leaderboardViewed(category: selectedCategory.rawValue)
                 loadLeaderboard()
+            }
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerView: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Rankings")
+                .font(.largeTitle.weight(.bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+
+            Spacer(minLength: 8)
+
+            if gameCenterService.isAuthenticated {
+                Button {
+                    let leaderboardID = GameCenterService.leaderboardID(for: selectedCategory)
+                    gameCenterService.showLeaderboard(leaderboardID: leaderboardID)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "gamecontroller.fill")
+                            .font(.title3.weight(.semibold))
+                        Text("Game Center")
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(AppColors.accent)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background {
+                        Capsule()
+                            .fill(AppColors.cardSurface)
+                            .overlay(
+                                Capsule()
+                                    .stroke(AppColors.cardBorder, lineWidth: 1)
+                            )
+                    }
+                }
+                .accessibilityLabel("Open Game Center leaderboard")
             }
         }
     }
