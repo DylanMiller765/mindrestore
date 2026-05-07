@@ -2712,7 +2712,7 @@ struct OnboardingDifferentiationView: View {
     private let receiptLines = [
         "NO ADS",
         "NO DATA SOLD",
-        "10% TO FIGHT BIG TECH",
+        "YOU'RE THE CUSTOMER",
         "TRAIN BEFORE YOU SCROLL"
     ]
 
@@ -2847,13 +2847,13 @@ struct OnboardingDifferentiationView: View {
         HStack(spacing: 12) {
             Image(systemName: index == 3 ? "bolt.fill" : "checkmark")
                 .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(index == 2 ? OB.amber : OB.accent)
+                .foregroundStyle(OB.accent)
                 .frame(width: 18, height: 18)
 
             Text(text)
                 .font(.system(size: 15, weight: .heavy, design: .monospaced))
                 .tracking(0.5)
-                .foregroundStyle(index == 2 ? OB.amber : OB.fg)
+                .foregroundStyle(OB.fg)
 
             Spacer()
         }
