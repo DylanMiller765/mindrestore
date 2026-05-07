@@ -165,13 +165,12 @@ struct PaywallView: View {
     private func paywallHero(compact: Bool) -> some View {
         ZStack {
             Ellipse()
-                .fill(PW.accent.opacity(0.16))
-                .frame(width: compact ? 250 : 286, height: compact ? 112 : 132)
-                .blur(radius: 28)
-                .offset(y: compact ? 16 : 20)
+                .fill(PW.accent.opacity(0.18))
+                .frame(width: compact ? 278 : 322, height: compact ? 126 : 148)
+                .blur(radius: 30)
+                .offset(y: compact ? 18 : 22)
 
-            heroPhoneSilhouette(compact: compact)
-                .offset(y: compact ? 8 : 12)
+            lockedFeedBackdrop(compact: compact)
 
             Circle()
                 .stroke(PW.accent.opacity(0.45), lineWidth: 1.3)
@@ -182,17 +181,6 @@ struct PaywallView: View {
             Circle()
                 .fill(PW.accent.opacity(0.08))
                 .frame(width: compact ? 132 : 154, height: compact ? 132 : 154)
-
-            heroSignalTick(width: compact ? 36 : 42)
-                .offset(x: compact ? -126 : -146, y: compact ? -20 : -28)
-
-            heroSignalTick(width: compact ? 26 : 32)
-                .rotationEffect(.degrees(16))
-                .offset(x: compact ? 130 : 148, y: compact ? -38 : -46)
-
-            heroSignalTick(width: compact ? 22 : 26)
-                .rotationEffect(.degrees(-18))
-                .offset(x: compact ? 118 : 138, y: compact ? 44 : 52)
 
             Image("mascot-unlocked")
                 .renderingMode(.original)
@@ -207,48 +195,71 @@ struct PaywallView: View {
         .accessibilityHidden(true)
     }
 
-    private func heroPhoneSilhouette(compact: Bool) -> some View {
-        let width: CGFloat = compact ? 190 : 220
-        let height: CGFloat = compact ? 120 : 138
-
-        return ZStack {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(PW.fg.opacity(0.025))
-                .frame(width: width, height: height)
+    private func lockedFeedBackdrop(compact: Bool) -> some View {
+        ZStack {
+            Capsule()
+                .fill(PW.fg.opacity(0.022))
+                .frame(width: compact ? 278 : 324, height: compact ? 118 : 138)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 32, style: .continuous)
-                        .stroke(PW.fg.opacity(0.06), lineWidth: 1)
+                    Capsule()
+                        .stroke(PW.fg.opacity(0.055), lineWidth: 1)
                 )
+                .offset(y: compact ? 8 : 10)
 
-            HStack(spacing: compact ? 7 : 8) {
-                ForEach(0..<4, id: \.self) { index in
-                    heroAppTile(index: index, compact: compact)
-                }
-            }
-            .offset(y: compact ? 6 : 8)
+            Circle()
+                .stroke(PW.accent.opacity(0.08), lineWidth: 1)
+                .frame(width: compact ? 274 : 318, height: compact ? 274 : 318)
+                .offset(y: compact ? 42 : 50)
+
+            feedAppTile(assetName: "logo-tiktok", compact: compact, scale: 0.94, rotation: -13)
+                .offset(x: compact ? -112 : -132, y: compact ? -30 : -34)
+
+            feedAppTile(assetName: "logo-instagram", compact: compact, scale: 1.05, rotation: 8)
+                .offset(x: compact ? -58 : -70, y: compact ? -54 : -62)
+
+            feedAppTile(assetName: "logo-youtube", compact: compact, scale: 1.12, rotation: -4)
+                .offset(x: 0, y: compact ? -66 : -76)
+
+            feedAppTile(assetName: "logo-x", compact: compact, scale: 0.92, rotation: 12)
+                .offset(x: compact ? 58 : 70, y: compact ? -54 : -62)
+
+            feedAppTile(assetName: "logo-reddit", compact: compact, scale: 0.96, rotation: 10)
+                .offset(x: compact ? -94 : -110, y: compact ? 34 : 40)
+
+            feedAppTile(assetName: "logo-snapchat", compact: compact, scale: 0.96, rotation: -10)
+                .offset(x: compact ? 94 : 110, y: compact ? 34 : 40)
 
             Image(systemName: "lock.fill")
-                .font(.system(size: compact ? 24 : 28, weight: .heavy))
-                .foregroundStyle(PW.fg.opacity(0.12))
-                .offset(y: compact ? -34 : -38)
+                .font(.system(size: compact ? 20 : 23, weight: .black))
+                .foregroundStyle(PW.fg.opacity(0.16))
+                .padding(compact ? 11 : 13)
+                .background(PW.bg.opacity(0.50), in: Circle())
+                .overlay(Circle().stroke(PW.accent.opacity(0.18), lineWidth: 1))
+                .offset(y: compact ? -4 : -6)
         }
     }
 
-    private func heroAppTile(index: Int, compact: Bool) -> some View {
-        RoundedRectangle(cornerRadius: compact ? 10 : 12, style: .continuous)
-            .fill(PW.fg.opacity(index == 1 ? 0.075 : 0.045))
-            .frame(width: compact ? 34 : 40, height: compact ? 42 : 48)
-            .overlay(
-                RoundedRectangle(cornerRadius: compact ? 10 : 12, style: .continuous)
-                    .stroke(PW.accent.opacity(index == 1 ? 0.22 : 0.09), lineWidth: 1)
-            )
-    }
+    private func feedAppTile(assetName: String, compact: Bool, scale: CGFloat, rotation: Double) -> some View {
+        let size: CGFloat = (compact ? 43 : 50) * scale
 
-    private func heroSignalTick(width: CGFloat) -> some View {
-        Capsule()
-            .fill(PW.accent.opacity(0.34))
-            .frame(width: width, height: 3)
-            .blur(radius: 0.1)
+        return RoundedRectangle(cornerRadius: compact ? 13 : 15, style: .continuous)
+            .fill(PW.fg.opacity(0.055))
+            .frame(width: size, height: size)
+            .overlay(
+                RoundedRectangle(cornerRadius: compact ? 13 : 15, style: .continuous)
+                    .stroke(PW.accent.opacity(0.12), lineWidth: 1)
+            )
+            .overlay(
+                Image(assetName)
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .saturation(0.0)
+                    .opacity(0.30)
+                    .padding(size * 0.22)
+            )
+            .rotationEffect(.degrees(rotation))
+            .shadow(color: PW.accent.opacity(0.08), radius: 12, y: 8)
     }
 
     private var headline: some View {
