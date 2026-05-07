@@ -27,10 +27,10 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
         let (title, subtitle) = pickMessage(attemptCount: attemptCount, appName: name)
 
-        // Load mascot and scale it up for a larger display
+        // ShieldConfiguration caps layout, so render the mascot larger before passing it in.
         let mascotIcon: UIImage? = {
             guard let original = UIImage(named: "shield-mascot") else { return nil }
-            let targetSize = CGSize(width: 120, height: 120)
+            let targetSize = CGSize(width: 168, height: 168)
             let renderer = UIGraphicsImageRenderer(size: targetSize)
             return renderer.image { _ in
                 original.draw(in: CGRect(origin: .zero, size: targetSize))
@@ -38,14 +38,14 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         }()
 
         return ShieldConfiguration(
-            backgroundBlurStyle: .dark,
-            backgroundColor: UIColor(red: 0.039, green: 0.039, blue: 0.059, alpha: 1.0),
+            backgroundBlurStyle: .light,
+            backgroundColor: UIColor(red: 0.94, green: 0.91, blue: 0.82, alpha: 1.0),
             icon: mascotIcon,
-            title: ShieldConfiguration.Label(text: title, color: .white),
-            subtitle: ShieldConfiguration.Label(text: subtitle, color: UIColor(white: 0.6, alpha: 1.0)),
-            primaryButtonLabel: ShieldConfiguration.Label(text: "Train your brain", color: .white),
+            title: ShieldConfiguration.Label(text: title, color: UIColor(red: 0.04, green: 0.04, blue: 0.05, alpha: 1.0)),
+            subtitle: ShieldConfiguration.Label(text: subtitle, color: UIColor(white: 0.28, alpha: 1.0)),
+            primaryButtonLabel: ShieldConfiguration.Label(text: "Train to unlock", color: .white),
             primaryButtonBackgroundColor: UIColor(red: 0.29, green: 0.50, blue: 0.90, alpha: 1.0),
-            secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay focused", color: UIColor(white: 0.5, alpha: 1.0))
+            secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay focused", color: UIColor(white: 0.36, alpha: 1.0))
         )
     }
 
@@ -54,34 +54,24 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     private func pickMessage(attemptCount: Int, appName: String) -> (String, String) {
         // Tier 1 (0-2 attempts) — friendly callout
         let tier1: [(String, String)] = [
-            ("Bro really tried to open \(appName) 💀", "Brain game first."),
-            ("Caught in 4K", "Play to unlock \(appName)."),
-            ("Be so for real right now", "One game and you're free."),
-            ("Nice try", "Beat the brain game to open \(appName)."),
-            ("\(appName)? Brain first.", "You know the drill."),
-            ("Not today", "Play a quick game to unlock."),
-            ("Memo says no.", "Earn it with a brain game."),
+            ("bruh enough \(appName)", "train to unlock?"),
+            ("\(appName)? not yet", "one game first."),
+            ("nice try", "train to unlock \(appName)."),
+            ("Memo says no", "earn it with a brain game."),
         ]
 
         // Tier 2 (3-5 attempts) — pointed callout
         let tier2: [(String, String)] = [
-            ("\(attemptCount) times. We're counting.", "Brain game to unlock \(appName)."),
-            ("Again? Embarrassing.", "Beat the game to open \(appName)."),
-            ("Your brain is begging you.", "Quick game to unlock."),
-            ("We see you.", "One game and you're back in."),
-            ("Bestie.", "\(attemptCount) attempts and counting."),
-            ("This is your \(attemptCount)th attempt btw.", "Game first."),
+            ("again with \(appName)?", "\(attemptCount) tries today."),
+            ("be so for real", "one game and you're back in."),
+            ("Memo is watching", "\(attemptCount) attempts and counting."),
         ]
 
         // Tier 3 (6+ attempts) — intervention mode
         let tier3: [(String, String)] = [
-            ("\(attemptCount) tries today. Touch grass.", "Or play a brain game I guess."),
-            ("Bro is COOKED.", "Put the phone down. Or play."),
-            ("We need to talk.", "\(attemptCount) attempts. Concerning."),
-            ("Put. The phone. Down.", "Or earn it with a brain game."),
-            ("Get a grip my guy.", "Brain game to unlock if you must."),
-            ("\(attemptCount) times? Be honest.", "Play a game or stay focused."),
-            ("Memo is disappointed.", "\(attemptCount) attempts today."),
+            ("\(attemptCount) tries. cooked.", "train or stay out."),
+            ("put the phone down", "or earn \(appName) back."),
+            ("we need to talk", "\(attemptCount) attempts today."),
         ]
 
         let pool: [(String, String)]

@@ -1,13 +1,14 @@
 import SwiftUI
 import SwiftData
 import Charts
+import FamilyControls
 
 // MARK: - Time Range
 
 private enum TimeRange: String, CaseIterable {
-    case week = "7D"
-    case month = "30D"
-    case year = "1Y"
+    case week = "Week"
+    case month = "Month"
+    case year = "Year"
 
     var days: Int {
         switch self {
@@ -16,6 +17,38 @@ private enum TimeRange: String, CaseIterable {
         case .year: return 365
         }
     }
+}
+
+private enum InsightsMode: String, CaseIterable {
+    case focus = "Focus"
+    case brain = "Brain"
+
+    var accentColor: Color {
+        switch self {
+        case .focus: return AppColors.mint
+        case .brain: return AppColors.accent
+        }
+    }
+}
+
+private struct FocusReportDay: Identifiable {
+    let id = UUID()
+    let date: Date
+    let hours: Double
+
+    var dayLabel: String {
+        date.formatted(.dateTime.weekday(.abbreviated)).uppercased()
+    }
+
+    var dateLabel: String {
+        date.formatted(.dateTime.day())
+    }
+}
+
+private struct FocusOffender: Identifiable {
+    let id = UUID()
+    let name: String
+    let seconds: TimeInterval
 }
 
 // MARK: - Insights Dashboard
@@ -29,11 +62,21 @@ struct ProgressDashboardView: View {
     @Query private var achievements: [Achievement]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
-    @State private var selectedRange: TimeRange = .month
+    @State private var selectedRange: TimeRange = .week
+    @State private var selectedMode: InsightsMode = .focus
     @State private var showingPaywall = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
+    private var hasBrainInsightData: Bool { !sessions.isEmpty || !brainScores.isEmpty }
+    private var hasFocusInsightData: Bool {
+        focusModeService.isEnabled
+            || focusModeService.blockedAppCount > 0
+            || focusModeService.dailyAttemptCount > 0
+            || focusModeService.weeklyBlockedMinutes > 0
+            || focusDemoDataEnabled
+    }
+    private var hasAnyInsightData: Bool { hasBrainInsightData || hasFocusInsightData }
 
     // MARK: - Filtered Data
 
@@ -78,41 +121,34 @@ struct ProgressDashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                if sessions.isEmpty && brainScores.isEmpty {
+                if !hasAnyInsightData {
                     emptyState
                 } else {
-                    VStack(spacing: 28) {
-                        trendlineSection
-                        statsTableSection
+                    VStack(spacing: 20) {
+                        insightsHeader
+                        insightsModePicker
 
-                        // Focus Mode stats — visible to anyone with Focus Mode enabled
-                        if focusModeService.isEnabled || focusModeService.dailyAttemptCount > 0 {
-                            focusModeStatsSection
-                        }
-
-                        if isProUser {
-                            cognitiveDomainsSection
-                            personalBestsSection
-                            trainingHeatmapSection
-                        } else {
-                            // Blurred teaser for pro sections
-                            proSectionsTeaser
+                        switch selectedMode {
+                        case .focus:
+                            focusInsightsTab
+                        case .brain:
+                            brainInsightsTab
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
+                    .padding(.top, 4)
+                    .padding(.bottom, 120)
                     .responsiveContent()
                     .frame(maxWidth: .infinity)
                 }
             }
             .pageBackground()
             .navigationTitle("Insights")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isProUser {
-                        timeRangePicker
-                    }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+            .onAppear {
+                if !hasFocusInsightData && hasBrainInsightData {
+                    selectedMode = .brain
                 }
             }
             .sheet(isPresented: $showingPaywall) {
@@ -151,6 +187,348 @@ struct ProgressDashboardView: View {
         .appCard()
         .padding(.horizontal)
         .padding(.top, 8)
+    }
+
+    // MARK: - Mode Picker
+
+    private var insightsHeader: some View {
+        Text("Insights")
+            .font(.system(size: 38, weight: .black, design: .rounded))
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var insightsModePicker: some View {
+        HStack(spacing: 24) {
+            ForEach(InsightsMode.allCases, id: \.self) { mode in
+                Button {
+                    withAnimation(.snappy(duration: 0.22)) {
+                        selectedMode = mode
+                    }
+                } label: {
+                    Text(mode.rawValue)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(selectedMode == mode ? .primary : AppColors.textSecondary)
+                        .padding(.vertical, 6)
+                        .overlay(alignment: .bottom) {
+                            Capsule()
+                                .fill(mode.accentColor)
+                                .frame(width: selectedMode == mode ? 20 : 0, height: 2)
+                                .opacity(selectedMode == mode ? 1 : 0)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(mode.rawValue) insights")
+                .accessibilityAddTraits(selectedMode == mode ? [.isSelected] : [])
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - Focus Tab
+
+    private var focusInsightsTab: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            focusReportHeader
+            focusMascotWeekStrip
+            focusStatsCard
+            focusBarChartSection
+            focusOffendersSection
+        }
+    }
+
+    private var focusReportHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Screen Time Report")
+                .font(.system(size: 28, weight: .black, design: .rounded))
+                .foregroundStyle(.primary)
+
+            Text(focusRangeSubtitle)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var focusRangeSubtitle: String {
+        switch selectedRange {
+        case .week: return "This week"
+        case .month: return "This month"
+        case .year: return "This year"
+        }
+    }
+
+    private var focusMascotWeekStrip: some View {
+        let days = focusWeekDays
+        let average = focusAverageHours
+
+        return HStack(spacing: 7) {
+            ForEach(Array(days.enumerated()), id: \.element.id) { index, day in
+                let isToday = index == days.count - 1
+                let state = focusMascotState(for: day.hours, average: average)
+
+                VStack(spacing: 5) {
+                    Text(day.dayLabel)
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .tracking(0.7)
+                        .foregroundStyle(isToday ? .primary : AppColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+
+                    Image(state.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: isToday ? 42 : 38)
+
+                    Text(day.dateLabel)
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(state.color)
+                        .monospacedDigit()
+                }
+                .padding(.vertical, 9)
+                .frame(maxWidth: .infinity)
+                .background {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(isToday ? state.color.opacity(0.10) : AppColors.cardSurface.opacity(0.42))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(isToday ? state.color.opacity(0.62) : AppColors.cardBorder.opacity(0.36), lineWidth: 1)
+                }
+                .accessibilityLabel("\(day.dayLabel) \(day.dateLabel), \(formatHours(day.hours))")
+            }
+        }
+    }
+
+    private var focusStatsCard: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                focusStatCell(title: "TOTAL", value: formatHours(focusTotalHours), detail: nil)
+                verticalRule
+                focusStatCell(title: "DAILY AVG", value: formatHours(focusAverageHours), detail: nil)
+            }
+
+            thinDivider.padding(.vertical, 12)
+
+            HStack(spacing: 0) {
+                focusStatCell(title: "PEAK DAY", value: focusPeakDayLabel, detail: focusPeakDayDetail)
+                verticalRule
+                focusStatCell(title: "PICKUPS", value: "\(focusPickupCount)", detail: "\(max(0, focusPickupCount / 7))/day")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(AppColors.cardSurface.opacity(0.66), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(AppColors.cardBorder.opacity(0.54), lineWidth: 1)
+        )
+    }
+
+    private func focusStatCell(title: String, value: String, detail: String?) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .tracking(1.0)
+                .foregroundStyle(AppColors.textSecondary)
+                .lineLimit(1)
+
+            Text(value)
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+
+            if let detail {
+                Text(detail)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 56)
+    }
+
+    private var verticalRule: some View {
+        Rectangle()
+            .fill(AppColors.cardBorder.opacity(0.42))
+            .frame(width: 1, height: 46)
+    }
+
+    private var focusBarChartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Screen Time Per Day")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Text("avg \(formatHours(focusAverageHours))")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColors.mint)
+                    .monospacedDigit()
+            }
+
+            focusBarChart
+        }
+    }
+
+    private var focusBarChart: some View {
+        let days = focusWeekDays
+        let maxHours = max(ceil(days.map(\.hours).max() ?? 1), 1)
+        let average = focusAverageHours
+
+        return GeometryReader { proxy in
+            let height = proxy.size.height
+            let plotTop: CGFloat = 18
+            let plotBottom: CGFloat = 28
+            let plotHeight = max(1, height - plotTop - plotBottom)
+            let averageY = plotTop + plotHeight * (1 - min(max(average / maxHours, 0), 1))
+
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    ForEach([1, 0.5, 0], id: \.self) { value in
+                        HStack(spacing: 8) {
+                            Text(value == 0 ? "0" : "\(Int((maxHours * value).rounded()))h")
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColors.textSecondary.opacity(0.70))
+                                .frame(width: 24, alignment: .leading)
+
+                            Rectangle()
+                                .fill(AppColors.cardBorder.opacity(value == 0 ? 0.28 : 0.16))
+                                .frame(height: 1)
+                        }
+                        if value != 0 { Spacer(minLength: 0) }
+                    }
+                }
+                .padding(.top, plotTop)
+                .padding(.bottom, plotBottom)
+
+                Path { path in
+                    path.move(to: CGPoint(x: 30, y: averageY))
+                    path.addLine(to: CGPoint(x: proxy.size.width, y: averageY))
+                }
+                .stroke(AppColors.mint.opacity(0.58), style: StrokeStyle(lineWidth: 1.3, lineCap: .round, dash: [6, 7]))
+
+                HStack(alignment: .bottom, spacing: 10) {
+                    ForEach(days) { day in
+                        VStack(spacing: 7) {
+                            Text(formatHours(day.hours))
+                                .font(.system(size: 10, weight: .black, design: .rounded))
+                                .foregroundStyle(AppColors.textSecondary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.65)
+
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: barColors(for: day.hours, average: average),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(height: max(day.hours > 0 ? 10 : 4, CGFloat(day.hours / maxHours) * plotHeight))
+
+                            Text(day.date.formatted(.dateTime.weekday(.abbreviated)))
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColors.textSecondary)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    }
+                }
+                .padding(.leading, 32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+        }
+        .frame(height: 210)
+    }
+
+    private var focusOffendersSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Weekly Offenders")
+                .font(.system(size: 20, weight: .black, design: .rounded))
+                .foregroundStyle(.primary)
+
+            VStack(spacing: 0) {
+                ForEach(Array(focusOffenders.prefix(4).enumerated()), id: \.element.id) { index, offender in
+                    HStack(spacing: 12) {
+                        Text("\(index + 1)")
+                            .font(.system(size: 13, weight: .black, design: .rounded))
+                            .foregroundStyle(AppColors.textSecondary)
+                            .frame(width: 18)
+
+                        focusOffenderIcon(index: index)
+
+                        Text(offender.name)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+
+                        Spacer(minLength: 0)
+
+                        Text(formatDuration(offender.seconds))
+                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+                    .padding(.vertical, 12)
+
+                    if index < min(focusOffenders.count, 4) - 1 {
+                        thinDivider
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .background(AppColors.cardSurface.opacity(0.54), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(AppColors.cardBorder.opacity(0.46), lineWidth: 1)
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func focusOffenderIcon(index: Int) -> some View {
+        let tokens = Array(focusModeService.activitySelection.applicationTokens)
+        if tokens.indices.contains(index) {
+            Label(tokens[index])
+                .labelStyle(.iconOnly)
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(AppColors.accent.opacity(0.14))
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Image(systemName: "app.fill")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(AppColors.accent)
+                )
+        }
+    }
+
+    private var brainInsightsTab: some View {
+        VStack(spacing: 28) {
+            trendlineSection
+            statsTableSection
+
+            if isProUser {
+                cognitiveDomainsSection
+                personalBestsSection
+                trainingHeatmapSection
+            } else {
+                proSectionsTeaser
+            }
+        }
     }
 
     // MARK: - 1. Brain Score Trendline
@@ -597,6 +975,148 @@ struct ProgressDashboardView: View {
         }
     }
 
+    private var focusDefaults: UserDefaults {
+        UserDefaults(suiteName: "group.com.memori.shared") ?? .standard
+    }
+
+    private var focusDemoDataEnabled: Bool {
+        #if DEBUG
+        focusDefaults.bool(forKey: "focus_demo_data_enabled")
+        #else
+        false
+        #endif
+    }
+
+    private var focusWeekHours: [Double] {
+        let stored = focusDefaults.array(forKey: "focus_demo_weekly_screen_time_hours") as? [Double] ?? []
+        if focusDemoDataEnabled, !stored.isEmpty {
+            return Array((Array(repeating: 0.0, count: max(0, 7 - stored.count)) + stored).suffix(7))
+        }
+
+        if focusModeService.weeklyBlockedMinutes > 0 || focusModeService.dailyAttemptCount > 0 {
+            let seed = max(Double(focusModeService.weeklyBlockedMinutes) / 60, Double(focusModeService.dailyAttemptCount) * 0.18, 0.55)
+            return [0.82, 1.05, 0.96, 1.12, 0.42, 0.68, 0.74].map { min(7.5, max(0.15, seed * $0)) }
+        }
+
+        return [0, 0, 0, 0, 0, 0, 0]
+    }
+
+    private var focusWeekDays: [FocusReportDay] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return focusWeekHours.enumerated().map { index, hours in
+            let date = calendar.date(byAdding: .day, value: index - 6, to: today) ?? today
+            return FocusReportDay(date: date, hours: hours)
+        }
+    }
+
+    private var focusTotalHours: Double {
+        focusWeekHours.reduce(0, +)
+    }
+
+    private var focusAverageHours: Double {
+        let active = focusWeekHours.filter { $0 > 0 }
+        guard !active.isEmpty else { return 0 }
+        return active.reduce(0, +) / Double(active.count)
+    }
+
+    private var focusPeakDay: FocusReportDay? {
+        focusWeekDays.max { $0.hours < $1.hours }
+    }
+
+    private var focusPeakDayLabel: String {
+        guard let peak = focusPeakDay, peak.hours > 0 else { return "--" }
+        return peak.date.formatted(.dateTime.weekday(.abbreviated))
+    }
+
+    private var focusPeakDayDetail: String? {
+        guard let peak = focusPeakDay, peak.hours > 0 else { return nil }
+        return formatHours(peak.hours)
+    }
+
+    private var focusPickupCount: Int {
+        let stored = focusDefaults.integer(forKey: "focus_demo_pickups")
+        if focusDemoDataEnabled, stored > 0 { return stored }
+
+        let receiptAttempts = focusDefaults.integer(forKey: "focus_receipt_blocked_attempts")
+        if receiptAttempts > 0 { return receiptAttempts }
+
+        let dailyAttempts = focusDefaults.integer(forKey: "focus_daily_attempt_count")
+        if dailyAttempts > 0 { return dailyAttempts }
+
+        return focusModeService.dailyAttemptCount
+    }
+
+    private var focusOffenders: [FocusOffender] {
+        let names = focusDefaults.stringArray(forKey: "focus_demo_offender_names") ?? []
+        let seconds = focusDefaults.array(forKey: "focus_demo_offender_seconds") as? [Int] ?? []
+
+        if focusDemoDataEnabled, !names.isEmpty {
+            return names.enumerated().map { index, name in
+                FocusOffender(
+                    name: name,
+                    seconds: TimeInterval(seconds.indices.contains(index) ? seconds[index] : 0)
+                )
+            }
+        }
+
+        if focusModeService.blockedAppCount > 0 {
+            let totalSeconds = max(focusTotalHours * 3600, Double(focusModeService.weeklyBlockedMinutes * 60))
+            return [
+                FocusOffender(name: "Locked target", seconds: totalSeconds * 0.46),
+                FocusOffender(name: "Feed app", seconds: totalSeconds * 0.31),
+                FocusOffender(name: "Scroll loop", seconds: totalSeconds * 0.18)
+            ].filter { $0.seconds > 0 }
+        }
+
+        return [
+            FocusOffender(name: "YouTube", seconds: TimeInterval(97 * 60)),
+            FocusOffender(name: "Instagram", seconds: TimeInterval(74 * 60)),
+            FocusOffender(name: "TikTok", seconds: TimeInterval(58 * 60))
+        ]
+    }
+
+    private func focusMascotState(for hours: Double, average: Double) -> (assetName: String, color: Color) {
+        guard hours > 0, average > 0 else {
+            return ("mascot-thinking", AppColors.textSecondary)
+        }
+
+        if hours >= average * 1.10 {
+            return ("mascot-locked-sad", AppColors.coral)
+        }
+
+        if hours <= average * 0.90 {
+            return ("mascot-unlocked", AppColors.mint)
+        }
+
+        return ("mascot-thinking", AppColors.periwinkle)
+    }
+
+    private func barColors(for hours: Double, average: Double) -> [Color] {
+        if average > 0, hours >= average * 1.10 {
+            return [AppColors.coral, AppColors.periwinkle, AppColors.accent]
+        }
+
+        if average > 0, hours <= average * 0.90, hours > 0 {
+            return [AppColors.mint, AppColors.periwinkle, AppColors.accent]
+        }
+
+        return [AppColors.periwinkle, AppColors.accent]
+    }
+
+    private func formatHours(_ hours: Double) -> String {
+        let totalMinutes = max(0, Int((hours * 60).rounded()))
+        let hourPart = totalMinutes / 60
+        let minutePart = totalMinutes % 60
+        if hourPart == 0 { return "\(minutePart)m" }
+        if minutePart == 0 { return "\(hourPart)h" }
+        return "\(hourPart)h \(minutePart)m"
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        formatHours(seconds / 3600)
+    }
+
     // MARK: - Pro Sections Teaser (blurred)
 
     private var proSectionsTeaser: some View {
@@ -766,7 +1286,7 @@ struct ProgressDashboardView: View {
         // For inverted metrics (brain age), negative = good
         let isGood = inverted ? !isPositive : isPositive
         let color = isGood
-            ? Color(red: 0.13, green: 0.80, blue: 0.0)
+            ? AppColors.mint
             : AppColors.coral
         let prefix = isPositive ? "+" : ""
         let suffix = inverted ? "y" : ""
