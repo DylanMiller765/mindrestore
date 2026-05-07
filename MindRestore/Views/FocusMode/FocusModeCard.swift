@@ -7,8 +7,6 @@ extension DeviceActivityReport.Context {
     /// Mirrors the context declared in the FocusUnlocksReport extension target.
     static let screenTime = Self("Screen Time")
     static let screenTimeWeekly = Self("Screen Time Weekly")
-    static let focusHomeDashboard = Self("Focus Home Dashboard")
-    static let focusInsightsReceipt = Self("Focus Insights Receipt")
 }
 
 // MARK: - Design tokens (matches Claude Design spec for Focus Mode)
