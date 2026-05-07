@@ -50,10 +50,31 @@ struct MindRestoreApp: App {
         AppTheme(rawValue: appTheme)?.colorScheme
     }
 
+    private var effectiveColorScheme: ColorScheme? {
+        #if DEBUG
+        if isDebugPaywallLaunch || isDebugFocusPassLaunch || isDebugInsightsLaunch { return .dark }
+        #endif
+        return colorScheme
+    }
+
+    #if DEBUG
+    private var isDebugPaywallLaunch: Bool {
+        ProcessInfo.processInfo.arguments.contains("--debug-paywall")
+    }
+
+    private var isDebugFocusPassLaunch: Bool {
+        ProcessInfo.processInfo.arguments.contains("--debug-focus-pass")
+    }
+
+    private var isDebugInsightsLaunch: Bool {
+        ProcessInfo.processInfo.arguments.contains { $0.contains("--debug-insights") }
+    }
+    #endif
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .preferredColorScheme(colorScheme)
+            rootView
+                .preferredColorScheme(effectiveColorScheme)
         }
         .modelContainer(
             try! ModelContainer(
@@ -63,7 +84,46 @@ struct MindRestoreApp: App {
             )
         )
     }
+
+    @ViewBuilder
+    private var rootView: some View {
+        #if DEBUG
+        if isDebugPaywallLaunch {
+            DebugPaywallHost()
+        } else if isDebugFocusPassLaunch {
+            DebugFocusPassHost()
+        } else if isDebugInsightsLaunch {
+            ProgressDashboardPreviewHost()
+        } else {
+            ContentView()
+        }
+        #else
+        ContentView()
+        #endif
+    }
 }
+
+#if DEBUG
+private struct DebugPaywallHost: View {
+    @State private var storeService = StoreService()
+
+    var body: some View {
+        PaywallView(isHighIntent: true, triggerSource: "debug_paywall")
+            .environment(storeService)
+    }
+}
+
+private struct DebugFocusPassHost: View {
+    @State private var focusModeService = FocusModeService()
+    @State private var storeService = StoreService()
+
+    var body: some View {
+        FocusModeSetupView(initialStep: 3, onComplete: {})
+            .environment(focusModeService)
+            .environment(storeService)
+    }
+}
+#endif
 
 // MARK: - AppDelegate (notification handling)
 
