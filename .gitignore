@@ -35,6 +35,9 @@ DerivedData-*/
 # Local planning/spec artifacts generated during agent work.
 # Existing tracked files remain tracked; this keeps new scratch plans out.
 /docs/superpowers/
+/docs/analytics/
+/docs/product/
+/docs/marketing/
 
 # Per-user Xcode state (scheme management, etc.)
 MindRestore.xcodeproj/xcuserdata/
